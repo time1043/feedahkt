@@ -1,5 +1,10 @@
 package com.time1043.feedah_kt.ui
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
@@ -60,11 +65,20 @@ fun FeedahApp() {
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
             // NavHost(navController, navGraph)
+            // NavHost AnimatedContent
             NavHost(
                 navController = navController,
                 startDestination = Home,
-                modifier = Modifier.padding(innerPadding)
+                modifier = Modifier.padding(innerPadding),
+                // enterTransition = { EnterTransition.None },
+                // exitTransition = { ExitTransition.None },
+                enterTransition = { fadeIn(tween(200)) },
+                exitTransition = { fadeOut(tween(200)) },
             ) {
+                // composable<Home>(
+                //     enterTransition = { fadeIn(tween(2000)) },
+                //     exitTransition = { fadeOut(tween(2000)) },
+                // ) { HomeScreen() }
                 composable<Home> { HomeScreen() }
                 composable<Favorites> { FavoritesScreen() }
                 composable<Profile> { ProfileScreen() }
