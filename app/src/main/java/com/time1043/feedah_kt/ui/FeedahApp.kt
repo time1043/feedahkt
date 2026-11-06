@@ -18,6 +18,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.toRoute
 import com.time1043.feedah_kt.R
 import com.time1043.feedah_kt.ui.screen.FavoritesScreen
 import com.time1043.feedah_kt.ui.screen.HomeScreen
@@ -65,9 +66,19 @@ fun FeedahApp() {
                 startDestination = Home,
                 modifier = Modifier.padding(innerPadding)
             ) {
-                composable<Home> { HomeScreen() }
+                composable<Home> {
+                    HomeScreen(
+                        onNavigateToProfile = { nickname ->
+                            navController.navigate(Profile(nickname.ifBlank { null }))
+                        }
+                    )
+                }
                 composable<Favorites> { FavoritesScreen() }
-                composable<Profile> { ProfileScreen() }
+                composable<Profile> { backStackEntry ->
+                    val profile: Profile = backStackEntry.toRoute()
+                    ProfileScreen(nickname = profile.nickname)
+                }
+
             }
         }
     }
@@ -82,7 +93,7 @@ data object Home : Route
 data object Favorites : Route
 
 @Serializable
-data object Profile : Route
+data class Profile(val nickname: String? = null) : Route
 
 enum class AppDestinations(
     val route: Route,
@@ -91,5 +102,5 @@ enum class AppDestinations(
 ) {
     HOME(Home, "Home", R.drawable.ic_home),
     FAVORITES(Favorites, "Favorites", R.drawable.ic_favorite),
-    PROFILE(Profile, "Profile", R.drawable.ic_account_box),
+    PROFILE(Profile(), "Profile", R.drawable.ic_account_box),
 }
