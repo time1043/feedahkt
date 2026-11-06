@@ -19,9 +19,10 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.ui.screen.FavoritesScreen
+import com.time1043.feedah_kt.ui.screen.BucketScreen
 import com.time1043.feedah_kt.ui.screen.HomeScreen
-import com.time1043.feedah_kt.ui.screen.ProfileScreen
+import com.time1043.feedah_kt.ui.screen.SettingsScreen
+import com.time1043.feedah_kt.ui.screen.StatisticsScreen
 import kotlinx.serialization.Serializable
 
 @PreviewScreenSizes
@@ -66,8 +67,9 @@ fun FeedahApp() {
                 modifier = Modifier.padding(innerPadding)
             ) {
                 composable<Home> { HomeScreen() }
-                composable<Favorites> { FavoritesScreen() }
-                composable<Profile> { ProfileScreen() }
+                composable<Bucket> { BucketScreen() }
+                composable<Stats> { StatisticsScreen() }
+                composable<Settings> { SettingsScreen() }
             }
         }
     }
@@ -79,10 +81,13 @@ sealed interface Route
 data object Home : Route
 
 @Serializable
-data object Favorites : Route
+data object Bucket : Route
 
 @Serializable
-data object Profile : Route
+data object Stats : Route
+
+@Serializable
+data object Settings : Route
 
 enum class AppDestinations(
     val route: Route,
@@ -90,6 +95,7 @@ enum class AppDestinations(
     val icon: Int,
 ) {
     HOME(Home, "Home", R.drawable.ic_home),
-    FAVORITES(Favorites, "Favorites", R.drawable.ic_favorite),
-    PROFILE(Profile, "Profile", R.drawable.ic_account_box),
+    BUCKET(Bucket, "Bucket", R.drawable.ic_favorite),
+    STATS(Stats, "Stats", R.drawable.ic_home),
+    SETTINGS(Settings, "Settings", R.drawable.ic_account_box),
 }

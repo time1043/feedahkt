@@ -5,6 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun ProfileScreen(modifier: Modifier = Modifier) {
-    Text(text = "Profile page", modifier = modifier)
+fun SettingsScreen(modifier: Modifier = Modifier) {
+    Text(text = "Settings page", modifier = modifier)
 }

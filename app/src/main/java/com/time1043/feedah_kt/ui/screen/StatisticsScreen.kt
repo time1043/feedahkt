@@ -5,6 +5,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 
 @Composable
-fun FavoritesScreen(modifier: Modifier = Modifier) {
-    Text(text = "Favorites page", modifier = modifier)
+fun StatisticsScreen(modifier: Modifier = Modifier) {
+    Text(text = "Statistics page", modifier = modifier)
 }
