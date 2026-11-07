@@ -9,10 +9,10 @@ import com.time1043.feedah_kt.ui.state.rememberCounterState
 
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
-    val (count, doubleCount, increment) = rememberCounterState()
+    val state = rememberCounterState()
 
     Column {
-        Text(text = "$count x 2 = $doubleCount")
-        Button(onClick = increment) { Text("Inc") }
+        Text(text = "${state.count} x 2 = ${state.doubleCount}")
+        Button(onClick = state::increment) { Text("Inc") }
     }
 }
