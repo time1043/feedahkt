@@ -29,30 +29,70 @@ fun FeedahNavHost(
         startDestination = Home,
         modifier = modifier
     ) {
-        homeScreen()
-        bucketScreen()
-        statsScreen()
+        homeScreen(
+            onOpenSearch = { navController.navigate(SearchRoute()) },
+            onOpenStudy = { navController.navigate(StudyRoute()) },
+            onOpenReview = { navController.navigate(ReviewRoute()) },
+        )
+        bucketScreen(
+            onOpenWords = { navController.navigate(WordsRoute("demo")) },
+            onOpenRounds = { navController.navigate(RoundsRoute("demo")) },
+            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
+        )
+        statsScreen(
+            onOpenDayReview = { navController.navigate(ReviewRoute()) },
+        )
         settingsScreen()
         studyScreen()
         browseScreen()
         reviewScreen()
-        searchScreen()
-        wordsScreen()
-        roundsScreen()
+        searchScreen(
+            onOpenWord = { navController.navigate(BrowseRoute(position = 1)) },
+        )
+        wordsScreen(
+            onOpenWord = { navController.navigate(BrowseRoute(position = 1, bucket = "demo")) },
+        )
+        roundsScreen(
+            onOpenRound = { navController.navigate(ReviewRoute(bucket = "demo", round = 1)) },
+        )
         bucketSettingsScreen()
     }
 }
 
-fun NavGraphBuilder.homeScreen() {
-    composable<Home> { HomeScreen() }
+fun NavGraphBuilder.homeScreen(
+    onOpenSearch: () -> Unit,
+    onOpenStudy: () -> Unit,
+    onOpenReview: () -> Unit,
+) {
+    composable<Home> {
+        HomeScreen(
+            onOpenSearch = onOpenSearch,
+            onOpenStudy = onOpenStudy,
+            onOpenReview = onOpenReview,
+        )
+    }
 }
 
-fun NavGraphBuilder.bucketScreen() {
-    composable<Bucket> { BucketScreen() }
+fun NavGraphBuilder.bucketScreen(
+    onOpenWords: () -> Unit,
+    onOpenRounds: () -> Unit,
+    onOpenBucketSettings: () -> Unit,
+) {
+    composable<Bucket> {
+        BucketScreen(
+            onOpenWords = onOpenWords,
+            onOpenRounds = onOpenRounds,
+            onOpenBucketSettings = onOpenBucketSettings,
+        )
+    }
 }
 
-fun NavGraphBuilder.statsScreen() {
-    composable<Stats> { StatisticsScreen() }
+fun NavGraphBuilder.statsScreen(
+    onOpenDayReview: () -> Unit,
+) {
+    composable<Stats> {
+        StatisticsScreen(onOpenDayReview = onOpenDayReview)
+    }
 }
 
 fun NavGraphBuilder.settingsScreen() {
@@ -71,16 +111,28 @@ fun NavGraphBuilder.reviewScreen() {
     composable<ReviewRoute> { ReviewScreen() }
 }
 
-fun NavGraphBuilder.searchScreen() {
-    composable<SearchRoute> { SearchScreen() }
+fun NavGraphBuilder.searchScreen(
+    onOpenWord: () -> Unit,
+) {
+    composable<SearchRoute> {
+        SearchScreen(onOpenWord = onOpenWord)
+    }
 }
 
-fun NavGraphBuilder.wordsScreen() {
-    composable<WordsRoute> { WordsScreen() }
+fun NavGraphBuilder.wordsScreen(
+    onOpenWord: () -> Unit,
+) {
+    composable<WordsRoute> {
+        WordsScreen(onOpenWord = onOpenWord)
+    }
 }
 
-fun NavGraphBuilder.roundsScreen() {
-    composable<RoundsRoute> { RoundsScreen() }
+fun NavGraphBuilder.roundsScreen(
+    onOpenRound: () -> Unit,
+) {
+    composable<RoundsRoute> {
+        RoundsScreen(onOpenRound = onOpenRound)
+    }
 }
 
 fun NavGraphBuilder.bucketSettingsScreen() {
