@@ -9,35 +9,29 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.time1043.feedah_kt.data.saveTheme
-import com.time1043.feedah_kt.data.themeFlow
 import com.time1043.feedah_kt.ui.navigation.AppDestinations
 import com.time1043.feedah_kt.ui.navigation.FeedahNavHost
 import com.time1043.feedah_kt.ui.navigation.navigateToTopLevelDestination
+import com.time1043.feedah_kt.ui.screen.tab.SettingsViewModel
 import com.time1043.feedah_kt.ui.theme.FeedahktTheme
 import com.time1043.feedah_kt.ui.theme.resolveDarkTheme
-import kotlinx.coroutines.launch
 
 @PreviewScreenSizes
 @Composable
 fun FeedahApp() {
-    // The theme choice persists in DataStore (see data/SettingsDataStore.kt);
-    // "system" follows the OS setting.
-    val appContext = LocalContext.current.applicationContext
-    val scope = rememberCoroutineScope()
-    val theme by themeFlow(appContext).collectAsState(initial = "system")
-    val darkTheme = resolveDarkTheme(theme, isSystemInDarkTheme())
+    val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory)
+    val settings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
+    val darkTheme = resolveDarkTheme(settings.theme, isSystemInDarkTheme())
 
     FeedahktTheme(darkTheme = darkTheme) {
         val navController = rememberNavController()
@@ -76,8 +70,8 @@ fun FeedahApp() {
         ) { padding ->
             FeedahNavHost(
                 navController = navController,
-                theme = theme,
-                onThemeSelect = { choice -> scope.launch { saveTheme(appContext, choice) } },
+                theme = settings.theme,
+                onThemeSelect = settingsViewModel::updateTheme,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

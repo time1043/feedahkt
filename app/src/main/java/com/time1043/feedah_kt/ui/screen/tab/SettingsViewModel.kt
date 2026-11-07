@@ -1,0 +1,47 @@
+package com.time1043.feedah_kt.ui.screen.tab
+
+import android.app.Application
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelProvider.AndroidViewModelFactory.Companion.APPLICATION_KEY
+import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
+import com.time1043.feedah_kt.data.settings.Settings
+import com.time1043.feedah_kt.data.settings.UserPreferencesRepository
+import com.time1043.feedah_kt.data.settings.settingsDataStore
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+class SettingsViewModel(
+    private val userPreferencesRepository: UserPreferencesRepository
+) : ViewModel() {
+
+    // Expose the DataStore flow as a StateFlow for Compose
+    val userSettings: StateFlow<Settings> = userPreferencesRepository.userSettingsFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = Settings(),
+        )
+
+    fun updateTheme(theme: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveTheme(theme)
+        }
+    }
+
+    companion object {
+        /** No-DI construction: pulls the application context from CreationExtras. */
+        val Factory: ViewModelProvider.Factory = viewModelFactory {
+            initializer {
+                val application = this[APPLICATION_KEY] as Application
+                SettingsViewModel(
+                    UserPreferencesRepository(application.settingsDataStore)
+                )
+            }
+        }
+    }
+}
