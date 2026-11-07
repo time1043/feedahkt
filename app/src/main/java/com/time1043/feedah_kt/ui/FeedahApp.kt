@@ -13,17 +13,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
-import androidx.navigation.NavGraph.Companion.findStartDestination
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.ui.screen.BucketScreen
-import com.time1043.feedah_kt.ui.screen.HomeScreen
-import com.time1043.feedah_kt.ui.screen.SettingsScreen
-import com.time1043.feedah_kt.ui.screen.StatisticsScreen
-import kotlinx.serialization.Serializable
+import com.time1043.feedah_kt.ui.navigation.AppDestinations
+import com.time1043.feedah_kt.ui.navigation.FeedahNavHost
+import com.time1043.feedah_kt.ui.navigation.navigateToTopLevelDestination
 
 @PreviewScreenSizes
 @Composable
@@ -47,55 +41,17 @@ fun FeedahApp() {
                         it.hasRoute(destination.route::class)
                     } == true,
                     onClick = {
-                        navController.navigate(destination.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        navController.navigateToTopLevelDestination(destination)
                     }
                 )
             }
         }
     ) {
         Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            // NavHost(navController, navGraph)
-            NavHost(
+            FeedahNavHost(
                 navController = navController,
-                startDestination = Home,
                 modifier = Modifier.padding(innerPadding)
-            ) {
-                composable<Home> { HomeScreen() }
-                composable<Bucket> { BucketScreen() }
-                composable<Stats> { StatisticsScreen() }
-                composable<Settings> { SettingsScreen() }
-            }
+            )
         }
     }
-}
-
-sealed interface Route
-
-@Serializable
-data object Home : Route
-
-@Serializable
-data object Bucket : Route
-
-@Serializable
-data object Stats : Route
-
-@Serializable
-data object Settings : Route
-
-enum class AppDestinations(
-    val route: Route,
-    val label: String,
-    val icon: Int,
-) {
-    HOME(Home, "Home", R.drawable.ic_home),
-    BUCKET(Bucket, "Bucket", R.drawable.ic_book),
-    STATS(Stats, "Stats", R.drawable.ic_bar_chart),
-    SETTINGS(Settings, "Settings", R.drawable.ic_settings),
 }
