@@ -13,6 +13,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
@@ -40,6 +41,7 @@ fun SearchScreen(
             label = { Text("Word position") },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
             singleLine = true,
+            modifier = Modifier.testTag("search.position"),
         )
         Button(
             onClick = { parsed?.let { onEvent(SearchEvent.OpenWord(it)) } },
