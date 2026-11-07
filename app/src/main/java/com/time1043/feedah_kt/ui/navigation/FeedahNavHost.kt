@@ -7,6 +7,7 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.toRoute
 import com.time1043.feedah_kt.ui.screen.mode.BrowseScreen
 import com.time1043.feedah_kt.ui.screen.tab.BucketScreen
 import com.time1043.feedah_kt.ui.screen.bucket.BucketSettingsScreen
@@ -94,7 +95,10 @@ fun NavGraphBuilder.studyScreen() {
 }
 
 fun NavGraphBuilder.browseScreen() {
-    composable<BrowseRoute> { BrowseScreen() }
+    composable<BrowseRoute> { entry ->
+        val route = entry.toRoute<BrowseRoute>()
+        BrowseScreen(position = route.position)
+    }
 }
 
 fun NavGraphBuilder.reviewScreen() {
@@ -104,7 +108,7 @@ fun NavGraphBuilder.reviewScreen() {
 fun NavGraphBuilder.searchScreen(navController: NavController) {
     composable<SearchRoute> {
         SearchScreen(
-            onOpenWord = { navController.navigate(BrowseRoute(position = 1)) },
+            onOpenWord = { position -> navController.navigate(BrowseRoute(position = position)) },
         )
     }
 }
