@@ -32,7 +32,11 @@ class FeedahNavHostTest {
                 navigatorProvider.addNavigator(ComposeNavigator())
                 navigatorProvider.addNavigator(DialogNavigator())
             }
-            FeedahNavHost(navController = navController)
+            FeedahNavHost(
+                navController = navController,
+                theme = "system",
+                onThemeSelect = {},
+            )
         }
     }
 
