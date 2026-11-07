@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.navigation.NavController
 import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -18,6 +19,16 @@ import com.time1043.feedah_kt.ui.screen.tab.StatisticsScreen
 import com.time1043.feedah_kt.ui.screen.mode.StudyScreen
 import com.time1043.feedah_kt.ui.screen.bucket.WordsScreen
 
+/**
+ * The whole navigation graph, assembled one line per destination (grouped
+ * by section). Conventions:
+ *  - the body is pure assembly: no navigation logic here;
+ *  - NavGraphBuilder extensions receive navController and own their
+ *    destination's edges — navigate calls live inside them;
+ *  - screens never see navController: they only take event lambdas
+ *    (possibly carrying data, e.g. onOpenWord(position));
+ *  - route identity lives in Routes.kt.
+ */
 @Composable
 fun FeedahNavHost(
     navController: NavHostController,
@@ -29,69 +40,48 @@ fun FeedahNavHost(
         startDestination = Home,
         modifier = modifier
     ) {
-        homeScreen(
-            onOpenSearch = { navController.navigate(SearchRoute()) },
-            onOpenStudy = { navController.navigate(StudyRoute()) },
-            onOpenReview = { navController.navigate(ReviewRoute()) },
-        )
-        bucketScreen(
-            onOpenWords = { navController.navigate(WordsRoute("demo")) },
-            onOpenRounds = { navController.navigate(RoundsRoute("demo")) },
-            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
-        )
-        statsScreen(
-            onOpenDayReview = { navController.navigate(ReviewRoute()) },
-        )
+        // tab
+        homeScreen(navController)
+        bucketScreen(navController)
+        statsScreen(navController)
         settingsScreen()
+        // mode
         studyScreen()
         browseScreen()
         reviewScreen()
-        searchScreen(
-            onOpenWord = { navController.navigate(BrowseRoute(position = 1)) },
-        )
-        wordsScreen(
-            onOpenWord = { navController.navigate(BrowseRoute(position = 1, bucket = "demo")) },
-        )
-        roundsScreen(
-            onOpenRound = { navController.navigate(ReviewRoute(bucket = "demo", round = 1)) },
-        )
+        searchScreen(navController)
+        // bucket
+        wordsScreen(navController)
+        roundsScreen(navController)
         bucketSettingsScreen()
     }
 }
 
-fun NavGraphBuilder.homeScreen(
-    onOpenSearch: () -> Unit,
-    onOpenStudy: () -> Unit,
-    onOpenReview: () -> Unit,
-) {
+fun NavGraphBuilder.homeScreen(navController: NavController) {
     composable<Home> {
         HomeScreen(
-            onOpenSearch = onOpenSearch,
-            onOpenStudy = onOpenStudy,
-            onOpenReview = onOpenReview,
+            onOpenSearch = { navController.navigate(SearchRoute()) },
+            onOpenStudy = { navController.navigate(StudyRoute()) },
+            onOpenReview = { navController.navigate(ReviewRoute()) },
         )
     }
 }
 
-fun NavGraphBuilder.bucketScreen(
-    onOpenWords: () -> Unit,
-    onOpenRounds: () -> Unit,
-    onOpenBucketSettings: () -> Unit,
-) {
+fun NavGraphBuilder.bucketScreen(navController: NavController) {
     composable<Bucket> {
         BucketScreen(
-            onOpenWords = onOpenWords,
-            onOpenRounds = onOpenRounds,
-            onOpenBucketSettings = onOpenBucketSettings,
+            onOpenWords = { navController.navigate(WordsRoute("demo")) },
+            onOpenRounds = { navController.navigate(RoundsRoute("demo")) },
+            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
         )
     }
 }
 
-fun NavGraphBuilder.statsScreen(
-    onOpenDayReview: () -> Unit,
-) {
+fun NavGraphBuilder.statsScreen(navController: NavController) {
     composable<Stats> {
-        StatisticsScreen(onOpenDayReview = onOpenDayReview)
+        StatisticsScreen(
+            onOpenDayReview = { navController.navigate(ReviewRoute()) },
+        )
     }
 }
 
@@ -111,27 +101,27 @@ fun NavGraphBuilder.reviewScreen() {
     composable<ReviewRoute> { ReviewScreen() }
 }
 
-fun NavGraphBuilder.searchScreen(
-    onOpenWord: () -> Unit,
-) {
+fun NavGraphBuilder.searchScreen(navController: NavController) {
     composable<SearchRoute> {
-        SearchScreen(onOpenWord = onOpenWord)
+        SearchScreen(
+            onOpenWord = { navController.navigate(BrowseRoute(position = 1)) },
+        )
     }
 }
 
-fun NavGraphBuilder.wordsScreen(
-    onOpenWord: () -> Unit,
-) {
+fun NavGraphBuilder.wordsScreen(navController: NavController) {
     composable<WordsRoute> {
-        WordsScreen(onOpenWord = onOpenWord)
+        WordsScreen(
+            onOpenWord = { navController.navigate(BrowseRoute(position = 1, bucket = "demo")) },
+        )
     }
 }
 
-fun NavGraphBuilder.roundsScreen(
-    onOpenRound: () -> Unit,
-) {
+fun NavGraphBuilder.roundsScreen(navController: NavController) {
     composable<RoundsRoute> {
-        RoundsScreen(onOpenRound = onOpenRound)
+        RoundsScreen(
+            onOpenRound = { navController.navigate(ReviewRoute(bucket = "demo", round = 1)) },
+        )
     }
 }
 
