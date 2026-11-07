@@ -2,6 +2,11 @@ package com.time1043.feedah_kt.ui
 
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.BarChart
+import androidx.compose.material.icons.outlined.Book
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -9,7 +14,7 @@ import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffo
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -18,7 +23,6 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.time1043.feedah_kt.R
 import com.time1043.feedah_kt.ui.screen.BucketScreen
 import com.time1043.feedah_kt.ui.screen.HomeScreen
 import com.time1043.feedah_kt.ui.screen.SettingsScreen
@@ -38,7 +42,7 @@ fun FeedahApp() {
                 item(
                     icon = {
                         Icon(
-                            painterResource(destination.icon),
+                            destination.icon,
                             contentDescription = destination.label
                         )
                     },
@@ -92,10 +96,10 @@ data object Settings : Route
 enum class AppDestinations(
     val route: Route,
     val label: String,
-    val icon: Int,
+    val icon: ImageVector,
 ) {
-    HOME(Home, "Home", R.drawable.ic_home),
-    BUCKET(Bucket, "Bucket", R.drawable.ic_favorite),
-    STATS(Stats, "Stats", R.drawable.ic_home),
-    SETTINGS(Settings, "Settings", R.drawable.ic_account_box),
+    HOME(Home, "Home", Icons.Outlined.Home),
+    BUCKET(Bucket, "Bucket", Icons.Outlined.Book),
+    STATS(Stats, "Stats", Icons.Outlined.BarChart),
+    SETTINGS(Settings, "Settings", Icons.Outlined.Settings),
 }
