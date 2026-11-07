@@ -24,6 +24,7 @@ import com.time1043.feedah_kt.ui.navigation.AppDestinations
 import com.time1043.feedah_kt.ui.navigation.FeedahNavHost
 import com.time1043.feedah_kt.ui.navigation.navigateToTopLevelDestination
 import com.time1043.feedah_kt.ui.theme.FeedahktTheme
+import com.time1043.feedah_kt.ui.theme.resolveDarkTheme
 
 @PreviewScreenSizes
 @Composable
@@ -31,11 +32,7 @@ fun FeedahApp() {
     // The theme choice lives in the shell until SettingsStore (data layer)
     // takes over persistence; "system" follows the OS setting.
     var theme by rememberSaveable { mutableStateOf("system") }
-    val darkTheme = when (theme) {
-        "light" -> false
-        "dark" -> true
-        else -> isSystemInDarkTheme()
-    }
+    val darkTheme = resolveDarkTheme(theme, isSystemInDarkTheme())
 
     FeedahktTheme(darkTheme = darkTheme) {
         val navController = rememberNavController()

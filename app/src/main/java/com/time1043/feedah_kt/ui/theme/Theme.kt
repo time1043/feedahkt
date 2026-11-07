@@ -56,3 +56,13 @@ fun FeedahktTheme(
         content = content
     )
 }
+
+/**
+ * Resolves the theme choice ("system" / "light" / "dark") against the OS
+ * setting; unknown values fall back to following the OS.
+ */
+fun resolveDarkTheme(theme: String, systemDark: Boolean): Boolean = when (theme) {
+    "light" -> false
+    "dark" -> true
+    else -> systemDark
+}
