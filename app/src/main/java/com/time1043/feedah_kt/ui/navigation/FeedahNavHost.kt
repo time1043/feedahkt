@@ -14,6 +14,7 @@ import com.time1043.feedah_kt.ui.screen.bucket.BucketSettingsScreen
 import com.time1043.feedah_kt.ui.screen.tab.HomeScreen
 import com.time1043.feedah_kt.ui.screen.mode.ReviewScreen
 import com.time1043.feedah_kt.ui.screen.bucket.RoundsScreen
+import com.time1043.feedah_kt.ui.screen.mode.SearchEvent
 import com.time1043.feedah_kt.ui.screen.mode.SearchScreen
 import com.time1043.feedah_kt.ui.screen.tab.SettingsScreen
 import com.time1043.feedah_kt.ui.screen.tab.StatisticsScreen
@@ -108,7 +109,12 @@ fun NavGraphBuilder.reviewScreen() {
 fun NavGraphBuilder.searchScreen(navController: NavController) {
     composable<SearchRoute> {
         SearchScreen(
-            onOpenWord = { position -> navController.navigate(BrowseRoute(position = position)) },
+            onEvent = { event ->
+                when (event) {
+                    is SearchEvent.OpenWord ->
+                        navController.navigate(BrowseRoute(position = event.position))
+                }
+            },
         )
     }
 }

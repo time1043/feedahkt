@@ -16,9 +16,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 
+/** The screen's event vocabulary; grows as the screen grows. */
+sealed interface SearchEvent {
+    data class OpenWord(val position: Int) : SearchEvent
+}
+
 @Composable
 fun SearchScreen(
-    onOpenWord: (Int) -> Unit,
+    onEvent: (SearchEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var position by rememberSaveable { mutableStateOf("42") }
@@ -37,7 +42,7 @@ fun SearchScreen(
             singleLine = true,
         )
         Button(
-            onClick = { parsed?.let(onOpenWord) },
+            onClick = { parsed?.let { onEvent(SearchEvent.OpenWord(it)) } },
             enabled = parsed != null,
         ) {
             Text(text = parsed?.let { "Open word #$it" } ?: "Open word")
