@@ -95,7 +95,7 @@ enum class AppDestinations(
     val icon: Int,
 ) {
     HOME(Home, "Home", R.drawable.ic_home),
-    BUCKET(Bucket, "Bucket", R.drawable.ic_favorite),
-    STATS(Stats, "Stats", R.drawable.ic_home),
-    SETTINGS(Settings, "Settings", R.drawable.ic_account_box),
+    BUCKET(Bucket, "Bucket", R.drawable.ic_book),
+    STATS(Stats, "Stats", R.drawable.ic_bar_chart),
+    SETTINGS(Settings, "Settings", R.drawable.ic_settings),
 }
