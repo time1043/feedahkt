@@ -34,6 +34,8 @@ import com.time1043.feedah_kt.ui.screen.bucket.WordsScreen
 @Composable
 fun FeedahNavHost(
     navController: NavHostController,
+    theme: String,
+    onThemeSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -46,7 +48,7 @@ fun FeedahNavHost(
         homeScreen(navController)
         bucketScreen(navController)
         statsScreen(navController)
-        settingsScreen()
+        settingsScreen(theme, onThemeSelect)
         // mode
         studyScreen()
         browseScreen()
@@ -87,8 +89,16 @@ fun NavGraphBuilder.statsScreen(navController: NavController) {
     }
 }
 
-fun NavGraphBuilder.settingsScreen() {
-    composable<Settings> { SettingsScreen() }
+fun NavGraphBuilder.settingsScreen(
+    theme: String,
+    onThemeSelect: (String) -> Unit,
+) {
+    composable<Settings> {
+        SettingsScreen(
+            theme = theme,
+            onThemeSelect = onThemeSelect,
+        )
+    }
 }
 
 fun NavGraphBuilder.studyScreen() {
