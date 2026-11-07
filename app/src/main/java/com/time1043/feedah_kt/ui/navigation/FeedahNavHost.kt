@@ -6,17 +6,17 @@ import androidx.navigation.NavGraphBuilder
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import com.time1043.feedah_kt.ui.screen.BrowseScreen
-import com.time1043.feedah_kt.ui.screen.BucketScreen
-import com.time1043.feedah_kt.ui.screen.BucketSettingsScreen
-import com.time1043.feedah_kt.ui.screen.HomeScreen
-import com.time1043.feedah_kt.ui.screen.ReviewScreen
-import com.time1043.feedah_kt.ui.screen.RoundsScreen
-import com.time1043.feedah_kt.ui.screen.SearchScreen
-import com.time1043.feedah_kt.ui.screen.SettingsScreen
-import com.time1043.feedah_kt.ui.screen.StatisticsScreen
-import com.time1043.feedah_kt.ui.screen.StudyScreen
-import com.time1043.feedah_kt.ui.screen.WordsScreen
+import com.time1043.feedah_kt.ui.screen.mode.BrowseScreen
+import com.time1043.feedah_kt.ui.screen.tab.BucketScreen
+import com.time1043.feedah_kt.ui.screen.bucket.BucketSettingsScreen
+import com.time1043.feedah_kt.ui.screen.tab.HomeScreen
+import com.time1043.feedah_kt.ui.screen.mode.ReviewScreen
+import com.time1043.feedah_kt.ui.screen.bucket.RoundsScreen
+import com.time1043.feedah_kt.ui.screen.mode.SearchScreen
+import com.time1043.feedah_kt.ui.screen.tab.SettingsScreen
+import com.time1043.feedah_kt.ui.screen.tab.StatisticsScreen
+import com.time1043.feedah_kt.ui.screen.mode.StudyScreen
+import com.time1043.feedah_kt.ui.screen.bucket.WordsScreen
 
 @Composable
 fun FeedahNavHost(

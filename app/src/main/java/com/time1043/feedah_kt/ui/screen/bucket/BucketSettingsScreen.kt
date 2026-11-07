@@ -1,4 +1,4 @@
-package com.time1043.feedah_kt.ui.screen
+package com.time1043.feedah_kt.ui.screen.bucket
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable

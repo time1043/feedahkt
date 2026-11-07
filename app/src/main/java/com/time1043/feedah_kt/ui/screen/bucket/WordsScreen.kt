@@ -1,4 +1,4 @@
-package com.time1043.feedah_kt.ui.screen
+package com.time1043.feedah_kt.ui.screen.bucket
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,15 +10,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun StatisticsScreen(
-    onOpenDayReview: () -> Unit,
+fun WordsScreen(
+    onOpenWord: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(text = "Statistics page")
-        Button(onClick = onOpenDayReview) { Text("Open Day Review") }
+        Text(text = "Words page")
+        Button(onClick = onOpenWord) { Text("Open Word") }
     }
 }

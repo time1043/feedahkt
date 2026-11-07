@@ -1,4 +1,4 @@
-package com.time1043.feedah_kt.ui.screen
+package com.time1043.feedah_kt.ui.screen.tab
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,15 +10,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun WordsScreen(
-    onOpenWord: () -> Unit,
+fun BucketScreen(
+    onOpenWords: () -> Unit,
+    onOpenRounds: () -> Unit,
+    onOpenBucketSettings: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(text = "Words page")
-        Button(onClick = onOpenWord) { Text("Open Word") }
+        Text(text = "Bucket page")
+        Button(onClick = onOpenWords) { Text("Open Words") }
+        Button(onClick = onOpenRounds) { Text("Open Rounds") }
+        Button(onClick = onOpenBucketSettings) { Text("Open Bucket Settings") }
     }
 }

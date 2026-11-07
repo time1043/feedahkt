@@ -1,4 +1,4 @@
-package com.time1043.feedah_kt.ui.screen
+package com.time1043.feedah_kt.ui.screen.mode
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column

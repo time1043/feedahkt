@@ -1,4 +1,4 @@
-package com.time1043.feedah_kt.ui.screen
+package com.time1043.feedah_kt.ui.screen.tab
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -10,15 +10,19 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
 @Composable
-fun RoundsScreen(
-    onOpenRound: () -> Unit,
+fun HomeScreen(
+    onOpenSearch: () -> Unit,
+    onOpenStudy: () -> Unit,
+    onOpenReview: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
         modifier = modifier.padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        Text(text = "Rounds page")
-        Button(onClick = onOpenRound) { Text("Open Round") }
+        Text(text = "Home page")
+        Button(onClick = onOpenSearch) { Text("Open Search") }
+        Button(onClick = onOpenStudy) { Text("Open Study") }
+        Button(onClick = onOpenReview) { Text("Open Review") }
     }
 }
