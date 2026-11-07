@@ -3,9 +3,10 @@ package com.time1043.feedah_kt.ui
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.adaptive.navigationsuite.NavigationSuiteScaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
@@ -26,32 +27,41 @@ fun FeedahApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    NavigationSuiteScaffold(
-        navigationSuiteItems = {
-            AppDestinations.entries.forEach { destination ->
-                item(
-                    icon = {
-                        Icon(
-                            painterResource(destination.icon),
-                            contentDescription = destination.label
+    // The bottom bar exists only on the four tabs; stack routes are full-screen.
+    val onTab = AppDestinations.entries.any { destination ->
+        currentDestination?.hierarchy?.any { it.hasRoute(destination.route::class) } == true
+    }
+
+    Scaffold(
+        bottomBar = {
+            if (onTab) {
+                NavigationBar {
+                    AppDestinations.entries.forEach { destination ->
+                        NavigationBarItem(
+                            icon = {
+                                Icon(
+                                    painterResource(destination.icon),
+                                    contentDescription = destination.label
+                                )
+                            },
+                            label = { Text(destination.label) },
+                            selected = currentDestination?.hierarchy?.any {
+                                it.hasRoute(destination.route::class)
+                            } == true,
+                            onClick = {
+                                navController.navigateToTopLevelDestination(destination)
+                            }
                         )
-                    },
-                    label = { Text(destination.label) },
-                    selected = currentDestination?.hierarchy?.any {
-                        it.hasRoute(destination.route::class)
-                    } == true,
-                    onClick = {
-                        navController.navigateToTopLevelDestination(destination)
                     }
-                )
+                }
             }
-        }
-    ) {
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            FeedahNavHost(
-                navController = navController,
-                modifier = Modifier.padding(innerPadding)
-            )
-        }
+        },
+    ) { padding ->
+        FeedahNavHost(
+            navController = navController,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding),
+        )
     }
 }
