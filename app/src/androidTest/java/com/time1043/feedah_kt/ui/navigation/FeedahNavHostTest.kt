@@ -46,6 +46,7 @@ class FeedahNavHostTest {
                 autoSpeak = true,
                 tapToReveal = true,
                 chrome = DeckChrome(),
+                wordsMeaning = false,
                 theme = "system",
                 onThemeSelect = {},
                 onSpeechRateSelect = {},

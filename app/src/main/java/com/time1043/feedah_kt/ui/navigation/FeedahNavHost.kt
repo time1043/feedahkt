@@ -42,6 +42,7 @@ fun FeedahNavHost(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    wordsMeaning: Boolean,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
@@ -88,7 +89,7 @@ fun FeedahNavHost(
         reviewScreen()
         searchScreen(navController)
         // bucket
-        wordsScreen(navController)
+        wordsScreen(navController, wordsMeaning)
         roundsScreen(navController)
         bucketSettingsScreen()
     }
@@ -229,13 +230,16 @@ fun NavGraphBuilder.searchScreen(navController: NavController) {
     }
 }
 
-fun NavGraphBuilder.wordsScreen(navController: NavController) {
-    composable<WordsRoute> {
+fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Boolean) {
+    composable<WordsRoute> { entry ->
+        val route = entry.toRoute<WordsRoute>()
         WordsScreen(
-            // The browse param is the CARD NUMBER (the mock bucket's first
-            // card), not a list index — position 1 would open not-found.
-            // Once the word list is real, pass the tapped word's position.
-            onOpenWord = { navController.navigate(BrowseRoute(position = 1701, bucket = "demo")) },
+            name = route.name,
+            wordsMeaning = wordsMeaning,
+            onOpenWord = { position ->
+                navController.navigate(BrowseRoute(position = position))
+            },
+            onBack = { navController.popBackStack() },
         )
     }
 }

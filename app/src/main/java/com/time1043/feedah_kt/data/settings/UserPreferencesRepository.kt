@@ -36,6 +36,8 @@ data class Settings(
     val deckProgressBar: Boolean = true,
     /** Whether the deck's page footer shows (bottom right, n/total). */
     val hudPage: Boolean = true,
+    /** Whether the word list shows the meaning column (default hidden). */
+    val wordsMeaning: Boolean = false,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -49,6 +51,7 @@ internal val DECK_HEADER_KEY = booleanPreferencesKey("deck-header")
 internal val DECK_TITLE_KEY = booleanPreferencesKey("deck-title")
 internal val DECK_PROGRESS_BAR_KEY = booleanPreferencesKey("deck-progress-bar")
 internal val HUD_PAGE_KEY = booleanPreferencesKey("hud-page")
+internal val WORDS_MEANING_KEY = booleanPreferencesKey("words-meaning")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
@@ -59,6 +62,7 @@ internal fun Preferences.toSettings(): Settings = Settings(
     deckTitle = this[DECK_TITLE_KEY] ?: Settings().deckTitle,
     deckProgressBar = this[DECK_PROGRESS_BAR_KEY] ?: Settings().deckProgressBar,
     hudPage = this[HUD_PAGE_KEY] ?: Settings().hudPage,
+    wordsMeaning = this[WORDS_MEANING_KEY] ?: Settings().wordsMeaning,
 )
 
 /**
@@ -113,5 +117,9 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveHudPage(hudPage: Boolean) {
         dataStore.edit { it[HUD_PAGE_KEY] = hudPage }
+    }
+
+    suspend fun saveWordsMeaning(wordsMeaning: Boolean) {
+        dataStore.edit { it[WORDS_MEANING_KEY] = wordsMeaning }
     }
 }

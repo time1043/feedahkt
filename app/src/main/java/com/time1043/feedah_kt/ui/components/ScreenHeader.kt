@@ -96,3 +96,56 @@ fun ScreenHeader(
         )
     }
 }
+
+/**
+ * The header row of the list pages (word list, round list; mirror of
+ * ListHeader in src/components/header.tsx): back on the left, the title
+ * centered, and a free right slot — the caller decides what lives there
+ * (the word list's eye toggle, …). Kept separate from ScreenHeader so
+ * neither accumulates the other's judgments.
+ */
+@Composable
+fun ListHeader(
+    /** The centered title; omit it for an empty center (the row keeps its
+     * height either way). */
+    title: String?,
+    onBack: () -> Unit,
+    /** The free right slot, rendered in the same 36dp box as an icon
+     * button. */
+    right: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .heightIn(min = 44.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        HeaderIconButton(
+            iconRes = R.drawable.ic_chevron_back,
+            contentDescription = "Back",
+            onClick = onBack,
+        )
+        if (title != null) {
+            Text(
+                text = title,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+        } else {
+            Box(Modifier.weight(1f))
+        }
+        Box(
+            modifier = Modifier.size(36.dp),
+            contentAlignment = Alignment.Center,
+        ) {
+            right?.invoke()
+        }
+    }
+}

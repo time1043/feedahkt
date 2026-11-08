@@ -96,6 +96,7 @@ fun FeedahApp() {
                 autoSpeak = settings.autoSpeak,
                 tapToReveal = settings.tapToReveal,
                 chrome = deckChrome,
+                wordsMeaning = settings.wordsMeaning,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 onSpeechRateSelect = settingsViewModel::updateSpeechRate,
