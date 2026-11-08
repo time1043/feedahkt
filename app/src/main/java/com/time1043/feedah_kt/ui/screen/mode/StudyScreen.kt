@@ -12,6 +12,7 @@ import com.time1043.feedah_kt.ui.components.WordCard
 @Composable
 fun StudyScreen(
     tts: FeedahTts,
+    speechRate: Float,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
@@ -23,13 +24,15 @@ fun StudyScreen(
     }
 
     // Opening the card speaks the word — mirror of 46da9f4 (study half).
+    // The rate is read at speak time: changing the setting must not
+    // re-speak this card.
     LaunchedEffect(word.word) {
-        tts.speakWord(word.word)
+        tts.speakWord(word.word, speechRate)
     }
 
     WordCard(
         word = word,
-        onReplay = { tts.speakWord(word.word) },
+        onReplay = { tts.speakWord(word.word, speechRate) },
         modifier = modifier,
     )
 }

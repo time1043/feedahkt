@@ -8,6 +8,8 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
+import com.time1043.feedah_kt.platform.FeedahTts
+import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
@@ -34,8 +36,11 @@ class FeedahNavHostTest {
             }
             FeedahNavHost(
                 navController = navController,
+                tts = FeedahTts(ApplicationProvider.getApplicationContext()),
+                speechRate = 1.15f,
                 theme = "system",
                 onThemeSelect = {},
+                onSpeechRateSelect = {},
             )
         }
     }

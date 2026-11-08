@@ -13,6 +13,7 @@ import com.time1043.feedah_kt.ui.components.WordCard
 fun BrowseScreen(
     position: Int,
     tts: FeedahTts,
+    speechRate: Float,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
@@ -27,13 +28,15 @@ fun BrowseScreen(
 
     // Opening the card speaks the word — the screen's speech policy; the
     // card stays a pure displayer. The deck takes this over when it lands.
+    // The rate is read at speak time: changing the setting must not
+    // re-speak this card.
     LaunchedEffect(word.word) {
-        tts.speakWord(word.word)
+        tts.speakWord(word.word, speechRate)
     }
 
     WordCard(
         word = word,
-        onReplay = { tts.speakWord(word.word) },
+        onReplay = { tts.speakWord(word.word, speechRate) },
         modifier = modifier,
     )
 }

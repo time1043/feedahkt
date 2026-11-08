@@ -36,8 +36,10 @@ import com.time1043.feedah_kt.platform.FeedahTts
 fun FeedahNavHost(
     navController: NavHostController,
     tts: FeedahTts,
+    speechRate: Float,
     theme: String,
     onThemeSelect: (String) -> Unit,
+    onSpeechRateSelect: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -50,10 +52,16 @@ fun FeedahNavHost(
         homeScreen(navController)
         bucketScreen(navController)
         statsScreen(navController)
-        settingsScreen(theme, onThemeSelect)
+        settingsScreen(
+            tts = tts,
+            theme = theme,
+            onThemeSelect = onThemeSelect,
+            speechRate = speechRate,
+            onSpeechRateSelect = onSpeechRateSelect,
+        )
         // mode
-        studyScreen(tts)
-        browseScreen(tts)
+        studyScreen(tts, speechRate)
+        browseScreen(tts, speechRate)
         reviewScreen()
         searchScreen(navController)
         // bucket
@@ -92,29 +100,45 @@ fun NavGraphBuilder.statsScreen(navController: NavController) {
 }
 
 fun NavGraphBuilder.settingsScreen(
+    tts: FeedahTts,
     theme: String,
     onThemeSelect: (String) -> Unit,
+    speechRate: Float,
+    onSpeechRateSelect: (Float) -> Unit,
 ) {
     composable<Settings> {
         SettingsScreen(
+            tts = tts,
             theme = theme,
             onThemeSelect = onThemeSelect,
+            speechRate = speechRate,
+            onSpeechRateSelect = onSpeechRateSelect,
         )
     }
 }
 
-fun NavGraphBuilder.studyScreen(tts: FeedahTts) {
+fun NavGraphBuilder.studyScreen(
+    tts: FeedahTts,
+    speechRate: Float,
+) {
     composable<StudyRoute> {
-        StudyScreen(tts = tts)
+        StudyScreen(
+            tts = tts,
+            speechRate = speechRate,
+        )
     }
 }
 
-fun NavGraphBuilder.browseScreen(tts: FeedahTts) {
+fun NavGraphBuilder.browseScreen(
+    tts: FeedahTts,
+    speechRate: Float,
+) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
         BrowseScreen(
             position = route.position,
             tts = tts,
+            speechRate = speechRate,
         )
     }
 }
