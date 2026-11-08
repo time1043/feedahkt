@@ -20,6 +20,7 @@ import com.time1043.feedah_kt.ui.screen.tab.SettingsScreen
 import com.time1043.feedah_kt.ui.screen.tab.StatisticsScreen
 import com.time1043.feedah_kt.ui.screen.mode.StudyScreen
 import com.time1043.feedah_kt.ui.screen.bucket.WordsScreen
+import com.time1043.feedah_kt.platform.FeedahTts
 
 /**
  * The whole navigation graph, assembled one line per destination (grouped
@@ -34,6 +35,7 @@ import com.time1043.feedah_kt.ui.screen.bucket.WordsScreen
 @Composable
 fun FeedahNavHost(
     navController: NavHostController,
+    tts: FeedahTts,
     theme: String,
     onThemeSelect: (String) -> Unit,
     modifier: Modifier = Modifier,
@@ -50,8 +52,8 @@ fun FeedahNavHost(
         statsScreen(navController)
         settingsScreen(theme, onThemeSelect)
         // mode
-        studyScreen()
-        browseScreen()
+        studyScreen(tts)
+        browseScreen(tts)
         reviewScreen()
         searchScreen(navController)
         // bucket
@@ -101,14 +103,19 @@ fun NavGraphBuilder.settingsScreen(
     }
 }
 
-fun NavGraphBuilder.studyScreen() {
-    composable<StudyRoute> { StudyScreen() }
+fun NavGraphBuilder.studyScreen(tts: FeedahTts) {
+    composable<StudyRoute> {
+        StudyScreen(tts = tts)
+    }
 }
 
-fun NavGraphBuilder.browseScreen() {
+fun NavGraphBuilder.browseScreen(tts: FeedahTts) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
-        BrowseScreen(position = route.position)
+        BrowseScreen(
+            position = route.position,
+            tts = tts,
+        )
     }
 }
 

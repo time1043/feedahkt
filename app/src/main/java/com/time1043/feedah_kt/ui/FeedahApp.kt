@@ -10,7 +10,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.PreviewScreenSizes
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -19,6 +21,7 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.ui.navigation.AppDestinations
 import com.time1043.feedah_kt.ui.navigation.FeedahNavHost
 import com.time1043.feedah_kt.ui.navigation.navigateToTopLevelDestination
@@ -29,6 +32,8 @@ import com.time1043.feedah_kt.ui.theme.resolveDarkTheme
 @PreviewScreenSizes
 @Composable
 fun FeedahApp() {
+    val appContext = LocalContext.current.applicationContext
+    val tts = remember { FeedahTts(appContext) }
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory)
     val settings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
     val darkTheme = resolveDarkTheme(settings.theme, isSystemInDarkTheme())
@@ -70,6 +75,7 @@ fun FeedahApp() {
         ) { padding ->
             FeedahNavHost(
                 navController = navController,
+                tts = tts,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 modifier = Modifier
