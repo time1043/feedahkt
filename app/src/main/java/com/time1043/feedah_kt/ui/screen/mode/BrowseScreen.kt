@@ -12,6 +12,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.time1043.feedah_kt.data.mock.findBucketByName
+import com.time1043.feedah_kt.data.mock.findWord
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.Word
 import com.time1043.feedah_kt.ui.components.WordCard
@@ -39,8 +40,7 @@ fun BrowseScreen(
     }
 
     // The opener may pass anything: guard the index, never trust the param.
-    val index = position - 1
-    val word = words.getOrNull(index)
+    val word = findWord(bucket = findBucketByName(appContext, "2050"), position = position)
 
     // Opening the card speaks the word — the screen's speech policy; the
     // card stays a pure displayer. The deck takes this over when it lands.
