@@ -15,6 +15,7 @@ import org.junit.runner.RunWith
  * Screen-level test: the segmented control emits the tapped theme choice,
  * with no knowledge of where the choice goes.
  */
+@RunWith(AndroidJUnit4::class)
 class SettingsScreenTest {
 
     @get:Rule
