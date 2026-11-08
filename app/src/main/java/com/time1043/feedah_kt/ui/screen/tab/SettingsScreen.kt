@@ -18,6 +18,10 @@ fun SettingsScreen(
     onThemeSelect: (String) -> Unit,
     speechRate: Float,
     onSpeechRateSelect: (Float) -> Unit,
+    autoSpeak: Boolean,
+    onAutoSpeakChange: (Boolean) -> Unit,
+    tapToReveal: Boolean,
+    onTapToRevealChange: (Boolean) -> Unit,
     tts: FeedahTts,
     modifier: Modifier = Modifier,
 ) {

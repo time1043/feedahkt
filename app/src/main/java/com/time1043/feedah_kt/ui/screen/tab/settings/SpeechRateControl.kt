@@ -34,6 +34,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.time1043.feedah_kt.R
+import com.time1043.feedah_kt.data.settings.DEFAULT_SPEECH_RATE
 import com.time1043.feedah_kt.platform.FeedahTts
 import kotlin.math.roundToInt
 
@@ -102,11 +103,35 @@ fun SpeechRateControl(
                 )
                 Text(text = "Speech rate", color = MaterialTheme.colorScheme.onSurface)
             }
-            Text(
-                text = "%.2f×".format(rate),
-                style = TextStyle(fontFeatureSettings = "tnum"),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(
+                    text = "%.2f×".format(rate),
+                    style = TextStyle(fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+                // Always rendered (no layout shift), alive only off the default.
+                Icon(
+                    painter = painterResource(R.drawable.ic_refresh),
+                    contentDescription = "Restore the default speech rate",
+                    tint = if (rate == DEFAULT_SPEECH_RATE) {
+                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.35f)
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = remember { MutableInteractionSource() },
+                            indication = null,
+                            enabled = rate != DEFAULT_SPEECH_RATE,
+                            onClick = { onRateChange(DEFAULT_SPEECH_RATE) },
+                        )
+                        .padding(all = 4.dp) // hitSlop 4
+                        .size(16.dp),
+                )
+            }
         }
         // The slider: a hand-rolled track — thumb follows the finger across
         // the track; values are quantized to RATE_STEP (source RateSlider).
