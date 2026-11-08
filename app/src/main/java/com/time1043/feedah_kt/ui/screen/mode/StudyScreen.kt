@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -19,6 +20,11 @@ fun StudyScreen(
     // bucket's 4th word, no deck yet.
     val word = remember {
         findBucketByName(appContext, "2050").words[3]
+    }
+
+    // Opening the card speaks the word — mirror of 46da9f4 (study half).
+    LaunchedEffect(word.word) {
+        tts.speakWord(word.word)
     }
 
     WordCard(

@@ -138,7 +138,10 @@ fun WordCard(
             verticalArrangement = Arrangement.Center,
         ) {
             if (revealed && word.forms.isNotEmpty()) {
-                Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
+                Column(
+                    Modifier.fillMaxWidth().padding(bottom = 24.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
                     for (row in 0 until FORMS_GRID_CELLS / 2) {
                         Row(Modifier.fillMaxWidth()) {
                             for (col in 0 until 2) {
