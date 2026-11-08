@@ -249,6 +249,10 @@ fun WordDeck(
     // events there, so it mirrors and speaks inline; here the jump lands in
     // the settle flow above, which mirrors and speaks the target.
     val scrubTo: (Int) -> Unit = { target ->
+        // A programmatic jump kills the gesture mark first: a rubber-band
+        // drag that snapped back never produced a settle emission, so a
+        // stale mark must not make this landing fire onSettle.
+        gestureSettling.value = false
         val clamped = target.coerceIn(0, currentWords.lastIndex)
         scope.launch { pagerState.scrollToPage(clamped) }
         currentOnScrub?.invoke(clamped)
@@ -260,6 +264,7 @@ fun WordDeck(
     // quiet anyway.)
     DisposableEffect(handle) {
         handle?.jump = { target ->
+            gestureSettling.value = false
             val count = currentWords.size + if (currentEnd != null) 1 else 0
             scope.launch { pagerState.scrollToPage(target.coerceIn(0, count - 1)) }
         }
@@ -278,30 +283,33 @@ fun WordDeck(
                     )
                 }
             }
-            VerticalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
-                val word = currentWords.getOrNull(page)
-                if (word != null) {
-                    WordCard(
-                        word = word,
-                        tapToReveal = tapToReveal,
-                        // Replay taps bypass the gate and always reach onSpeak.
-                        onReplay = { currentOnSpeak?.invoke(word) },
-                    )
-                } else {
-                    currentEnd?.render()
+            // The card viewport: the banner overlays its top edge (the
+            // source's absolute top-1 inside the flex-1 view) — no layout
+            // space, and taps outside the pill reach the pager below (the
+            // source's pointerEvents="box-none").
+            Box(Modifier.weight(1f)) {
+                VerticalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { page ->
+                    val word = currentWords.getOrNull(page)
+                    if (word != null) {
+                        WordCard(
+                            word = word,
+                            tapToReveal = tapToReveal,
+                            // Replay taps bypass the gate and always reach
+                            // onSpeak.
+                            onReplay = { currentOnSpeak?.invoke(word) },
+                        )
+                    } else {
+                        currentEnd?.render()
+                    }
+                }
+                banner?.let { hud ->
+                    Box(
+                        Modifier
+                            .align(Alignment.TopCenter)
+                            .padding(top = 4.dp), // top-1
+                    ) { hud() }
                 }
             }
-        }
-        // The floating banner hugs the bar's underside — inside the card
-        // viewport, so it exists no matter which chrome the settings hide.
-        // The box itself takes no taps; taps outside the banner reach the
-        // cards underneath (the source's pointerEvents="box-none").
-        banner?.let { hud ->
-            Box(
-                Modifier
-                    .align(Alignment.TopCenter)
-                    .padding(top = 4.dp), // top-1
-            ) { hud() }
         }
         hudLeft?.let { hud ->
             Box(
