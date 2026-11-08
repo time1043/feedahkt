@@ -199,7 +199,7 @@ fun NavGraphBuilder.studyScreen(
             tapToReveal = tapToReveal,
             chrome = chrome,
             bucketName = activeBucket,
-            onBack = { navController.popBackStack() },
+            onBack = navController::goBack,
             onSearch = { navController.navigate(SearchRoute()) },
         )
     }
@@ -227,7 +227,7 @@ fun NavGraphBuilder.browseScreen(
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
             chrome = chrome,
-            onBack = { navController.popBackStack() },
+            onBack = navController::goBack,
             onSearch = { navController.navigate(SearchRoute()) },
         )
     }
@@ -259,7 +259,7 @@ fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Bool
             onOpenWord = { position ->
                 navController.navigate(BrowseRoute(position = position, bucket = route.name))
             },
-            onBack = { navController.popBackStack() },
+            onBack = navController::goBack,
         )
     }
 }
@@ -269,7 +269,7 @@ fun NavGraphBuilder.roundsScreen(navController: NavController) {
         val route = entry.toRoute<RoundsRoute>()
         RoundsScreen(
             name = route.name,
-            onBack = { navController.popBackStack() },
+            onBack = navController::goBack,
         )
     }
 }
@@ -285,7 +285,7 @@ fun NavGraphBuilder.bucketSettingsScreen(
             name = route.name,
             activeBucket = activeBucket,
             onActiveBucketChange = onActiveBucketChange,
-            onBack = { navController.popBackStack() },
+            onBack = navController::goBack,
         )
     }
 }
