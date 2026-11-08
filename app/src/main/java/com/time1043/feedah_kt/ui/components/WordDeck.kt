@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.ui.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
@@ -13,6 +14,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.time1043.feedah_kt.types.Word
@@ -53,6 +55,11 @@ fun WordDeck(
     initialIndex: Int = 0,
     /** Whether the scrubbable progress bar renders above the cards. */
     progressBar: Boolean = true,
+    /** The current card changed (opened, swiped, scrubbed): mirror it out. */
+    onIndexChange: ((Int) -> Unit)? = null,
+    /** Quiet footer slots on the bottom line (page counter, round/time). */
+    hudLeft: (@Composable () -> Unit)? = null,
+    hudRight: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     if (words.isEmpty()) return
@@ -68,6 +75,7 @@ fun WordDeck(
     // The screen re-composes with a fresh callback when the rate changes;
     // the long-lived collector below must speak with the latest one.
     val currentOnSpeak by rememberUpdatedState(onSpeak)
+    val currentOnIndexChange by rememberUpdatedState(onIndexChange)
     val currentWords by rememberUpdatedState(words)
 
     // Every settle speaks the card it landed on; opening the deck is just
@@ -85,6 +93,13 @@ fun WordDeck(
         }
     }
 
+    // Mirror the current card out, whenever it changes.
+    LaunchedEffect(pagerState) {
+        snapshotFlow { pagerState.settledPage }.collect { target ->
+            currentOnIndexChange?.invoke(target)
+        }
+    }
+
     // The source's scrubTo: a programmatic jump (animated: false) fires no
     // events there, so it mirrors and speaks inline; here the jump lands in
     // the settle flow, which mirrors and speaks the target.
@@ -93,25 +108,41 @@ fun WordDeck(
         scope.launch { pagerState.scrollToPage(target.coerceIn(0, words.lastIndex)) }
     }
 
-    Column(modifier = modifier) {
-        if (progressBar) {
-            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)) { // px-4 pb-1
-                ProgressBar(
-                    value = pagerState.settledPage,
-                    max = words.size,
-                    scrubbable = true,
-                    onScrub = scrubTo,
+    Box(modifier = modifier) {
+        Column(Modifier.fillMaxSize()) {
+            if (progressBar) {
+                Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)) { // px-4 pb-1
+                    ProgressBar(
+                        value = pagerState.settledPage,
+                        max = words.size,
+                        scrubbable = true,
+                        onScrub = scrubTo,
+                    )
+                }
+            }
+            VerticalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
+                val word = currentWords.getOrNull(page) ?: return@VerticalPager
+                WordCard(
+                    word = word,
+                    tapToReveal = tapToReveal,
+                    // Replay taps bypass the gate and always reach onSpeak.
+                    onReplay = { currentOnSpeak?.invoke(word) },
                 )
             }
         }
-        VerticalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
-            val word = currentWords.getOrNull(page) ?: return@VerticalPager
-            WordCard(
-                word = word,
-                tapToReveal = tapToReveal,
-                // Replay taps bypass the gate and always reach onSpeak.
-                onReplay = { currentOnSpeak?.invoke(word) },
-            )
+        hudLeft?.let { hud ->
+            Box(
+                Modifier
+                    .align(Alignment.BottomStart)
+                    .padding(start = 24.dp, bottom = 32.dp), // left-6 bottom-8
+            ) { hud() }
+        }
+        hudRight?.let { hud ->
+            Box(
+                Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(end = 24.dp, bottom = 32.dp), // right-6 bottom-8
+            ) { hud() }
         }
     }
 }

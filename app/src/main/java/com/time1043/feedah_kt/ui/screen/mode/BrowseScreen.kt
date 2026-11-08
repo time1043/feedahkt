@@ -6,10 +6,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.data.mock.findBucketByName
 import com.time1043.feedah_kt.data.mock.findWord
 import com.time1043.feedah_kt.data.settings.DeckChrome
@@ -47,6 +52,8 @@ fun BrowseScreen(
     // The opener may pass anything: guard the index, never trust the param.
     val index = position - 1
     val word = bucket?.let { findWord(it, position) }
+    // The deck's current card, mirrored out for the footer counter.
+    var current by remember { mutableIntStateOf(index) }
 
     Column(modifier = modifier) {
         // Mirror of ed70b82: the header and its title are deck settings.
@@ -70,6 +77,14 @@ fun BrowseScreen(
                 canSpeak = settingsReady && autoSpeak,
                 tapToReveal = tapToReveal,
                 progressBar = chrome.showProgressBar,
+                onIndexChange = { current = it },
+                hudRight = {
+                    Text(
+                        text = "${current + 1}/${words.size}",
+                        style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                },
                 modifier = Modifier.weight(1f),
             )
             else -> Box(

@@ -1,11 +1,18 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.data.mock.findBucketByName
 import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
@@ -34,6 +41,8 @@ fun StudyScreen(
             findBucketByName(appContext, "2050").words
         }
     }
+    // The deck's current card, mirrored out for the footer counter.
+    var index by remember { mutableIntStateOf(0) }
 
     Column(modifier = modifier) {
         // Mirror of ed70b82: the header and its title are deck settings.
@@ -54,6 +63,14 @@ fun StudyScreen(
             canSpeak = settingsReady && autoSpeak,
             tapToReveal = tapToReveal,
             progressBar = chrome.showProgressBar,
+            onIndexChange = { index = it },
+            hudRight = {
+                Text(
+                    text = "${index + 1}/${words.size}",
+                    style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
             modifier = Modifier.weight(1f),
         )
     }
