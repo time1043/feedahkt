@@ -38,9 +38,14 @@ class FeedahNavHostTest {
                 navController = navController,
                 tts = FeedahTts(ApplicationProvider.getApplicationContext()),
                 speechRate = 1.15f,
+                settingsReady = true,
+                autoSpeak = true,
+                tapToReveal = true,
                 theme = "system",
                 onThemeSelect = {},
                 onSpeechRateSelect = {},
+                onAutoSpeakChange = {},
+                onTapToRevealChange = {},
             )
         }
     }

@@ -30,6 +30,10 @@ class SettingsScreenTest {
                 onThemeSelect = { selections.add(it) },
                 speechRate = 1.15f,
                 onSpeechRateSelect = {},
+                autoSpeak = true,
+                onAutoSpeakChange = {},
+                tapToReveal = true,
+                onTapToRevealChange = {},
                 tts = FeedahTts(ApplicationProvider.getApplicationContext()),
             )
         }
