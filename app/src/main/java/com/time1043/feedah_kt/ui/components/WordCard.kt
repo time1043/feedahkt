@@ -82,7 +82,7 @@ fun WordCard(
     var revealed by remember { mutableStateOf(false) }
 
     val interaction = remember { MutableInteractionSource() }
-    val shown = tapToReveal && revealed
+    val shown = !tapToReveal || revealed
     val toggle = { if (tapToReveal) revealed = !revealed }
 
     Column(modifier.fillMaxSize()) {
