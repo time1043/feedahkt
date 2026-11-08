@@ -12,6 +12,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.time1043.feedah_kt.data.mock.findBucketByName
 import com.time1043.feedah_kt.data.mock.findWord
+import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.Bucket
 import com.time1043.feedah_kt.ui.components.ScreenHeader
@@ -27,6 +28,7 @@ fun BrowseScreen(
     settingsReady: Boolean,
     autoSpeak: Boolean,
     tapToReveal: Boolean,
+    chrome: DeckChrome,
     onBack: () -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
@@ -47,11 +49,14 @@ fun BrowseScreen(
     val word = bucket?.let { findWord(it, position) }
 
     Column(modifier = modifier) {
-        ScreenHeader(
-            title = "Browse 2050", // mirror of 8e2c2b7
-            onBack = onBack,
-            onSearch = onSearch,
-        )
+        // Mirror of ed70b82: the header and its title are deck settings.
+        if (chrome.showHeader) {
+            ScreenHeader(
+                title = if (chrome.showTitle) "Browse 2050" else null,
+                onBack = onBack,
+                onSearch = onSearch,
+            )
+        }
         when {
             // Still loading the mock buckets: keep the frame empty.
             bucket == null -> Unit

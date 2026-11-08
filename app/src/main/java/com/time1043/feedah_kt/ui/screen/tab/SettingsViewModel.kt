@@ -60,6 +60,18 @@ class SettingsViewModel(
         }
     }
 
+    fun updateDeckHeader(deckHeader: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveDeckHeader(deckHeader)
+        }
+    }
+
+    fun updateDeckTitle(deckTitle: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveDeckTitle(deckTitle)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

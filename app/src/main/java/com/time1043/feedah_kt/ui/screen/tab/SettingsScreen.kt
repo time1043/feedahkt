@@ -22,6 +22,10 @@ fun SettingsScreen(
     onAutoSpeakChange: (Boolean) -> Unit,
     tapToReveal: Boolean,
     onTapToRevealChange: (Boolean) -> Unit,
+    deckHeader: Boolean,
+    onDeckHeaderChange: (Boolean) -> Unit,
+    deckTitle: Boolean,
+    onDeckTitleChange: (Boolean) -> Unit,
     tts: FeedahTts,
     modifier: Modifier = Modifier,
 ) {
@@ -39,6 +43,8 @@ fun SettingsScreen(
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             SwitchRow(label = "Auto speak", value = autoSpeak, onValueChange = onAutoSpeakChange)
             SwitchRow(label = "Tap to reveal", value = tapToReveal, onValueChange = onTapToRevealChange)
+            SwitchRow(label = "Header", value = deckHeader, onValueChange = onDeckHeaderChange)
+            SwitchRow(label = "Header title", value = deckTitle, onValueChange = onDeckTitleChange)
         }
 
         ThemeToggle(current = theme, onSelect = onThemeSelect)

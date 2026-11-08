@@ -35,6 +35,10 @@ class SettingsScreenTest {
                 onAutoSpeakChange = {},
                 tapToReveal = true,
                 onTapToRevealChange = {},
+                deckHeader = true,
+                onDeckHeaderChange = {},
+                deckTitle = true,
+                onDeckTitleChange = {},
                 tts = FeedahTts(ApplicationProvider.getApplicationContext()),
             )
         }

@@ -8,6 +8,7 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
+import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
@@ -44,11 +45,14 @@ class FeedahNavHostTest {
                 settingsReady = true,
                 autoSpeak = true,
                 tapToReveal = true,
+                chrome = DeckChrome(),
                 theme = "system",
                 onThemeSelect = {},
                 onSpeechRateSelect = {},
                 onAutoSpeakChange = {},
                 onTapToRevealChange = {},
+                onDeckHeaderChange = {},
+                onDeckTitleChange = {},
             )
         }
     }

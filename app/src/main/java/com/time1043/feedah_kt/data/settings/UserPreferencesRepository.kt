@@ -28,6 +28,10 @@ data class Settings(
     val autoSpeak: Boolean = true,
     /** The meaning waits for a tap; off = always visible. */
     val tapToReveal: Boolean = true,
+    /** Whether the mode screens' header shows. */
+    val deckHeader: Boolean = true,
+    /** Whether the header shows its title. */
+    val deckTitle: Boolean = true,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -37,12 +41,16 @@ internal val THEME_KEY = stringPreferencesKey("theme")
 internal val SPEECH_RATE_KEY = floatPreferencesKey("speech-rate")
 internal val AUTO_SPEAK_KEY = booleanPreferencesKey("auto-speak")
 internal val TAP_TO_REVEAL_KEY = booleanPreferencesKey("tap-to-reveal")
+internal val DECK_HEADER_KEY = booleanPreferencesKey("deck-header")
+internal val DECK_TITLE_KEY = booleanPreferencesKey("deck-title")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
     speechRate = this[SPEECH_RATE_KEY] ?: Settings().speechRate,
     autoSpeak = this[AUTO_SPEAK_KEY] ?: Settings().autoSpeak,
     tapToReveal = this[TAP_TO_REVEAL_KEY] ?: Settings().tapToReveal,
+    deckHeader = this[DECK_HEADER_KEY] ?: Settings().deckHeader,
+    deckTitle = this[DECK_TITLE_KEY] ?: Settings().deckTitle,
 )
 
 /**
@@ -81,5 +89,13 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveTapToReveal(tapToReveal: Boolean) {
         dataStore.edit { it[TAP_TO_REVEAL_KEY] = tapToReveal }
+    }
+
+    suspend fun saveDeckHeader(deckHeader: Boolean) {
+        dataStore.edit { it[DECK_HEADER_KEY] = deckHeader }
+    }
+
+    suspend fun saveDeckTitle(deckTitle: Boolean) {
+        dataStore.edit { it[DECK_TITLE_KEY] = deckTitle }
     }
 }
