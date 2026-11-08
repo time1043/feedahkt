@@ -154,6 +154,11 @@ fun WordsScreen(
                             max = words.size,
                             scrubbable = true,
                             onScrub = jumpTo,
+                            // The thumb agrees with the rows: both show card
+                            // numbers.
+                            labelFor = { i ->
+                                words.getOrNull(i)?.position?.toString() ?: (i + 1).toString()
+                            },
                         )
                     }
                 }
