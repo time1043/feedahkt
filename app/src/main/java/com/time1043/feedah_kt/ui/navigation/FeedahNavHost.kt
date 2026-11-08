@@ -52,7 +52,7 @@ fun FeedahNavHost(
         statsScreen(navController)
         settingsScreen(theme, onThemeSelect)
         // mode
-        studyScreen()
+        studyScreen(tts)
         browseScreen(tts)
         reviewScreen()
         searchScreen(navController)
@@ -103,8 +103,10 @@ fun NavGraphBuilder.settingsScreen(
     }
 }
 
-fun NavGraphBuilder.studyScreen() {
-    composable<StudyRoute> { StudyScreen() }
+fun NavGraphBuilder.studyScreen(tts: FeedahTts) {
+    composable<StudyRoute> {
+        StudyScreen(tts = tts)
+    }
 }
 
 fun NavGraphBuilder.browseScreen(tts: FeedahTts) {
