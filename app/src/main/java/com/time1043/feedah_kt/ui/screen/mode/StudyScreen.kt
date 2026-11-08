@@ -86,10 +86,7 @@ fun StudyScreen(
         // Mirror of ed70b82: the header and its title are deck settings.
         if (chrome.showHeader) {
             ScreenHeader(
-                // R{n} is the probe's round: it advances the moment a
-                // walk-through completes, so the title agrees with the end
-                // page's promise. (0d23b78)
-                title = if (chrome.showTitle) "Study $bucketName R${ready.progress.round}" else null,
+                title = if (chrome.showTitle) "Study $bucketName" else null,
                 onBack = onBack,
                 onSearch = onSearch,
             )
@@ -107,6 +104,17 @@ fun StudyScreen(
             // not the header, which the settings can hide — and is the way
             // back to the probe.
             onScrub = { controller.startBrowsing() },
+            // The footer line pairs the two: the probe's round on the left,
+            // the pagination ordinal on the right. R{n} advances the moment
+            // a walk-through completes, agreeing with the end page's
+            // promise. (3f04993 — the round moved out of the title.)
+            hudLeft = {
+                Text(
+                    text = "R${ready.progress.round}",
+                    style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            },
             banner = if (ready.browsing) {
                 {
                     Surface(
