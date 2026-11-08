@@ -3,9 +3,12 @@ package com.time1043.feedah_kt.ui.screen.tab
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.time1043.feedah_kt.platform.FeedahTts
 import org.junit.Assert.assertEquals
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
  * Screen-level test: the segmented control emits the tapped theme choice,
@@ -24,6 +27,9 @@ class SettingsScreenTest {
             SettingsScreen(
                 theme = "system",
                 onThemeSelect = { selections.add(it) },
+                speechRate = 1.15f,
+                onSpeechRateSelect = {},
+                tts = FeedahTts(composeRule.activity.applicationContext),
             )
         }
 
