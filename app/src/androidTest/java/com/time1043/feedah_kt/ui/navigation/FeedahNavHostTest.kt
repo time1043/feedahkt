@@ -56,6 +56,7 @@ class FeedahNavHostTest {
                 onDeckTitleChange = {},
                 onDeckProgressBarChange = {},
                 onHudPageChange = {},
+                onWordsMeaningChange = {},
             )
         }
     }

@@ -43,6 +43,8 @@ class SettingsScreenTest {
                 onDeckProgressBarChange = {},
                 hudPage = true,
                 onHudPageChange = {},
+                wordsMeaning = false,
+                onWordsMeaningChange = {},
                 tts = FeedahTts(ApplicationProvider.getApplicationContext()),
             )
         }

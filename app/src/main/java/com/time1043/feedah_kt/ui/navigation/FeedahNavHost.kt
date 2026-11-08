@@ -52,6 +52,7 @@ fun FeedahNavHost(
     onDeckTitleChange: (Boolean) -> Unit,
     onDeckProgressBarChange: (Boolean) -> Unit,
     onHudPageChange: (Boolean) -> Unit,
+    onWordsMeaningChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -82,6 +83,8 @@ fun FeedahNavHost(
             onDeckProgressBarChange = onDeckProgressBarChange,
             hudPage = chrome.showHudPage,
             onHudPageChange = onHudPageChange,
+            wordsMeaning = wordsMeaning,
+            onWordsMeaningChange = onWordsMeaningChange,
         )
         // mode
         studyScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
@@ -139,6 +142,8 @@ fun NavGraphBuilder.settingsScreen(
     onDeckProgressBarChange: (Boolean) -> Unit,
     hudPage: Boolean,
     onHudPageChange: (Boolean) -> Unit,
+    wordsMeaning: Boolean,
+    onWordsMeaningChange: (Boolean) -> Unit,
 ) {
     composable<Settings> {
         SettingsScreen(
@@ -159,6 +164,8 @@ fun NavGraphBuilder.settingsScreen(
             onDeckProgressBarChange = onDeckProgressBarChange,
             hudPage = hudPage,
             onHudPageChange = onHudPageChange,
+            wordsMeaning = wordsMeaning,
+            onWordsMeaningChange = onWordsMeaningChange,
         )
     }
 }
