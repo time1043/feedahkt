@@ -79,7 +79,7 @@ fun BrowseScreen(
     Column(modifier = modifier) {
         when {
             // Still loading the mock buckets: keep the frame empty.
-            bucket == null -> Unit
+            buckets == null -> Unit
             // Mirror of 4d56bce: browse swipes through the deck from its
             // position. Same seams as study — the deck decides when to
             // speak, the screen decides how and whether.
@@ -121,10 +121,8 @@ fun BrowseScreen(
             }
             else -> {
                 // Mirror of 90b8051: the not-found page keeps its own way
-                // back, whatever the header setting. (The source also names
-                // bucket-not-found vs word-not-found; browse carries one
-                // hardcoded bucket here, so only the word can be missing —
-                // the bucket half lands with the bucket-aware browse.)
+                // back, whatever the header setting; the message names the
+                // entity that is actually missing.
                 Row(
                     Modifier
                         .fillMaxWidth()
