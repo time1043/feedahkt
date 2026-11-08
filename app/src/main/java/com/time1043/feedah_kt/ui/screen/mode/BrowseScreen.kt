@@ -1,7 +1,7 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,6 +14,7 @@ import com.time1043.feedah_kt.data.mock.findBucketByName
 import com.time1043.feedah_kt.data.mock.findWord
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -26,6 +27,8 @@ fun BrowseScreen(
     settingsReady: Boolean,
     autoSpeak: Boolean,
     tapToReveal: Boolean,
+    onBack: () -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
@@ -43,25 +46,35 @@ fun BrowseScreen(
     val index = position - 1
     val word = bucket?.let { findWord(it, position) }
 
-    when {
-        // Still loading the mock buckets: keep the frame empty.
-        bucket == null -> Unit
-        // Mirror of 4d56bce: browse swipes through the deck from its
-        // position. Same seams as study — the deck decides when to speak,
-        // the screen decides how and whether.
-        word != null -> WordDeck(
-            words = words,
-            initialIndex = index,
-            onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
-            canSpeak = settingsReady && autoSpeak,
-            tapToReveal = tapToReveal,
-            modifier = modifier,
+    Column(modifier = modifier) {
+        ScreenHeader(
+            title = "Browse 2050", // mirror of 8e2c2b7
+            onBack = onBack,
+            onSearch = onSearch,
         )
-        else -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            Text(
-                text = "Word not found",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+        when {
+            // Still loading the mock buckets: keep the frame empty.
+            bucket == null -> Unit
+            // Mirror of 4d56bce: browse swipes through the deck from its
+            // position. Same seams as study — the deck decides when to
+            // speak, the screen decides how and whether.
+            word != null -> WordDeck(
+                words = words,
+                initialIndex = index,
+                onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
+                canSpeak = settingsReady && autoSpeak,
+                tapToReveal = tapToReveal,
+                modifier = Modifier.weight(1f),
             )
+            else -> Box(
+                Modifier.weight(1f),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Word not found",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
         }
     }
 }

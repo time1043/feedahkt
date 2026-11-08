@@ -69,8 +69,8 @@ fun FeedahNavHost(
             onTapToRevealChange = onTapToRevealChange,
         )
         // mode
-        studyScreen(tts, speechRate, settingsReady, autoSpeak, tapToReveal)
-        browseScreen(tts, speechRate, settingsReady, autoSpeak, tapToReveal)
+        studyScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal)
+        browseScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal)
         reviewScreen()
         searchScreen(navController)
         // bucket
@@ -135,6 +135,7 @@ fun NavGraphBuilder.settingsScreen(
 }
 
 fun NavGraphBuilder.studyScreen(
+    navController: NavController,
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
@@ -148,11 +149,14 @@ fun NavGraphBuilder.studyScreen(
             settingsReady = settingsReady,
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
+            onBack = { navController.popBackStack() },
+            onSearch = { navController.navigate(SearchRoute()) },
         )
     }
 }
 
 fun NavGraphBuilder.browseScreen(
+    navController: NavController,
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
@@ -168,6 +172,8 @@ fun NavGraphBuilder.browseScreen(
             settingsReady = settingsReady,
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
+            onBack = { navController.popBackStack() },
+            onSearch = { navController.navigate(SearchRoute()) },
         )
     }
 }
