@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -128,7 +129,11 @@ fun ProgressBar(
                         .offset {
                             IntOffset((fraction * trackWidth).roundToInt() - 12.dp.roundToPx(), 0)
                         }
-                        .size(24.dp) // h-6 min-w-6
+                        // requiredSize: the thumb is a real 24dp circle that
+                        // overflows the 4dp track (the source's absolute
+                        // -top-2.5 h-6 in an overflow-visible track) — a plain
+                        // size would be squashed to the track's height.
+                        .requiredSize(24.dp) // h-6 min-w-6
                         .background(MaterialTheme.colorScheme.primary, CircleShape),
                     contentAlignment = Alignment.Center,
                 ) {
