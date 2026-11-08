@@ -121,7 +121,7 @@ fun NavGraphBuilder.bucketScreen(navController: NavController) {
         BucketScreen(
             onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
             onOpenRounds = { name -> navController.navigate(RoundsRoute(name)) },
-            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
+            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute()) },
         )
     }
 }
