@@ -24,8 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.data.mock.findBucketByName
 import com.time1043.feedah_kt.data.mock.findWord
+import com.time1043.feedah_kt.data.mock.loadBuckets
 import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.Bucket
@@ -38,6 +38,7 @@ import kotlinx.coroutines.withContext
 @Composable
 fun BrowseScreen(
     position: Int,
+    bucketParam: String?,
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
@@ -50,13 +51,17 @@ fun BrowseScreen(
 ) {
     val appContext = LocalContext.current.applicationContext
 
+    // The bucket the opener came from (the word list passes it); no param
+    // means the home screen's default bucket.
+    val bucketName = bucketParam?.takeIf { it.isNotEmpty() } ?: "2050"
     // The mock buckets load from assets: keep the parse off the main
     // thread (the source imports them synchronously; same data, async).
-    val bucket by produceState<Bucket?>(initialValue = null, key1 = appContext) {
-        value = withContext(Dispatchers.IO) {
-            findBucketByName(appContext, "2050")
-        }
+    val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {
+        value = withContext(Dispatchers.IO) { loadBuckets(appContext) }
     }
+    // Honest guard: an unknown name is not found (no silent first-bucket
+    // fallback).
+    val bucket = buckets?.find { candidate -> candidate.name == bucketName }
     val words = bucket?.words ?: emptyList()
 
     // The param is the CARD NUMBER — the data position printed on the card
@@ -66,6 +71,7 @@ fun BrowseScreen(
     // pagination ordinal.
     val word = bucket?.let { findWord(it, position) }
     val initialIndex = word?.let(words::indexOf) ?: 0
+
     // The deck's current card, mirrored out for the footer counter. Re-read
     // when the buckets land: the first composition races the async load.
     var current by remember(bucket) { mutableIntStateOf(initialIndex) }
@@ -82,7 +88,11 @@ fun BrowseScreen(
                 // settings (the header rides with the deck, per 90b8051).
                 if (chrome.showHeader) {
                     ScreenHeader(
-                        title = if (chrome.showTitle) "Browse 2050" else null,
+                        title = if (chrome.showTitle && bucket != null) {
+                            "Browse ${bucket.name}"
+                        } else {
+                            null
+                        },
                         onBack = onBack,
                         onSearch = onSearch,
                     )

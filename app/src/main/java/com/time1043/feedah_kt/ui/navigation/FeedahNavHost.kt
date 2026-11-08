@@ -199,6 +199,7 @@ fun NavGraphBuilder.browseScreen(
         val route = entry.toRoute<BrowseRoute>()
         BrowseScreen(
             position = route.position,
+            bucketParam = route.bucket,
             tts = tts,
             speechRate = speechRate,
             settingsReady = settingsReady,
@@ -235,7 +236,7 @@ fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Bool
             name = route.name,
             wordsMeaning = wordsMeaning,
             onOpenWord = { position ->
-                navController.navigate(BrowseRoute(position = position))
+                navController.navigate(BrowseRoute(position = position, bucket = route.name))
             },
             onBack = { navController.popBackStack() },
         )
