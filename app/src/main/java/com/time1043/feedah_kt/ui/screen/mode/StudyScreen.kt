@@ -86,7 +86,10 @@ fun StudyScreen(
         // Mirror of ed70b82: the header and its title are deck settings.
         if (chrome.showHeader) {
             ScreenHeader(
-                title = if (chrome.showTitle) "Study $bucketName" else null,
+                // R{n} is the probe's round: it advances the moment a
+                // walk-through completes, so the title agrees with the end
+                // page's promise. (0d23b78)
+                title = if (chrome.showTitle) "Study $bucketName R${ready.progress.round}" else null,
                 onBack = onBack,
                 onSearch = onSearch,
             )
