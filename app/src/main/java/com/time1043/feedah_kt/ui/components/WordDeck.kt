@@ -43,10 +43,15 @@ fun WordDeck(
     canSpeak: Boolean = true,
     /** Whether the meaning waits for a tap; forwarded to every card. */
     tapToReveal: Boolean,
+    /** Card to open on, clamped into range; read once on mount. */
+    initialIndex: Int = 0,
     modifier: Modifier = Modifier,
 ) {
     if (words.isEmpty()) return
-    val pagerState = rememberPagerState { words.size }
+    // Clamped once: the pager only reads its initial page at mount, and the
+    // deck mounts once per session (source: `initial`).
+    val initial = initialIndex.coerceIn(0, words.lastIndex)
+    val pagerState = rememberPagerState(initialPage = initial) { words.size }
     // One speak per index: an animated advance settles its target twice
     // (explicitly + via the animation's momentum end) — only the first
     // speaks, otherwise the word audibly restarts (source: spokenIndexRef).

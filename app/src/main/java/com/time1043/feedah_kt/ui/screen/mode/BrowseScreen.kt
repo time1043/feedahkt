@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
@@ -14,8 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import com.time1043.feedah_kt.data.mock.findBucketByName
 import com.time1043.feedah_kt.data.mock.findWord
 import com.time1043.feedah_kt.platform.FeedahTts
-import com.time1043.feedah_kt.types.Word
-import com.time1043.feedah_kt.ui.components.WordCard
+import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.ui.components.WordDeck
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -33,33 +32,29 @@ fun BrowseScreen(
 
     // The mock buckets load from assets: keep the parse off the main
     // thread (the source imports them synchronously; same data, async).
-    val words by produceState(initialValue = emptyList(), key1 = appContext) {
+    val bucket by produceState<Bucket?>(initialValue = null, key1 = appContext) {
         value = withContext(Dispatchers.IO) {
-            findBucketByName(appContext, "2050").words
+            findBucketByName(appContext, "2050")
         }
     }
+    val words = bucket?.words ?: emptyList()
 
     // The opener may pass anything: guard the index, never trust the param.
-    val word = findWord(bucket = findBucketByName(appContext, "2050"), position = position)
-
-    // Opening the card speaks the word — the screen's speech policy; the
-    // card stays a pure displayer. The deck takes this over when it lands.
-    // The gate matters: the settings settle on their stored values only
-    // after the storage read, which races this screen's first frame. The
-    // rate and the auto-speak toggle read fresh at call time — flipping
-    // either mid-card must not re-speak.
-    LaunchedEffect(word?.word, settingsReady) {
-        val current = word ?: return@LaunchedEffect
-        if (!settingsReady || !autoSpeak) return@LaunchedEffect
-        tts.speakWord(current.word, speechRate)
-    }
+    val index = position - 1
+    val word = bucket?.let { findWord(it, position) }
 
     when {
-        words.isEmpty() -> Unit // still loading
-        word != null -> WordCard(
-            word = word,
+        // Still loading the mock buckets: keep the frame empty.
+        bucket == null -> Unit
+        // Mirror of 4d56bce: browse swipes through the deck from its
+        // position. Same seams as study — the deck decides when to speak,
+        // the screen decides how and whether.
+        word != null -> WordDeck(
+            words = words,
+            initialIndex = index,
+            onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
+            canSpeak = settingsReady && autoSpeak,
             tapToReveal = tapToReveal,
-            onReplay = { tts.speakWord(word.word, speechRate) },
             modifier = modifier,
         )
         else -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
