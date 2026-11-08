@@ -232,7 +232,10 @@ fun NavGraphBuilder.searchScreen(navController: NavController) {
 fun NavGraphBuilder.wordsScreen(navController: NavController) {
     composable<WordsRoute> {
         WordsScreen(
-            onOpenWord = { navController.navigate(BrowseRoute(position = 1, bucket = "demo")) },
+            // The browse param is the CARD NUMBER (the mock bucket's first
+            // card), not a list index — position 1 would open not-found.
+            // Once the word list is real, pass the tapped word's position.
+            onOpenWord = { navController.navigate(BrowseRoute(position = 1701, bucket = "demo")) },
         )
     }
 }
