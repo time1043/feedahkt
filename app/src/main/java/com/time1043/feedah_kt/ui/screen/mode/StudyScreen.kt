@@ -48,11 +48,11 @@ fun StudyScreen(
     Column(modifier = modifier) {
         // Mirror of ed70b82: the header and its title are deck settings.
         if (chrome.showHeader) {
-        ScreenHeader(
-            title = if (chrome.showTitle) "Study $bucketName" else null,
-            onBack = onBack,
-            onSearch = onSearch,
-        )
+            ScreenHeader(
+                title = if (chrome.showTitle) "Study $bucketName" else null,
+                onBack = onBack,
+                onSearch = onSearch,
+            )
         }
         // Mirror of e7cd571: the study screen swipes the mock bucket through
         // the deck. The deck decides when to speak (open, settle, replay
