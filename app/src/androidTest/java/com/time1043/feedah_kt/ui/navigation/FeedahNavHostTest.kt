@@ -77,13 +77,14 @@ class FeedahNavHostTest {
     fun search_openWord_passesPositionToBrowse() {
         // arrange: done in setup; walk Home -> Search first
 
-        // act: open search, then open word #42 (pre-filled input)
+        // act: open search, then open word #1701 (pre-filled input — the
+        // mock bucket's first card number)
         composeRule.onNodeWithText("Open Search").performClick()
-        composeRule.onNodeWithText("Open word #42").performClick()
+        composeRule.onNodeWithText("Open word #1701").performClick()
 
         // assert: the back stack top is BrowseRoute carrying the position
         assertEquals(
-            BrowseRoute(position = 42),
+            BrowseRoute(position = 1701),
             navController.currentBackStackEntry?.toRoute<BrowseRoute>(),
         )
     }

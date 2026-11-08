@@ -6,7 +6,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 
-/** The 1-based position lookup behind the browse route. */
+/** The card-number lookup behind the browse route. */
 class BucketTest {
 
     private val bucket = Bucket(
@@ -19,19 +19,20 @@ class BucketTest {
     )
 
     @Test
-    fun firstPosition_returnsTheFirstWord() {
-        assertEquals("click", findWord(bucket, 1)?.word)
+    fun theFirstCardNumber_returnsTheFirstWord() {
+        assertEquals("click", findWord(bucket, 1701)?.word)
     }
 
     @Test
-    fun lastPosition_returnsTheLastWord() {
-        assertEquals("combine", findWord(bucket, 3)?.word)
+    fun theLastCardNumber_returnsTheLastWord() {
+        assertEquals("combine", findWord(bucket, 1703)?.word)
     }
 
     @Test
-    fun outOfRangePositions_returnNull() {
-        assertNull(findWord(bucket, 0))
-        assertNull(findWord(bucket, 4))
+    fun unknownCardNumbers_returnNull() {
+        assertNull(findWord(bucket, 1)) // a 1-based index is not a card number
+        assertNull(findWord(bucket, 1700))
+        assertNull(findWord(bucket, 1704))
         assertNull(findWord(bucket, -1))
     }
 }

@@ -49,11 +49,16 @@ fun BrowseScreen(
     }
     val words = bucket?.words ?: emptyList()
 
-    // The opener may pass anything: guard the index, never trust the param.
-    val index = position - 1
+    // The param is the CARD NUMBER — the data position printed on the card
+    // (1701+ for the mock bucket), not a list index. It is the identifier
+    // every surface shares: what the card shows is what opens here, and
+    // what search/review will carry. The footer, by contrast, is a 1-based
+    // pagination ordinal.
     val word = bucket?.let { findWord(it, position) }
-    // The deck's current card, mirrored out for the footer counter.
-    var current by remember { mutableIntStateOf(index) }
+    val initialIndex = word?.let(words::indexOf) ?: 0
+    // The deck's current card, mirrored out for the footer counter. Re-read
+    // when the buckets land: the first composition races the async load.
+    var current by remember(bucket) { mutableIntStateOf(initialIndex) }
 
     Column(modifier = modifier) {
         // Mirror of ed70b82: the header and its title are deck settings.
@@ -72,7 +77,7 @@ fun BrowseScreen(
             // speak, the screen decides how and whether.
             word != null -> WordDeck(
                 words = words,
-                initialIndex = index,
+                initialIndex = initialIndex,
                 onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
                 canSpeak = settingsReady && autoSpeak,
                 tapToReveal = tapToReveal,
