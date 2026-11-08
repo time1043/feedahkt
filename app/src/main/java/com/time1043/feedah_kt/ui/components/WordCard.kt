@@ -1,5 +1,7 @@
 package com.time1043.feedah_kt.ui.components
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,6 +15,10 @@ import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
@@ -31,17 +37,26 @@ private const val FORMS_GRID_CELLS = 12
  * The full-screen word card, split into two fixed halves — the project's
  * layout convention, so nothing jitters as content changes:
  *   - top 50%: position, the word, the ipa, and a fixed-height slot for the
- *     meaning. The headword stays anchored whether the meaning runs one
- *     line or three.
- *   - bottom 50%: the supplementary word forms, in the fixed grid.
+ *     meaning. The headword stays anchored whether the meaning is hidden or
+ *     runs three lines.
+ *   - bottom 50%: the supplementary word forms, in the fixed grid, shown
+ *     together with the meaning.
+ * Tapping anywhere on the card reveals or hides the meaning and the forms —
+ * recall first, then check.
  */
 @Composable
 fun WordCard(word: Word, modifier: Modifier = Modifier) {
+    var revealed by remember { mutableStateOf(false) }
+
+    val interaction = remember { MutableInteractionSource() }
+    val toggle = { revealed = !revealed }
+
     Column(modifier.fillMaxSize()) {
         Column(
             Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .clickable(interactionSource = interaction, indication = null, onClick = toggle)
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
@@ -83,7 +98,7 @@ fun WordCard(word: Word, modifier: Modifier = Modifier) {
                     .height(110.dp),
                 contentAlignment = Alignment.TopCenter,
             ) {
-                if (word.meaning.isNotEmpty()) {
+                if (revealed && word.meaning.isNotEmpty()) {
                     Text(
                         text = word.meaning,
                         style = TextStyle(fontSize = 20.sp, lineHeight = 28.sp),
@@ -97,11 +112,12 @@ fun WordCard(word: Word, modifier: Modifier = Modifier) {
             Modifier
                 .fillMaxWidth()
                 .weight(1f)
+                .clickable(interactionSource = interaction, indication = null, onClick = toggle)
                 .padding(horizontal = 32.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            if (word.forms.isNotEmpty()) {
+            if (revealed && word.forms.isNotEmpty()) {
                 Column(Modifier.fillMaxWidth().padding(bottom = 24.dp)) {
                     for (row in 0 until FORMS_GRID_CELLS / 2) {
                         Row(Modifier.fillMaxWidth()) {
