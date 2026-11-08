@@ -2,6 +2,11 @@ package com.time1043.feedah_kt.ui.screen.mode
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -14,12 +19,17 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.time1043.feedah_kt.R
 import com.time1043.feedah_kt.data.mock.findBucketByName
 import com.time1043.feedah_kt.data.mock.findWord
 import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import kotlinx.coroutines.Dispatchers
@@ -61,49 +71,73 @@ fun BrowseScreen(
     var current by remember(bucket) { mutableIntStateOf(initialIndex) }
 
     Column(modifier = modifier) {
-        // Mirror of ed70b82: the header and its title are deck settings.
-        if (chrome.showHeader) {
-            ScreenHeader(
-                title = if (chrome.showTitle) "Browse 2050" else null,
-                onBack = onBack,
-                onSearch = onSearch,
-            )
-        }
         when {
             // Still loading the mock buckets: keep the frame empty.
             bucket == null -> Unit
             // Mirror of 4d56bce: browse swipes through the deck from its
             // position. Same seams as study — the deck decides when to
             // speak, the screen decides how and whether.
-            word != null -> WordDeck(
-                words = words,
-                initialIndex = initialIndex,
-                onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
-                canSpeak = settingsReady && autoSpeak,
-                tapToReveal = tapToReveal,
-                progressBar = chrome.showProgressBar,
-                onIndexChange = { current = it },
-                hudRight = if (chrome.showHudPage) {
-                    {
-                        Text(
-                            text = "${current + 1}/${words.size}",
-                            style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                } else {
-                    null
-                },
-                modifier = Modifier.weight(1f),
-            )
-            else -> Box(
-                Modifier.weight(1f),
-                contentAlignment = Alignment.Center,
-            ) {
-                Text(
-                    text = "Word not found",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            word != null -> {
+                // Mirror of ed70b82: the header and its title are deck
+                // settings (the header rides with the deck, per 90b8051).
+                if (chrome.showHeader) {
+                    ScreenHeader(
+                        title = if (chrome.showTitle) "Browse 2050" else null,
+                        onBack = onBack,
+                        onSearch = onSearch,
+                    )
+                }
+                WordDeck(
+                    words = words,
+                    initialIndex = initialIndex,
+                    onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
+                    canSpeak = settingsReady && autoSpeak,
+                    tapToReveal = tapToReveal,
+                    progressBar = chrome.showProgressBar,
+                    onIndexChange = { current = it },
+                    hudRight = if (chrome.showHudPage) {
+                        {
+                            Text(
+                                text = "${current + 1}/${words.size}",
+                                style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    } else {
+                        null
+                    },
+                    modifier = Modifier.weight(1f),
                 )
+            }
+            else -> {
+                // Mirror of 90b8051: the not-found page keeps its own way
+                // back, whatever the header setting. (The source also names
+                // bucket-not-found vs word-not-found; browse carries one
+                // hardcoded bucket here, so only the word can be missing —
+                // the bucket half lands with the bucket-aware browse.)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 44.dp)
+                        .padding(horizontal = 16.dp, vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    HeaderIconButton(
+                        iconRes = R.drawable.ic_chevron_back,
+                        contentDescription = "Back",
+                        onClick = onBack,
+                    )
+                    Text(
+                        text = "Word not found",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.weight(1f),
+                    )
+                    Box(Modifier.size(36.dp))
+                }
+                Box(Modifier.weight(1f))
             }
         }
     }
