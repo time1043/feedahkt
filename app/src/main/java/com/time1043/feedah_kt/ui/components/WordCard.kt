@@ -147,7 +147,7 @@ fun WordCard(
                                         .weight(1f)
                                         .height(28.dp)
                                         .padding(horizontal = 8.dp),
-                                    contentAlignment = Alignment.Center,
+                                    contentAlignment = Alignment.CenterStart,
                                 ) {
                                     val form = word.forms.getOrNull(row * 2 + col)
                                     if (form != null) {
