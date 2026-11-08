@@ -38,9 +38,13 @@ fun FeedahNavHost(
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
+    autoSpeak: Boolean,
+    tapToReveal: Boolean,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
+    onAutoSpeakChange: (Boolean) -> Unit,
+    onTapToRevealChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -59,10 +63,14 @@ fun FeedahNavHost(
             onThemeSelect = onThemeSelect,
             speechRate = speechRate,
             onSpeechRateSelect = onSpeechRateSelect,
+            autoSpeak = autoSpeak,
+            onAutoSpeakChange = onAutoSpeakChange,
+            tapToReveal = tapToReveal,
+            onTapToRevealChange = onTapToRevealChange,
         )
         // mode
-        studyScreen(tts, speechRate, settingsReady)
-        browseScreen(tts, speechRate, settingsReady)
+        studyScreen(tts, speechRate, settingsReady, autoSpeak, tapToReveal)
+        browseScreen(tts, speechRate, settingsReady, autoSpeak, tapToReveal)
         reviewScreen()
         searchScreen(navController)
         // bucket
@@ -106,6 +114,10 @@ fun NavGraphBuilder.settingsScreen(
     onThemeSelect: (String) -> Unit,
     speechRate: Float,
     onSpeechRateSelect: (Float) -> Unit,
+    autoSpeak: Boolean,
+    onAutoSpeakChange: (Boolean) -> Unit,
+    tapToReveal: Boolean,
+    onTapToRevealChange: (Boolean) -> Unit,
 ) {
     composable<Settings> {
         SettingsScreen(
@@ -114,6 +126,10 @@ fun NavGraphBuilder.settingsScreen(
             onThemeSelect = onThemeSelect,
             speechRate = speechRate,
             onSpeechRateSelect = onSpeechRateSelect,
+            autoSpeak = autoSpeak,
+            onAutoSpeakChange = onAutoSpeakChange,
+            tapToReveal = tapToReveal,
+            onTapToRevealChange = onTapToRevealChange,
         )
     }
 }
@@ -122,12 +138,16 @@ fun NavGraphBuilder.studyScreen(
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
+    autoSpeak: Boolean,
+    tapToReveal: Boolean,
 ) {
     composable<StudyRoute> {
         StudyScreen(
             tts = tts,
             speechRate = speechRate,
             settingsReady = settingsReady,
+            autoSpeak = autoSpeak,
+            tapToReveal = tapToReveal,
         )
     }
 }
@@ -136,6 +156,8 @@ fun NavGraphBuilder.browseScreen(
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
+    autoSpeak: Boolean,
+    tapToReveal: Boolean,
 ) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
@@ -144,6 +166,8 @@ fun NavGraphBuilder.browseScreen(
             tts = tts,
             speechRate = speechRate,
             settingsReady = settingsReady,
+            autoSpeak = autoSpeak,
+            tapToReveal = tapToReveal,
         )
     }
 }

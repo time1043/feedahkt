@@ -48,6 +48,18 @@ class SettingsViewModel(
         }
     }
 
+    fun updateAutoSpeak(autoSpeak: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveAutoSpeak(autoSpeak)
+        }
+    }
+
+    fun updateTapToReveal(tapToReveal: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveTapToReveal(tapToReveal)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

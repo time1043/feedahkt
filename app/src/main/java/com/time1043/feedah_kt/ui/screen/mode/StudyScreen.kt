@@ -14,6 +14,8 @@ fun StudyScreen(
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
+    autoSpeak: Boolean,
+    tapToReveal: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
@@ -27,15 +29,16 @@ fun StudyScreen(
     // Opening the card speaks the word — mirror of 46da9f4 (study half).
     // The gate matters: the settings settle on their stored values only
     // after the storage read, which races this screen's first frame. The
-    // rate itself reads fresh at call time — a settings change mid-card
-    // must not re-speak.
+    // rate and the auto-speak toggle read fresh at call time — flipping
+    // either mid-card must not re-speak.
     LaunchedEffect(word.word, settingsReady) {
-        if (!settingsReady) return@LaunchedEffect
+        if (!settingsReady || !autoSpeak) return@LaunchedEffect
         tts.speakWord(word.word, speechRate)
     }
 
     WordCard(
         word = word,
+        tapToReveal = tapToReveal,
         onReplay = { tts.speakWord(word.word, speechRate) },
         modifier = modifier,
     )

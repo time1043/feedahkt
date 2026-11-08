@@ -79,9 +79,13 @@ fun FeedahApp() {
                 tts = tts,
                 speechRate = settings.speechRate,
                 settingsReady = settingsReady,
+                autoSpeak = settings.autoSpeak,
+                tapToReveal = settings.tapToReveal,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 onSpeechRateSelect = settingsViewModel::updateSpeechRate,
+                onAutoSpeakChange = settingsViewModel::updateAutoSpeak,
+                onTapToRevealChange = settingsViewModel::updateTapToReveal,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

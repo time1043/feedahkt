@@ -3,6 +3,7 @@ package com.time1043.feedah_kt.data.settings
 import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.floatPreferencesKey
@@ -23,6 +24,10 @@ data class Settings(
     val theme: String = "system",
     /** The speech rate for word pronunciation; 1.0 is the system default. */
     val speechRate: Float = DEFAULT_SPEECH_RATE,
+    /** Speak the word as the card opens. */
+    val autoSpeak: Boolean = true,
+    /** The meaning waits for a tap; off = always visible. */
+    val tapToReveal: Boolean = true,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -30,10 +35,14 @@ internal val Context.settingsDataStore: DataStore<Preferences>
 
 internal val THEME_KEY = stringPreferencesKey("theme")
 internal val SPEECH_RATE_KEY = floatPreferencesKey("speech-rate")
+internal val AUTO_SPEAK_KEY = booleanPreferencesKey("auto-speak")
+internal val TAP_TO_REVEAL_KEY = booleanPreferencesKey("tap-to-reveal")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
     speechRate = this[SPEECH_RATE_KEY] ?: Settings().speechRate,
+    autoSpeak = this[AUTO_SPEAK_KEY] ?: Settings().autoSpeak,
+    tapToReveal = this[TAP_TO_REVEAL_KEY] ?: Settings().tapToReveal,
 )
 
 /**
@@ -64,5 +73,13 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveSpeechRate(rate: Float) {
         dataStore.edit { it[SPEECH_RATE_KEY] = rate }
+    }
+
+    suspend fun saveAutoSpeak(autoSpeak: Boolean) {
+        dataStore.edit { it[AUTO_SPEAK_KEY] = autoSpeak }
+    }
+
+    suspend fun saveTapToReveal(tapToReveal: Boolean) {
+        dataStore.edit { it[TAP_TO_REVEAL_KEY] = tapToReveal }
     }
 }
