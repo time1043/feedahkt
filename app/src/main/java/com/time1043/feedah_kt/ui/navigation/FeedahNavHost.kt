@@ -43,6 +43,7 @@ fun FeedahNavHost(
     tapToReveal: Boolean,
     chrome: DeckChrome,
     wordsMeaning: Boolean,
+    activeBucket: String,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
@@ -53,6 +54,7 @@ fun FeedahNavHost(
     onDeckProgressBarChange: (Boolean) -> Unit,
     onHudPageChange: (Boolean) -> Unit,
     onWordsMeaningChange: (Boolean) -> Unit,
+    onActiveBucketChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -87,14 +89,20 @@ fun FeedahNavHost(
             onWordsMeaningChange = onWordsMeaningChange,
         )
         // mode
-        studyScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
-        browseScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
+        studyScreen(
+            navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
+            activeBucket,
+        )
+        browseScreen(
+            navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
+            activeBucket,
+        )
         reviewScreen()
         searchScreen(navController)
         // bucket
         wordsScreen(navController, wordsMeaning)
         roundsScreen(navController)
-        bucketSettingsScreen()
+        bucketSettingsScreen(navController, activeBucket, onActiveBucketChange)
     }
 }
 
@@ -112,6 +120,8 @@ fun NavGraphBuilder.bucketScreen(navController: NavController) {
     composable<Bucket> {
         BucketScreen(
             onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
+            onOpenRounds = { name -> navController.navigate(RoundsRoute(name)) },
+            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
         )
     }
 }
@@ -178,6 +188,7 @@ fun NavGraphBuilder.studyScreen(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    activeBucket: String,
 ) {
     composable<StudyRoute> {
         StudyScreen(
@@ -187,6 +198,7 @@ fun NavGraphBuilder.studyScreen(
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
             chrome = chrome,
+            bucketName = activeBucket,
             onBack = { navController.popBackStack() },
             onSearch = { navController.navigate(SearchRoute()) },
         )
@@ -201,12 +213,14 @@ fun NavGraphBuilder.browseScreen(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    activeBucket: String,
 ) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
         BrowseScreen(
             position = route.position,
             bucketParam = route.bucket,
+            activeBucket = activeBucket,
             tts = tts,
             speechRate = speechRate,
             settingsReady = settingsReady,
@@ -251,13 +265,27 @@ fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Bool
 }
 
 fun NavGraphBuilder.roundsScreen(navController: NavController) {
-    composable<RoundsRoute> {
+    composable<RoundsRoute> { entry ->
+        val route = entry.toRoute<RoundsRoute>()
         RoundsScreen(
-            onOpenRound = { navController.navigate(ReviewRoute(bucket = "demo", round = 1)) },
+            name = route.name,
+            onBack = { navController.popBackStack() },
         )
     }
 }
 
-fun NavGraphBuilder.bucketSettingsScreen() {
-    composable<BucketSettingsRoute> { BucketSettingsScreen() }
+fun NavGraphBuilder.bucketSettingsScreen(
+    navController: NavController,
+    activeBucket: String,
+    onActiveBucketChange: (String) -> Unit,
+) {
+    composable<BucketSettingsRoute> { entry ->
+        val route = entry.toRoute<BucketSettingsRoute>()
+        BucketSettingsScreen(
+            name = route.name,
+            activeBucket = activeBucket,
+            onActiveBucketChange = onActiveBucketChange,
+            onBack = { navController.popBackStack() },
+        )
+    }
 }

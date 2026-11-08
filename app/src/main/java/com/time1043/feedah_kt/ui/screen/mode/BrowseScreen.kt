@@ -39,6 +39,7 @@ import kotlinx.coroutines.withContext
 fun BrowseScreen(
     position: Int,
     bucketParam: String?,
+    activeBucket: String,
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
@@ -53,7 +54,7 @@ fun BrowseScreen(
 
     // The bucket the opener came from (the word list passes it); no param
     // means the home screen's default bucket.
-    val bucketName = bucketParam?.takeIf { it.isNotEmpty() } ?: "2050"
+    val bucketName = bucketParam?.takeIf { it.isNotEmpty() } ?: activeBucket
     // The mock buckets load from assets: keep the parse off the main
     // thread (the source imports them synchronously; same data, async).
     val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {

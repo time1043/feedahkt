@@ -90,6 +90,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateActiveBucket(activeBucket: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveActiveBucket(activeBucket)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

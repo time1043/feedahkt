@@ -15,15 +15,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -42,8 +47,10 @@ import com.time1043.feedah_kt.data.mock.loadBuckets
 import com.time1043.feedah_kt.types.Bucket
 import com.time1043.feedah_kt.types.Word
 import com.time1043.feedah_kt.ui.components.ListHeader
+import com.time1043.feedah_kt.ui.components.ProgressBar
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 private const val ROW_HEIGHT = 52
@@ -76,6 +83,23 @@ fun WordsScreen(
     var override by remember { mutableStateOf<Boolean?>(null) }
     val showMeaning = override ?: wordsMeaning
     val guardOpenWord = rememberNavGuard()
+    // The top visible row, mirrored by the progress bar.
+    val listState = rememberLazyListState()
+    var index by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
+    // The source samples the offset at scroll end; the flow mirrors the top
+    // visible row as it settles — the same value at rest.
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.firstVisibleItemIndex }.collect { top ->
+            index = top.coerceIn(0, (words.size - 1).coerceAtLeast(0))
+        }
+    }
+    val jumpTo: (Int) -> Unit = { target ->
+        scope.launch {
+            if (words.isEmpty()) return@launch
+            listState.scrollToItem(target.coerceIn(0, words.lastIndex))
+        }
+    }
 
     Column(modifier = modifier) {
         ListHeader(
@@ -122,13 +146,25 @@ fun WordsScreen(
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
-                items(words, key = { it.position }) { word ->
-                    WordRow(
-                        word = word,
-                        showMeaning = showMeaning,
-                        onClick = { guardOpenWord { onOpenWord(word.position) } },
-                    )
+            else -> Column(modifier = Modifier.fillMaxSize()) {
+                Box(Modifier.padding(horizontal = 16.dp)) { // px-4
+                    if (words.isNotEmpty()) {
+                        ProgressBar(
+                            value = index,
+                            max = words.size,
+                            scrubbable = true,
+                            onScrub = jumpTo,
+                        )
+                    }
+                }
+                LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
+                    items(words, key = { it.position }) { word ->
+                        WordRow(
+                            word = word,
+                            showMeaning = showMeaning,
+                            onClick = { guardOpenWord { onOpenWord(word.position) } },
+                        )
+                    }
                 }
             }
         }
