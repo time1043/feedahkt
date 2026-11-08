@@ -29,6 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -66,9 +69,12 @@ fun WordsScreen(
     // fallback).
     val bucket = buckets?.find { candidate -> candidate.name == name }
     val words = bucket?.words ?: emptyList()
-    // The eye is per-visit: it starts from the stored setting and never
-    // writes back to it.
-    var showMeaning by remember { mutableStateOf(wordsMeaning) }
+    // The eye follows the stored setting once it has hydrated — a mount-time
+    // seed would capture the factory value on a cold-start deep link — and a
+    // tap overrides it for this visit only (null = no override yet). It
+    // never writes back to the setting.
+    var override by remember { mutableStateOf<Boolean?>(null) }
+    val showMeaning = override ?: wordsMeaning
     val guardOpenWord = rememberNavGuard()
 
     Column(modifier = modifier) {
@@ -83,7 +89,8 @@ fun WordsScreen(
                         .clickable(
                             interactionSource = interaction,
                             indication = null,
-                            onClick = { showMeaning = !showMeaning },
+                            role = Role.Button,
+                            onClick = { override = !showMeaning },
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -91,7 +98,7 @@ fun WordsScreen(
                         painter = painterResource(
                             if (showMeaning) R.drawable.ic_eye else R.drawable.ic_eye_off,
                         ),
-                        contentDescription = "Toggle meanings",
+                        contentDescription = if (showMeaning) "Hide meanings" else "Show meanings",
                         tint = if (showMeaning) {
                             MaterialTheme.colorScheme.primary
                         } else {
@@ -145,7 +152,13 @@ private fun WordRow(
                 .fillMaxWidth()
                 .height(ROW_HEIGHT.dp)
                 .alpha(if (pressed) 0.6f else 1f)
-                .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                .semantics { contentDescription = "${word.word}, ${word.meaning}" }
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
