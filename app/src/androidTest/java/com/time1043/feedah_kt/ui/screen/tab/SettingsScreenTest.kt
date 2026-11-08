@@ -4,6 +4,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.core.app.ApplicationProvider
 import com.time1043.feedah_kt.platform.FeedahTts
 import org.junit.Assert.assertEquals
 import org.junit.Rule
@@ -29,7 +30,7 @@ class SettingsScreenTest {
                 onThemeSelect = { selections.add(it) },
                 speechRate = 1.15f,
                 onSpeechRateSelect = {},
-                tts = FeedahTts(composeRule.activity.applicationContext),
+                tts = FeedahTts(ApplicationProvider.getApplicationContext()),
             )
         }
 
