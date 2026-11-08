@@ -18,6 +18,7 @@ fun BrowseScreen(
     position: Int,
     tts: FeedahTts,
     speechRate: Float,
+    settingsReady: Boolean,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
@@ -29,10 +30,14 @@ fun BrowseScreen(
 
     // Opening the card speaks the word — the screen's speech policy; the
     // card stays a pure displayer. The deck takes this over when it lands.
-    // The rate is read at speak time: changing the setting must not
-    // re-speak this card.
-    LaunchedEffect(word?.word) {
-        word?.let { tts.speakWord(it.word, speechRate) }
+    // The gate matters: the settings settle on their stored values only
+    // after the storage read, which races this screen's first frame. The
+    // rate itself reads fresh at call time — a settings change mid-card
+    // must not re-speak.
+    LaunchedEffect(word?.word, settingsReady) {
+        val current = word ?: return@LaunchedEffect
+        if (!settingsReady) return@LaunchedEffect
+        tts.speakWord(current.word, speechRate)
     }
 
     if (word != null) {

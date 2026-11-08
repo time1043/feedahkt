@@ -36,6 +36,7 @@ fun FeedahApp() {
     val tts = remember { FeedahTts(appContext) }
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory)
     val settings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
+    val settingsReady by settingsViewModel.settingsReady.collectAsStateWithLifecycle()
     val darkTheme = resolveDarkTheme(settings.theme, isSystemInDarkTheme())
 
     FeedahktTheme(darkTheme = darkTheme) {
@@ -77,6 +78,7 @@ fun FeedahApp() {
                 navController = navController,
                 tts = tts,
                 speechRate = settings.speechRate,
+                settingsReady = settingsReady,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 onSpeechRateSelect = settingsViewModel::updateSpeechRate,

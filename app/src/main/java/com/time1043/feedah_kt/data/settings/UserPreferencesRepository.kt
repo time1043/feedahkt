@@ -51,6 +51,13 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
         }
         .map { prefs -> prefs.toSettings() }
 
+    /** Flips once the stored settings have been read from the file. */
+    val hydratedFlow: Flow<Boolean> = dataStore.data
+        .catch { throwable ->
+            if (throwable is IOException) emit(emptyPreferences()) else throw throwable
+        }
+        .map { true }
+
     suspend fun saveTheme(theme: String) {
         dataStore.edit { it[THEME_KEY] = theme }
     }

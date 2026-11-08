@@ -37,6 +37,7 @@ fun FeedahNavHost(
     navController: NavHostController,
     tts: FeedahTts,
     speechRate: Float,
+    settingsReady: Boolean,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
@@ -60,8 +61,8 @@ fun FeedahNavHost(
             onSpeechRateSelect = onSpeechRateSelect,
         )
         // mode
-        studyScreen(tts, speechRate)
-        browseScreen(tts, speechRate)
+        studyScreen(tts, speechRate, settingsReady)
+        browseScreen(tts, speechRate, settingsReady)
         reviewScreen()
         searchScreen(navController)
         // bucket
@@ -120,11 +121,13 @@ fun NavGraphBuilder.settingsScreen(
 fun NavGraphBuilder.studyScreen(
     tts: FeedahTts,
     speechRate: Float,
+    settingsReady: Boolean,
 ) {
     composable<StudyRoute> {
         StudyScreen(
             tts = tts,
             speechRate = speechRate,
+            settingsReady = settingsReady,
         )
     }
 }
@@ -132,6 +135,7 @@ fun NavGraphBuilder.studyScreen(
 fun NavGraphBuilder.browseScreen(
     tts: FeedahTts,
     speechRate: Float,
+    settingsReady: Boolean,
 ) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
@@ -139,6 +143,7 @@ fun NavGraphBuilder.browseScreen(
             position = route.position,
             tts = tts,
             speechRate = speechRate,
+            settingsReady = settingsReady,
         )
     }
 }

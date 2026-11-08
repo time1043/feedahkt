@@ -27,6 +27,15 @@ class SettingsViewModel(
             initialValue = Settings(),
         )
 
+    // Flips once the stored settings settle — the gate for a first-frame
+    // auto-speak racing the storage read.
+    val settingsReady: StateFlow<Boolean> = userPreferencesRepository.hydratedFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = false,
+        )
+
     fun updateTheme(theme: String) {
         viewModelScope.launch {
             userPreferencesRepository.saveTheme(theme)
