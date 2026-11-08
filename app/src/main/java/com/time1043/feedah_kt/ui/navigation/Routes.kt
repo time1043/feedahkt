@@ -46,6 +46,7 @@ data class WordsRoute(val name: String) : Route
 @Serializable
 data class RoundsRoute(val name: String) : Route
 
-/** /bucket/settings — active bucket, study drill, search scope, restore. */
+/** /bucket/settings?name — the bucket settings; an optional name shows the
+ * per-bucket note. */
 @Serializable
-data object BucketSettingsRoute : Route
+data class BucketSettingsRoute(val name: String? = null) : Route

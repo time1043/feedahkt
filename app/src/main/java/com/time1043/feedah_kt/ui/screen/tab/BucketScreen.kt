@@ -34,6 +34,7 @@ import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
 import com.time1043.feedah_kt.data.mock.loadBuckets
 import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.TabHeader
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
 import kotlinx.coroutines.Dispatchers
@@ -57,7 +58,16 @@ fun BucketScreen(
     val guardOpenBucket = rememberNavGuard()
 
     Column(modifier = modifier.fillMaxSize()) {
-        TabHeader(title = "Bucket")
+        TabHeader(
+            title = "Bucket",
+            right = {
+                HeaderIconButton(
+                    iconRes = R.drawable.ic_settings,
+                    contentDescription = "Bucket list settings",
+                    onClick = onOpenBucketSettings,
+                )
+            },
+        )
         for (bucket in buckets ?: emptyList()) {
             Row(
                 Modifier
