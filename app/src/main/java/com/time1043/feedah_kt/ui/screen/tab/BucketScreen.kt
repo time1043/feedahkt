@@ -17,6 +17,9 @@ import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,7 +58,10 @@ fun BucketScreen(
                         color = MaterialTheme.colorScheme.outlineVariant, // border-gray-300
                         shape = RoundedCornerShape(16.dp), // rounded-2xl
                     )
-                    .clickable(onClickLabel = bucket.name) {
+                    .clickable(
+                        role = Role.Button,
+                        onClickLabel = bucket.name,
+                    ) {
                         guardOpenBucket { onOpenBucket(bucket.name) }
                     }
                     .padding(16.dp), // p-4
@@ -67,6 +73,9 @@ fun BucketScreen(
                     fontSize = 17.sp,
                     fontWeight = FontWeight.SemiBold,
                     color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.semantics {
+                        contentDescription = "${bucket.name}, ${bucket.words.size} words"
+                    },
                 )
                 Text(
                     text = "${bucket.words.size} words",

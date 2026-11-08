@@ -29,6 +29,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -86,6 +89,7 @@ fun WordsScreen(
                         .clickable(
                             interactionSource = interaction,
                             indication = null,
+                            role = Role.Button,
                             onClick = { override = !showMeaning },
                         ),
                     contentAlignment = Alignment.Center,
@@ -148,7 +152,13 @@ private fun WordRow(
                 .fillMaxWidth()
                 .height(ROW_HEIGHT.dp)
                 .alpha(if (pressed) 0.6f else 1f)
-                .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                .clickable(
+                    interactionSource = interaction,
+                    indication = null,
+                    role = Role.Button,
+                    onClick = onClick,
+                )
+                .semantics { contentDescription = "${word.word}, ${word.meaning}" }
                 .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
