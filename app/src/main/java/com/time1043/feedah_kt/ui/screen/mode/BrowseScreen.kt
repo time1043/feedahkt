@@ -138,7 +138,10 @@ fun BrowseScreen(
                         onClick = onBack,
                     )
                     Text(
-                        text = "Word not found",
+                        // The message names the entity that is actually
+                        // missing (the source's 90b8051; the header row itself
+                        // landed with the word-desk port).
+                        text = if (bucket == null) "Bucket not found" else "Word not found",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
