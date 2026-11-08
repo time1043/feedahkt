@@ -24,6 +24,7 @@ import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.data.mock.loadBuckets
 import com.time1043.feedah_kt.types.Bucket
 import com.time1043.feedah_kt.ui.components.TabHeader
+import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -40,6 +41,7 @@ fun BucketScreen(
     val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {
         value = withContext(Dispatchers.IO) { loadBuckets(appContext) }
     }
+    val guardOpenBucket = rememberNavGuard()
 
     Column(modifier = modifier.fillMaxSize()) {
         TabHeader(title = "Bucket")
@@ -53,7 +55,9 @@ fun BucketScreen(
                         color = MaterialTheme.colorScheme.outlineVariant, // border-gray-300
                         shape = RoundedCornerShape(16.dp), // rounded-2xl
                     )
-                    .clickable(onClickLabel = bucket.name) { onOpenBucket(bucket.name) }
+                    .clickable(onClickLabel = bucket.name) {
+                        guardOpenBucket { onOpenBucket(bucket.name) }
+                    }
                     .padding(16.dp), // p-4
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
