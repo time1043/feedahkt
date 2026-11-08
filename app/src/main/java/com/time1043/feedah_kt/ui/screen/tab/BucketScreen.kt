@@ -64,7 +64,7 @@ fun BucketScreen(
                 HeaderIconButton(
                     iconRes = R.drawable.ic_settings,
                     contentDescription = "Bucket list settings",
-                    onClick = onOpenBucketSettings,
+                    onClick = { guardOpenBucket { onOpenBucketSettings() } },
                 )
             },
         )
