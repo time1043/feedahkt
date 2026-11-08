@@ -1,26 +1,41 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.time1043.feedah_kt.data.mock.findBucketByName
-import com.time1043.feedah_kt.data.settings.DeckChrome
+import com.time1043.feedah_kt.logic.EndFacts
+import com.time1043.feedah_kt.logic.StudySession
+import com.time1043.feedah_kt.logic.countsOf
+import com.time1043.feedah_kt.logic.frontierOf
 import com.time1043.feedah_kt.platform.FeedahTts
+import com.time1043.feedah_kt.data.settings.DeckChrome
+import com.time1043.feedah_kt.types.toWord
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.time1043.feedah_kt.ui.components.DeckEndAction
+import com.time1043.feedah_kt.ui.components.WordDeckEnd
+import com.time1043.feedah_kt.ui.components.rememberWordDeckHandle
 
+/** The study screen: swipe through the bucket's words, one full-screen card
+ * at a time, driven by the study session. */
 @Composable
 fun StudyScreen(
     tts: FeedahTts,
@@ -34,16 +49,38 @@ fun StudyScreen(
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val appContext = LocalContext.current.applicationContext
+    val controller = rememberStudySession(bucketName)
+    val deckHandle = rememberWordDeckHandle()
+    // The deck decides when to speak (open, settle, replay taps); the screen
+    // decides how and whether — the stored rate, once its hydration has
+    // settled and auto-speak is on.
+    val canSpeak = settingsReady && autoSpeak
+    val session = controller.session
 
-    // The mock buckets load from assets, off the main thread.
-    val words by produceState(initialValue = emptyList(), key1 = appContext) {
-        value = withContext(Dispatchers.IO) {
-            findBucketByName(appContext, bucketName).words
-        }
+    if (session is StudySession.Loading) {
+        // Blank frame while the mock buckets load.
+        Box(modifier = modifier.fillMaxSize())
+        return
     }
-    // The deck's current card, mirrored out for the footer counter.
-    var index by remember { mutableIntStateOf(0) }
+    val ready = session as StudySession.Ready
+
+    val frontier = frontierOf(ready)
+    // The end page shows the frozen facts of the round that just completed;
+    // live counts read 0 of 0 (roundAdvanced wipes the answers) and the live
+    // round number is already the next one when the page first paints.
+    val endFacts = ready.endFacts ?: run {
+        val counts = countsOf(ready)
+        EndFacts(
+            answered = counts.answered,
+            correct = counts.correct,
+            nextRound = ready.progress.round + 1,
+        )
+    }
+
+    val resumeStudying: () -> Unit = {
+        controller.resume()
+        deckHandle.scrollTo(frontier)
+    }
 
     Column(modifier = modifier) {
         // Mirror of ed70b82: the header and its title are deck settings.
@@ -54,21 +91,46 @@ fun StudyScreen(
                 onSearch = onSearch,
             )
         }
-        // Mirror of e7cd571: the study screen swipes the mock bucket through
-        // the deck. The deck decides when to speak (open, settle, replay
-        // taps); the screen decides how and whether — the stored rate, once
-        // its hydration has settled and auto-speak is on.
         WordDeck(
-            words = words,
-            onSpeak = { word -> tts.speakWord(word.word, speechRate) },
-            canSpeak = settingsReady && autoSpeak,
-            tapToReveal = tapToReveal,
+            handle = deckHandle,
+            words = ready.words.map { it.toWord() },
+            initialIndex = frontier,
             progressBar = chrome.showProgressBar,
-            onIndexChange = { index = it },
+            tapToReveal = tapToReveal,
+            canSpeak = canSpeak,
+            onSpeak = { word -> tts.speakWord(word.word, speechRate) },
+            onSettle = controller::settle,
+            // Scrubbing opens browse mode: the pill floats over the cards —
+            // not the header, which the settings can hide — and is the way
+            // back to the probe.
+            onScrub = { controller.startBrowsing() },
+            banner = if (ready.browsing) {
+                {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary, // bg-blue-500
+                    ) {
+                        Text(
+                            text = "Resume studying",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier
+                                .clickable(role = Role.Button, onClick = resumeStudying)
+                                .padding(horizontal = 16.dp, vertical = 6.dp), // px-4 py-1.5
+                        )
+                    }
+                }
+            } else {
+                null
+            },
+            // The pagination ordinal follows the PROBE's pointer, not the
+            // deck's index: browse-mode swiping never moves it.
             hudRight = if (chrome.showHudPage) {
                 {
                     Text(
-                        text = "${index + 1}/${words.size}",
+                        text = "${minOf(ready.progress.pointer + 1, ready.words.size)}/" +
+                            ready.words.size,
                         style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -76,7 +138,36 @@ fun StudyScreen(
             } else {
                 null
             },
-            modifier = Modifier.weight(1f),
+            end = WordDeckEnd(
+                render = {
+                    Column(
+                        Modifier
+                            .fillMaxSize()
+                            .padding(horizontal = 32.dp), // px-8
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Text(
+                            text = "Round complete",
+                            fontSize = 28.sp,
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurface,
+                        )
+                        Text(
+                            text = "Round ${endFacts.nextRound} starts in a moment",
+                            fontSize = 17.sp,
+                            textAlign = TextAlign.Center,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                },
+                // Reaching the end completes the round only when the probe
+                // has actually walked the whole list outside browse mode;
+                // otherwise the deck snaps back to the last word.
+                onReached = { controller.reachEnd() },
+                action = DeckEndAction.Reset,
+            ),
         )
     }
 }
