@@ -1,15 +1,23 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
+import androidx.compose.foundation.layout.Column
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.data.mock.findBucketByName
+import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
-import com.time1043.feedah_kt.types.Word
-import com.time1043.feedah_kt.ui.components.WordCard
+import com.time1043.feedah_kt.ui.components.ScreenHeader
+import com.time1043.feedah_kt.ui.components.WordDeck
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -20,6 +28,9 @@ fun StudyScreen(
     settingsReady: Boolean,
     autoSpeak: Boolean,
     tapToReveal: Boolean,
+    chrome: DeckChrome,
+    onBack: () -> Unit,
+    onSearch: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
@@ -30,28 +41,41 @@ fun StudyScreen(
             findBucketByName(appContext, "2050").words
         }
     }
+    // The deck's current card, mirrored out for the footer counter.
+    var index by remember { mutableIntStateOf(0) }
 
-    // Mirror of the source study screen at the word-card commit: the mock
-    // bucket's 4th word, no deck yet.
-    val word = words.getOrNull(3)
-
-    // Opening the card speaks the word — mirror of 46da9f4 (study half).
-    // The gate matters: the settings settle on their stored values only
-    // after the storage read, which races this screen's first frame. The
-    // rate and the auto-speak toggle read fresh at call time — flipping
-    // either mid-card must not re-speak.
-    LaunchedEffect(word?.word, settingsReady) {
-        val current = word ?: return@LaunchedEffect
-        if (!settingsReady || !autoSpeak) return@LaunchedEffect
-        tts.speakWord(current.word, speechRate)
-    }
-
-    if (word != null) {
-        WordCard(
-            word = word,
+    Column(modifier = modifier) {
+        // Mirror of ed70b82: the header and its title are deck settings.
+        if (chrome.showHeader) {
+            ScreenHeader(
+                title = if (chrome.showTitle) "Study 2050" else null,
+                onBack = onBack,
+                onSearch = onSearch,
+            )
+        }
+        // Mirror of e7cd571: the study screen swipes the mock bucket through
+        // the deck. The deck decides when to speak (open, settle, replay
+        // taps); the screen decides how and whether — the stored rate, once
+        // its hydration has settled and auto-speak is on.
+        WordDeck(
+            words = words,
+            onSpeak = { word -> tts.speakWord(word.word, speechRate) },
+            canSpeak = settingsReady && autoSpeak,
             tapToReveal = tapToReveal,
-            onReplay = { tts.speakWord(word.word, speechRate) },
-            modifier = modifier,
+            progressBar = chrome.showProgressBar,
+            onIndexChange = { index = it },
+            hudRight = if (chrome.showHudPage) {
+                {
+                    Text(
+                        text = "${index + 1}/${words.size}",
+                        style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                null
+            },
+            modifier = Modifier.weight(1f),
         )
     }
 }

@@ -8,6 +8,7 @@ import androidx.navigation.compose.ComposeNavigator
 import androidx.navigation.compose.DialogNavigator
 import androidx.navigation.testing.TestNavHostController
 import androidx.navigation.toRoute
+import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
 import androidx.test.core.app.ApplicationProvider
 import org.junit.Assert.assertEquals
@@ -44,11 +45,16 @@ class FeedahNavHostTest {
                 settingsReady = true,
                 autoSpeak = true,
                 tapToReveal = true,
+                chrome = DeckChrome(),
                 theme = "system",
                 onThemeSelect = {},
                 onSpeechRateSelect = {},
                 onAutoSpeakChange = {},
                 onTapToRevealChange = {},
+                onDeckHeaderChange = {},
+                onDeckTitleChange = {},
+                onDeckProgressBarChange = {},
+                onHudPageChange = {},
             )
         }
     }
@@ -71,13 +77,14 @@ class FeedahNavHostTest {
     fun search_openWord_passesPositionToBrowse() {
         // arrange: done in setup; walk Home -> Search first
 
-        // act: open search, then open word #42 (pre-filled input)
+        // act: open search, then open word #1701 (pre-filled input — the
+        // mock bucket's first card number)
         composeRule.onNodeWithText("Open Search").performClick()
-        composeRule.onNodeWithText("Open word #42").performClick()
+        composeRule.onNodeWithText("Open word #1701").performClick()
 
         // assert: the back stack top is BrowseRoute carrying the position
         assertEquals(
-            BrowseRoute(position = 42),
+            BrowseRoute(position = 1701),
             navController.currentBackStackEntry?.toRoute<BrowseRoute>(),
         )
     }

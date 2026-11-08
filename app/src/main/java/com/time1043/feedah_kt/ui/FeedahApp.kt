@@ -23,6 +23,7 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.time1043.feedah_kt.platform.FeedahTts
+import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.ui.navigation.AppDestinations
 import com.time1043.feedah_kt.ui.navigation.FeedahNavHost
 import com.time1043.feedah_kt.ui.navigation.navigateToTopLevelDestination
@@ -44,6 +45,13 @@ fun FeedahApp() {
     val settings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
     val settingsReady by settingsViewModel.settingsReady.collectAsStateWithLifecycle()
     val darkTheme = resolveDarkTheme(settings.theme, isSystemInDarkTheme())
+    // The mode screens' read side of the deck-chrome settings.
+    val deckChrome = DeckChrome(
+        showHeader = settings.deckHeader,
+        showTitle = settings.deckTitle,
+        showProgressBar = settings.deckProgressBar,
+        showHudPage = settings.hudPage,
+    )
 
     FeedahktTheme(darkTheme = darkTheme) {
         val navController = rememberNavController()
@@ -87,11 +95,16 @@ fun FeedahApp() {
                 settingsReady = settingsReady,
                 autoSpeak = settings.autoSpeak,
                 tapToReveal = settings.tapToReveal,
+                chrome = deckChrome,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 onSpeechRateSelect = settingsViewModel::updateSpeechRate,
                 onAutoSpeakChange = settingsViewModel::updateAutoSpeak,
                 onTapToRevealChange = settingsViewModel::updateTapToReveal,
+                onDeckHeaderChange = settingsViewModel::updateDeckHeader,
+                onDeckTitleChange = settingsViewModel::updateDeckTitle,
+                onDeckProgressBarChange = settingsViewModel::updateDeckProgressBar,
+                onHudPageChange = settingsViewModel::updateHudPage,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

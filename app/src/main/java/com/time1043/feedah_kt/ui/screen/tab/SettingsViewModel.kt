@@ -60,6 +60,30 @@ class SettingsViewModel(
         }
     }
 
+    fun updateDeckHeader(deckHeader: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveDeckHeader(deckHeader)
+        }
+    }
+
+    fun updateDeckTitle(deckTitle: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveDeckTitle(deckTitle)
+        }
+    }
+
+    fun updateDeckProgressBar(deckProgressBar: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveDeckProgressBar(deckProgressBar)
+        }
+    }
+
+    fun updateHudPage(hudPage: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveHudPage(hudPage)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

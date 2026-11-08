@@ -20,6 +20,7 @@ import com.time1043.feedah_kt.ui.screen.tab.SettingsScreen
 import com.time1043.feedah_kt.ui.screen.tab.StatisticsScreen
 import com.time1043.feedah_kt.ui.screen.mode.StudyScreen
 import com.time1043.feedah_kt.ui.screen.bucket.WordsScreen
+import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
 
 /**
@@ -40,11 +41,16 @@ fun FeedahNavHost(
     settingsReady: Boolean,
     autoSpeak: Boolean,
     tapToReveal: Boolean,
+    chrome: DeckChrome,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
     onAutoSpeakChange: (Boolean) -> Unit,
     onTapToRevealChange: (Boolean) -> Unit,
+    onDeckHeaderChange: (Boolean) -> Unit,
+    onDeckTitleChange: (Boolean) -> Unit,
+    onDeckProgressBarChange: (Boolean) -> Unit,
+    onHudPageChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -67,10 +73,18 @@ fun FeedahNavHost(
             onAutoSpeakChange = onAutoSpeakChange,
             tapToReveal = tapToReveal,
             onTapToRevealChange = onTapToRevealChange,
+            deckHeader = chrome.showHeader,
+            onDeckHeaderChange = onDeckHeaderChange,
+            deckTitle = chrome.showTitle,
+            onDeckTitleChange = onDeckTitleChange,
+            deckProgressBar = chrome.showProgressBar,
+            onDeckProgressBarChange = onDeckProgressBarChange,
+            hudPage = chrome.showHudPage,
+            onHudPageChange = onHudPageChange,
         )
         // mode
-        studyScreen(tts, speechRate, settingsReady, autoSpeak, tapToReveal)
-        browseScreen(tts, speechRate, settingsReady, autoSpeak, tapToReveal)
+        studyScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
+        browseScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
         reviewScreen()
         searchScreen(navController)
         // bucket
@@ -118,6 +132,14 @@ fun NavGraphBuilder.settingsScreen(
     onAutoSpeakChange: (Boolean) -> Unit,
     tapToReveal: Boolean,
     onTapToRevealChange: (Boolean) -> Unit,
+    deckHeader: Boolean,
+    onDeckHeaderChange: (Boolean) -> Unit,
+    deckTitle: Boolean,
+    onDeckTitleChange: (Boolean) -> Unit,
+    deckProgressBar: Boolean,
+    onDeckProgressBarChange: (Boolean) -> Unit,
+    hudPage: Boolean,
+    onHudPageChange: (Boolean) -> Unit,
 ) {
     composable<Settings> {
         SettingsScreen(
@@ -130,16 +152,26 @@ fun NavGraphBuilder.settingsScreen(
             onAutoSpeakChange = onAutoSpeakChange,
             tapToReveal = tapToReveal,
             onTapToRevealChange = onTapToRevealChange,
+            deckHeader = deckHeader,
+            onDeckHeaderChange = onDeckHeaderChange,
+            deckTitle = deckTitle,
+            onDeckTitleChange = onDeckTitleChange,
+            deckProgressBar = deckProgressBar,
+            onDeckProgressBarChange = onDeckProgressBarChange,
+            hudPage = hudPage,
+            onHudPageChange = onHudPageChange,
         )
     }
 }
 
 fun NavGraphBuilder.studyScreen(
+    navController: NavController,
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
     autoSpeak: Boolean,
     tapToReveal: Boolean,
+    chrome: DeckChrome,
 ) {
     composable<StudyRoute> {
         StudyScreen(
@@ -148,16 +180,21 @@ fun NavGraphBuilder.studyScreen(
             settingsReady = settingsReady,
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
+            chrome = chrome,
+            onBack = { navController.popBackStack() },
+            onSearch = { navController.navigate(SearchRoute()) },
         )
     }
 }
 
 fun NavGraphBuilder.browseScreen(
+    navController: NavController,
     tts: FeedahTts,
     speechRate: Float,
     settingsReady: Boolean,
     autoSpeak: Boolean,
     tapToReveal: Boolean,
+    chrome: DeckChrome,
 ) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
@@ -168,6 +205,9 @@ fun NavGraphBuilder.browseScreen(
             settingsReady = settingsReady,
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
+            chrome = chrome,
+            onBack = { navController.popBackStack() },
+            onSearch = { navController.navigate(SearchRoute()) },
         )
     }
 }

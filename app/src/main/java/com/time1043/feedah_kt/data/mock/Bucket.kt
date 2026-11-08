@@ -28,9 +28,11 @@ fun findBucketByName(context: Context, name: String): Bucket =
     loadBuckets(context).find { it.name == name } ?: loadBuckets(context).first()
 
 /**
- * Looks a word up by its 1-based position in the bucket, mirroring the
- * source's browse screen. Out-of-range positions return null — the caller
+ * Looks a word up by its card number — the data position printed on the
+ * card (1701+ for the mock bucket), not a list index. It is the identifier
+ * every surface shares: what the card shows is what opens in browse, and
+ * what search/review will carry. Unknown numbers return null — the caller
  * decides what to render.
  */
 fun findWord(bucket: Bucket, position: Int): Word? =
-    bucket.words.getOrNull(position - 1)
+    bucket.words.find { it.position == position }

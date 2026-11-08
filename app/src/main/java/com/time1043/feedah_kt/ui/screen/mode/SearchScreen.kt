@@ -27,7 +27,11 @@ fun SearchScreen(
     onEvent: (SearchEvent) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    var position by rememberSaveable { mutableStateOf("42") }
+    // The search box takes the CARD NUMBER (the data position printed on
+    // the card); default it to the bucket's first card so the first press
+    // works (mirror of f18e173's entry default; a real search replaces
+    // this stub).
+    var position by rememberSaveable { mutableStateOf("1701") }
     val parsed = position.toIntOrNull()
 
     Column(
