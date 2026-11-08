@@ -5,6 +5,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
+import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
@@ -16,15 +17,19 @@ import kotlinx.coroutines.flow.map
 data class Settings(
     /** "system" | "light" | "dark". */
     val theme: String = "system",
+    /** The speech rate for word pronunciation; 1.0 is the system default. */
+    val speechRate: Float = 1.15f,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
     by preferencesDataStore(name = "feedah.settings")
 
 internal val THEME_KEY = stringPreferencesKey("theme")
+internal val SPEECH_RATE_KEY = floatPreferencesKey("speech-rate")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
+    speechRate = this[SPEECH_RATE_KEY] ?: Settings().speechRate,
 )
 
 /**
@@ -44,5 +49,9 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveTheme(theme: String) {
         dataStore.edit { it[THEME_KEY] = theme }
+    }
+
+    suspend fun saveSpeechRate(rate: Float) {
+        dataStore.edit { it[SPEECH_RATE_KEY] = rate }
     }
 }

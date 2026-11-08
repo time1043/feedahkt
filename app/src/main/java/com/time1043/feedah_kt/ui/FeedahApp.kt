@@ -76,6 +76,7 @@ fun FeedahApp() {
             FeedahNavHost(
                 navController = navController,
                 tts = tts,
+                speechRate = settings.speechRate,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 modifier = Modifier

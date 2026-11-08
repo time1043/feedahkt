@@ -27,12 +27,16 @@ class FeedahTts(context: Context) {
 
     val isAvailable: Boolean get() = ready
 
-    /** Stops any queued utterance, then speaks [text] at the fixed rate. */
-    fun speakWord(text: String) {
+    /**
+     * Stops any queued utterance, then speaks [text] at [rate] — the rate is
+     * injected by the caller: it is a user setting, and the screen owns the
+     * speech policy.
+     */
+    fun speakWord(text: String, rate: Float) {
         val tts = engine ?: return
         if (!ready) return
         tts.stop()
-        tts.setSpeechRate(1.15f)
+        tts.setSpeechRate(rate)
         tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "feedah-word")
     }
 
@@ -49,6 +53,6 @@ class FeedahTts(context: Context) {
 }
 
 /** The single speak entry point used by screens (source lib/speech.ts). */
-fun speakWord(tts: FeedahTts, text: String) {
-    tts.speakWord(text)
+fun speakWord(tts: FeedahTts, text: String, rate: Float) {
+    tts.speakWord(text, rate)
 }
