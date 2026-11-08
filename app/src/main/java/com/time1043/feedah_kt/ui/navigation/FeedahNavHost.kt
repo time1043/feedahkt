@@ -54,6 +54,7 @@ fun FeedahNavHost(
     onDeckProgressBarChange: (Boolean) -> Unit,
     onHudPageChange: (Boolean) -> Unit,
     onWordsMeaningChange: (Boolean) -> Unit,
+    onActiveBucketChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -101,7 +102,7 @@ fun FeedahNavHost(
         // bucket
         wordsScreen(navController, wordsMeaning)
         roundsScreen(navController)
-        bucketSettingsScreen(navController)
+        bucketSettingsScreen(navController, activeBucket, onActiveBucketChange)
     }
 }
 
@@ -273,11 +274,17 @@ fun NavGraphBuilder.roundsScreen(navController: NavController) {
     }
 }
 
-fun NavGraphBuilder.bucketSettingsScreen(navController: NavController) {
+fun NavGraphBuilder.bucketSettingsScreen(
+    navController: NavController,
+    activeBucket: String,
+    onActiveBucketChange: (String) -> Unit,
+) {
     composable<BucketSettingsRoute> { entry ->
         val route = entry.toRoute<BucketSettingsRoute>()
         BucketSettingsScreen(
             name = route.name,
+            activeBucket = activeBucket,
+            onActiveBucketChange = onActiveBucketChange,
             onBack = { navController.popBackStack() },
         )
     }

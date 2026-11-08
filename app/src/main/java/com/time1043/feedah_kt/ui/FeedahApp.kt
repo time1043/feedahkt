@@ -108,6 +108,7 @@ fun FeedahApp() {
                 onDeckProgressBarChange = settingsViewModel::updateDeckProgressBar,
                 onHudPageChange = settingsViewModel::updateHudPage,
                 onWordsMeaningChange = settingsViewModel::updateWordsMeaning,
+                onActiveBucketChange = settingsViewModel::updateActiveBucket,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
