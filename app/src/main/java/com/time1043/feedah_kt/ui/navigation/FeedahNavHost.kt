@@ -112,6 +112,8 @@ fun NavGraphBuilder.bucketScreen(navController: NavController) {
     composable<Bucket> {
         BucketScreen(
             onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
+            onOpenRounds = { name -> navController.navigate(RoundsRoute(name)) },
+            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
         )
     }
 }
@@ -251,9 +253,11 @@ fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Bool
 }
 
 fun NavGraphBuilder.roundsScreen(navController: NavController) {
-    composable<RoundsRoute> {
+    composable<RoundsRoute> { entry ->
+        val route = entry.toRoute<RoundsRoute>()
         RoundsScreen(
-            onOpenRound = { navController.navigate(ReviewRoute(bucket = "demo", round = 1)) },
+            name = route.name,
+            onBack = { navController.popBackStack() },
         )
     }
 }
