@@ -1,5 +1,8 @@
 package com.time1043.feedah_kt.ui.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.pager.VerticalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.runtime.Composable
@@ -7,10 +10,13 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import com.time1043.feedah_kt.types.Word
+import kotlinx.coroutines.launch
 
 /**
  * The vertical card pager: one full-screen card at a time, swiped through
@@ -45,6 +51,8 @@ fun WordDeck(
     tapToReveal: Boolean,
     /** Card to open on, clamped into range; read once on mount. */
     initialIndex: Int = 0,
+    /** Whether the scrubbable progress bar renders above the cards. */
+    progressBar: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     if (words.isEmpty()) return
@@ -77,13 +85,33 @@ fun WordDeck(
         }
     }
 
-    VerticalPager(state = pagerState, modifier = modifier) { page ->
-        val word = currentWords.getOrNull(page) ?: return@VerticalPager
-        WordCard(
-            word = word,
-            tapToReveal = tapToReveal,
-            // Replay taps bypass the gate and always reach onSpeak.
-            onReplay = { currentOnSpeak?.invoke(word) },
-        )
+    // The source's scrubTo: a programmatic jump (animated: false) fires no
+    // events there, so it mirrors and speaks inline; here the jump lands in
+    // the settle flow, which mirrors and speaks the target.
+    val scope = rememberCoroutineScope()
+    val scrubTo: (Int) -> Unit = { target ->
+        scope.launch { pagerState.scrollToPage(target.coerceIn(0, words.lastIndex)) }
+    }
+
+    Column(modifier = modifier) {
+        if (progressBar) {
+            Box(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 4.dp)) { // px-4 pb-1
+                ProgressBar(
+                    value = pagerState.settledPage,
+                    max = words.size,
+                    scrubbable = true,
+                    onScrub = scrubTo,
+                )
+            }
+        }
+        VerticalPager(state = pagerState, modifier = Modifier.weight(1f)) { page ->
+            val word = currentWords.getOrNull(page) ?: return@VerticalPager
+            WordCard(
+                word = word,
+                tapToReveal = tapToReveal,
+                // Replay taps bypass the gate and always reach onSpeak.
+                onReplay = { currentOnSpeak?.invoke(word) },
+            )
+        }
     }
 }
