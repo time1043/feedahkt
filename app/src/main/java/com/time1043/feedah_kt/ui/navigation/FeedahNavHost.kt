@@ -108,9 +108,7 @@ fun NavGraphBuilder.homeScreen(navController: NavController) {
 fun NavGraphBuilder.bucketScreen(navController: NavController) {
     composable<Bucket> {
         BucketScreen(
-            onOpenWords = { navController.navigate(WordsRoute("demo")) },
-            onOpenRounds = { navController.navigate(RoundsRoute("demo")) },
-            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
+            onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
         )
     }
 }

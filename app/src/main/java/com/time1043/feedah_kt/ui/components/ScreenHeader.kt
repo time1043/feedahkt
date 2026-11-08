@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.ui.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -147,5 +148,33 @@ fun ListHeader(
         ) {
             right?.invoke()
         }
+    }
+}
+
+/** Header row of the four tabs (mirror of TabHeader in
+ * src/components/header.tsx): 22sp bold title left, optional right slot.
+ * The title is optional — the home header carries only its search icon. */
+@Composable
+fun TabHeader(
+    title: String?,
+    right: (@Composable () -> Unit)? = null,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(start = 16.dp, end = 16.dp, top = 12.dp, bottom = 8.dp), // px-4 pb-2 pt-3
+        horizontalArrangement = Arrangement.SpaceBetween, // justify-between
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        if (title != null) {
+            Text(
+                text = title,
+                fontSize = 22.sp,
+                fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+        }
+        right?.invoke()
     }
 }
