@@ -27,11 +27,38 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.time1043.feedah_kt.logic.meaningLines
 import com.time1043.feedah_kt.types.Word
 
 // Word forms render in a fixed 2×6 grid (12 cells); empty cells keep the
 // layout, so the forms block is the same size on every card and never shifts.
 private const val FORMS_GRID_CELLS = 12
+
+/** The meaning, one line per part-of-speech group when it is long. */
+@Composable
+private fun CardMeaning(meaning: String) {
+    if (meaning.isEmpty()) return
+    val lines = meaningLines(meaning)
+    if (lines != null) {
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            for (line in lines) {
+                Text(
+                    text = line,
+                    style = TextStyle(fontSize = 20.sp, lineHeight = 28.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    } else {
+        Text(
+            text = meaning,
+            style = TextStyle(fontSize = 20.sp, lineHeight = 28.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
 
 /**
  * The full-screen word card, split into two fixed halves — the project's
@@ -118,13 +145,8 @@ fun WordCard(
                     .height(110.dp),
                 contentAlignment = Alignment.TopCenter,
             ) {
-                if (revealed && word.meaning.isNotEmpty()) {
-                    Text(
-                        text = word.meaning,
-                        style = TextStyle(fontSize = 20.sp, lineHeight = 28.sp),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                    )
+                if (revealed) {
+                    CardMeaning(meaning = word.meaning)
                 }
             }
         }
