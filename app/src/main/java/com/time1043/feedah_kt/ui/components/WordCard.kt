@@ -75,13 +75,15 @@ private fun CardMeaning(meaning: String) {
 @Composable
 fun WordCard(
     word: Word,
+    tapToReveal: Boolean = true,
     onReplay: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var revealed by remember { mutableStateOf(false) }
 
     val interaction = remember { MutableInteractionSource() }
-    val toggle = { revealed = !revealed }
+    val shown = !tapToReveal || revealed
+    val toggle = { if (tapToReveal) revealed = !revealed }
 
     Column(modifier.fillMaxSize()) {
         Column(
@@ -145,7 +147,7 @@ fun WordCard(
                     .height(110.dp),
                 contentAlignment = Alignment.TopCenter,
             ) {
-                if (revealed) {
+                if (shown) {
                     CardMeaning(meaning = word.meaning)
                 }
             }
@@ -159,7 +161,7 @@ fun WordCard(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center,
         ) {
-            if (revealed && word.forms.isNotEmpty()) {
+            if (shown && word.forms.isNotEmpty()) {
                 Column(
                     Modifier.fillMaxWidth().padding(bottom = 24.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),

@@ -27,6 +27,15 @@ class SettingsViewModel(
             initialValue = Settings(),
         )
 
+    // Flips once the stored settings settle — the gate for a first-frame
+    // auto-speak racing the storage read.
+    val settingsReady: StateFlow<Boolean> = userPreferencesRepository.hydratedFlow
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = false,
+        )
+
     fun updateTheme(theme: String) {
         viewModelScope.launch {
             userPreferencesRepository.saveTheme(theme)
@@ -36,6 +45,18 @@ class SettingsViewModel(
     fun updateSpeechRate(rate: Float) {
         viewModelScope.launch {
             userPreferencesRepository.saveSpeechRate(rate)
+        }
+    }
+
+    fun updateAutoSpeak(autoSpeak: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveAutoSpeak(autoSpeak)
+        }
+    }
+
+    fun updateTapToReveal(tapToReveal: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveTapToReveal(tapToReveal)
         }
     }
 
