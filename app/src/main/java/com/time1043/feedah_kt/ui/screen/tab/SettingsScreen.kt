@@ -9,6 +9,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.ui.screen.tab.settings.SpeechRateControl
+import com.time1043.feedah_kt.ui.screen.tab.settings.SwitchRow
 import com.time1043.feedah_kt.ui.screen.tab.settings.ThemeToggle
 
 @Composable
@@ -30,6 +31,12 @@ fun SettingsScreen(
             tts = tts,
             onRateChange = onSpeechRateSelect,
         )
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            SwitchRow(label = "Auto speak", value = autoSpeak, onValueChange = onAutoSpeakChange)
+            SwitchRow(label = "Tap to reveal", value = tapToReveal, onValueChange = onTapToRevealChange)
+        }
+
         ThemeToggle(current = theme, onSelect = onThemeSelect)
     }
 }
