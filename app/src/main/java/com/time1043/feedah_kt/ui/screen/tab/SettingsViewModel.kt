@@ -78,6 +78,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateHudPage(hudPage: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveHudPage(hudPage)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

@@ -64,12 +64,16 @@ fun StudyScreen(
             tapToReveal = tapToReveal,
             progressBar = chrome.showProgressBar,
             onIndexChange = { index = it },
-            hudRight = {
-                Text(
-                    text = "${index + 1}/${words.size}",
-                    style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            hudRight = if (chrome.showHudPage) {
+                {
+                    Text(
+                        text = "${index + 1}/${words.size}",
+                        style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                null
             },
             modifier = Modifier.weight(1f),
         )

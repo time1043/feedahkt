@@ -50,6 +50,7 @@ fun FeedahApp() {
         showHeader = settings.deckHeader,
         showTitle = settings.deckTitle,
         showProgressBar = settings.deckProgressBar,
+        showHudPage = settings.hudPage,
     )
 
     FeedahktTheme(darkTheme = darkTheme) {
@@ -103,6 +104,7 @@ fun FeedahApp() {
                 onDeckHeaderChange = settingsViewModel::updateDeckHeader,
                 onDeckTitleChange = settingsViewModel::updateDeckTitle,
                 onDeckProgressBarChange = settingsViewModel::updateDeckProgressBar,
+                onHudPageChange = settingsViewModel::updateHudPage,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

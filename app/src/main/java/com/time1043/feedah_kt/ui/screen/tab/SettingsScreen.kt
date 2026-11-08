@@ -28,6 +28,8 @@ fun SettingsScreen(
     onDeckTitleChange: (Boolean) -> Unit,
     deckProgressBar: Boolean,
     onDeckProgressBarChange: (Boolean) -> Unit,
+    hudPage: Boolean,
+    onHudPageChange: (Boolean) -> Unit,
     tts: FeedahTts,
     modifier: Modifier = Modifier,
 ) {
@@ -52,6 +54,7 @@ fun SettingsScreen(
                 value = deckProgressBar,
                 onValueChange = onDeckProgressBarChange,
             )
+            SwitchRow(label = "Page footer", value = hudPage, onValueChange = onHudPageChange)
         }
 
         ThemeToggle(current = theme, onSelect = onThemeSelect)

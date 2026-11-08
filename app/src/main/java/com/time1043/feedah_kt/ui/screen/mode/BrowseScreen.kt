@@ -78,12 +78,16 @@ fun BrowseScreen(
                 tapToReveal = tapToReveal,
                 progressBar = chrome.showProgressBar,
                 onIndexChange = { current = it },
-                hudRight = {
-                    Text(
-                        text = "${current + 1}/${words.size}",
-                        style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                hudRight = if (chrome.showHudPage) {
+                    {
+                        Text(
+                            text = "${current + 1}/${words.size}",
+                            style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
+                } else {
+                    null
                 },
                 modifier = Modifier.weight(1f),
             )

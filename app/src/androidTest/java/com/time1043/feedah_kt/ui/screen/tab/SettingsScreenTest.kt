@@ -41,6 +41,8 @@ class SettingsScreenTest {
                 onDeckTitleChange = {},
                 deckProgressBar = true,
                 onDeckProgressBarChange = {},
+                hudPage = true,
+                onHudPageChange = {},
                 tts = FeedahTts(ApplicationProvider.getApplicationContext()),
             )
         }

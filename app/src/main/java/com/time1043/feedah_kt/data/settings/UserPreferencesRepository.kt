@@ -34,6 +34,8 @@ data class Settings(
     val deckTitle: Boolean = true,
     /** Whether the deck's scrubbable progress bar shows. */
     val deckProgressBar: Boolean = true,
+    /** Whether the deck's page footer shows (bottom right, n/total). */
+    val hudPage: Boolean = true,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -46,6 +48,7 @@ internal val TAP_TO_REVEAL_KEY = booleanPreferencesKey("tap-to-reveal")
 internal val DECK_HEADER_KEY = booleanPreferencesKey("deck-header")
 internal val DECK_TITLE_KEY = booleanPreferencesKey("deck-title")
 internal val DECK_PROGRESS_BAR_KEY = booleanPreferencesKey("deck-progress-bar")
+internal val HUD_PAGE_KEY = booleanPreferencesKey("hud-page")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
@@ -55,6 +58,7 @@ internal fun Preferences.toSettings(): Settings = Settings(
     deckHeader = this[DECK_HEADER_KEY] ?: Settings().deckHeader,
     deckTitle = this[DECK_TITLE_KEY] ?: Settings().deckTitle,
     deckProgressBar = this[DECK_PROGRESS_BAR_KEY] ?: Settings().deckProgressBar,
+    hudPage = this[HUD_PAGE_KEY] ?: Settings().hudPage,
 )
 
 /**
@@ -105,5 +109,9 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveDeckProgressBar(deckProgressBar: Boolean) {
         dataStore.edit { it[DECK_PROGRESS_BAR_KEY] = deckProgressBar }
+    }
+
+    suspend fun saveHudPage(hudPage: Boolean) {
+        dataStore.edit { it[HUD_PAGE_KEY] = hudPage }
     }
 }

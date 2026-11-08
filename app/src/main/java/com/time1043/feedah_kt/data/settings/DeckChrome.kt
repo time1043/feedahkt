@@ -14,4 +14,6 @@ data class DeckChrome(
     val showTitle: Boolean = true,
     /** Whether the deck's scrubbable progress bar shows. */
     val showProgressBar: Boolean = true,
+    /** Whether the deck's page footer shows (bottom right, n/total). */
+    val showHudPage: Boolean = true,
 )

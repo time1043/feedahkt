@@ -54,6 +54,7 @@ class FeedahNavHostTest {
                 onDeckHeaderChange = {},
                 onDeckTitleChange = {},
                 onDeckProgressBarChange = {},
+                onHudPageChange = {},
             )
         }
     }
