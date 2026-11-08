@@ -49,7 +49,7 @@ fun StudyScreen(
         // Mirror of ed70b82: the header and its title are deck settings.
         if (chrome.showHeader) {
             ScreenHeader(
-                title = if (chrome.showTitle) "Study 2050" else null,
+                title = if (chrome.showTitle) "Study $bucketName" else null,
                 onBack = onBack,
                 onSearch = onSearch,
             )

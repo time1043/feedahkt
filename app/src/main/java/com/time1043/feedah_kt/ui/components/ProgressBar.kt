@@ -60,6 +60,10 @@ fun ProgressBar(
     scrubbable: Boolean = false,
     /** Called with the target index when the gesture ends. */
     onScrub: (Int) -> Unit,
+    /** The thumb's text for a drag index; defaults to the 1-based ordinal.
+     * Surfaces whose rows carry their own numbers (the word list's card
+     * numbers) pass a mapper so the thumb agrees with the rows. */
+    labelFor: ((Int) -> String)? = null,
     modifier: Modifier = Modifier,
 ) {
     var trackWidth by remember { mutableFloatStateOf(0f) }
@@ -138,7 +142,7 @@ fun ProgressBar(
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
-                        text = "${grabbing + 1}",
+                        text = labelFor?.invoke(grabbing) ?: "${grabbing + 1}",
                         style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onPrimary,
                     )
