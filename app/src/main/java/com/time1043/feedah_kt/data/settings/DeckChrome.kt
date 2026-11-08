@@ -12,4 +12,6 @@ data class DeckChrome(
     val showHeader: Boolean = true,
     /** Whether the header shows its title (the icons stay either way). */
     val showTitle: Boolean = true,
+    /** Whether the deck's scrubbable progress bar shows. */
+    val showProgressBar: Boolean = true,
 )

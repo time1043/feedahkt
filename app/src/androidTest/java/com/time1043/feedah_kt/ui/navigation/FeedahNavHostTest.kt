@@ -53,6 +53,7 @@ class FeedahNavHostTest {
                 onTapToRevealChange = {},
                 onDeckHeaderChange = {},
                 onDeckTitleChange = {},
+                onDeckProgressBarChange = {},
             )
         }
     }

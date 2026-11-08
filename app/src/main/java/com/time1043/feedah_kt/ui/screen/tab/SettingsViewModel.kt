@@ -72,6 +72,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateDeckProgressBar(deckProgressBar: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveDeckProgressBar(deckProgressBar)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

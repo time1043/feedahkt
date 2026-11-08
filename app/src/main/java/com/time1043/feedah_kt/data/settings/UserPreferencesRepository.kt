@@ -32,6 +32,8 @@ data class Settings(
     val deckHeader: Boolean = true,
     /** Whether the header shows its title. */
     val deckTitle: Boolean = true,
+    /** Whether the deck's scrubbable progress bar shows. */
+    val deckProgressBar: Boolean = true,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -43,6 +45,7 @@ internal val AUTO_SPEAK_KEY = booleanPreferencesKey("auto-speak")
 internal val TAP_TO_REVEAL_KEY = booleanPreferencesKey("tap-to-reveal")
 internal val DECK_HEADER_KEY = booleanPreferencesKey("deck-header")
 internal val DECK_TITLE_KEY = booleanPreferencesKey("deck-title")
+internal val DECK_PROGRESS_BAR_KEY = booleanPreferencesKey("deck-progress-bar")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
@@ -51,6 +54,7 @@ internal fun Preferences.toSettings(): Settings = Settings(
     tapToReveal = this[TAP_TO_REVEAL_KEY] ?: Settings().tapToReveal,
     deckHeader = this[DECK_HEADER_KEY] ?: Settings().deckHeader,
     deckTitle = this[DECK_TITLE_KEY] ?: Settings().deckTitle,
+    deckProgressBar = this[DECK_PROGRESS_BAR_KEY] ?: Settings().deckProgressBar,
 )
 
 /**
@@ -97,5 +101,9 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveDeckTitle(deckTitle: Boolean) {
         dataStore.edit { it[DECK_TITLE_KEY] = deckTitle }
+    }
+
+    suspend fun saveDeckProgressBar(deckProgressBar: Boolean) {
+        dataStore.edit { it[DECK_PROGRESS_BAR_KEY] = deckProgressBar }
     }
 }

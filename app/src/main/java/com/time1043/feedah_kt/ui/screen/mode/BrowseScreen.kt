@@ -69,6 +69,7 @@ fun BrowseScreen(
                 onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
                 canSpeak = settingsReady && autoSpeak,
                 tapToReveal = tapToReveal,
+                progressBar = chrome.showProgressBar,
                 modifier = Modifier.weight(1f),
             )
             else -> Box(

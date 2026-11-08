@@ -26,6 +26,8 @@ fun SettingsScreen(
     onDeckHeaderChange: (Boolean) -> Unit,
     deckTitle: Boolean,
     onDeckTitleChange: (Boolean) -> Unit,
+    deckProgressBar: Boolean,
+    onDeckProgressBarChange: (Boolean) -> Unit,
     tts: FeedahTts,
     modifier: Modifier = Modifier,
 ) {
@@ -45,6 +47,11 @@ fun SettingsScreen(
             SwitchRow(label = "Tap to reveal", value = tapToReveal, onValueChange = onTapToRevealChange)
             SwitchRow(label = "Header", value = deckHeader, onValueChange = onDeckHeaderChange)
             SwitchRow(label = "Header title", value = deckTitle, onValueChange = onDeckTitleChange)
+            SwitchRow(
+                label = "Progress bar",
+                value = deckProgressBar,
+                onValueChange = onDeckProgressBarChange,
+            )
         }
 
         ThemeToggle(current = theme, onSelect = onThemeSelect)

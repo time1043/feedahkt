@@ -53,6 +53,7 @@ fun StudyScreen(
             onSpeak = { word -> tts.speakWord(word.word, speechRate) },
             canSpeak = settingsReady && autoSpeak,
             tapToReveal = tapToReveal,
+            progressBar = chrome.showProgressBar,
             modifier = Modifier.weight(1f),
         )
     }

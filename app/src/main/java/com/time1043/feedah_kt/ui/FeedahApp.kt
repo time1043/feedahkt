@@ -49,6 +49,7 @@ fun FeedahApp() {
     val deckChrome = DeckChrome(
         showHeader = settings.deckHeader,
         showTitle = settings.deckTitle,
+        showProgressBar = settings.deckProgressBar,
     )
 
     FeedahktTheme(darkTheme = darkTheme) {
@@ -101,6 +102,7 @@ fun FeedahApp() {
                 onTapToRevealChange = settingsViewModel::updateTapToReveal,
                 onDeckHeaderChange = settingsViewModel::updateDeckHeader,
                 onDeckTitleChange = settingsViewModel::updateDeckTitle,
+                onDeckProgressBarChange = settingsViewModel::updateDeckProgressBar,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),
