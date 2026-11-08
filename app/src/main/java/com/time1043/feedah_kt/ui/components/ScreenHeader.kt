@@ -153,7 +153,9 @@ fun ListHeader(
 
 /** Header row of the four tabs (mirror of TabHeader in
  * src/components/header.tsx): 22sp bold title left, optional right slot.
- * The title is optional — the home header carries only its search icon. */
+ * The title is optional — an untitled tab renders a spacer so its right
+ * slot still lands on the right edge (the home header carries only its
+ * search icon). */
 @Composable
 fun TabHeader(
     title: String?,
@@ -174,6 +176,8 @@ fun TabHeader(
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
+        } else {
+            Box(Modifier.weight(1f))
         }
         right?.invoke()
     }
