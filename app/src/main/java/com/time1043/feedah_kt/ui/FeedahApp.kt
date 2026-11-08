@@ -9,6 +9,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
@@ -34,6 +35,11 @@ import com.time1043.feedah_kt.ui.theme.resolveDarkTheme
 fun FeedahApp() {
     val appContext = LocalContext.current.applicationContext
     val tts = remember { FeedahTts(appContext) }
+    // The engine is app-scoped: shut it down when the shell leaves the
+    // composition (activity recreation recreates it fresh).
+    DisposableEffect(Unit) {
+        onDispose { tts.shutdown() }
+    }
     val settingsViewModel: SettingsViewModel = viewModel(factory = SettingsViewModel.Factory)
     val settings by settingsViewModel.userSettings.collectAsStateWithLifecycle()
     val settingsReady by settingsViewModel.settingsReady.collectAsStateWithLifecycle()
