@@ -13,12 +13,16 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
+/** The factory speech rate; what "restore default" resets to. 1.0 is the
+ * system default, slightly accelerated for studying. */
+const val DEFAULT_SPEECH_RATE = 1.15f
+
 /** All settings, one flat data class with defaults. */
 data class Settings(
     /** "system" | "light" | "dark". */
     val theme: String = "system",
     /** The speech rate for word pronunciation; 1.0 is the system default. */
-    val speechRate: Float = 1.15f,
+    val speechRate: Float = DEFAULT_SPEECH_RATE,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
