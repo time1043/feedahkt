@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -22,6 +23,12 @@ fun BrowseScreen(
     val word = remember(position) {
         val bucket = findBucketByName(appContext, "2050")
         bucket.words.getOrNull(position - 1) ?: bucket.words.first()
+    }
+
+    // Opening the card speaks the word — the screen's speech policy; the
+    // card stays a pure displayer. The deck takes this over when it lands.
+    LaunchedEffect(word.word) {
+        tts.speakWord(word.word)
     }
 
     WordCard(
