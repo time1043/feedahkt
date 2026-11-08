@@ -14,12 +14,15 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
+import androidx.test.ext.junit.runners.AndroidJUnit4
 
 /**
  * Graph-level test: the real FeedahNavHost on a TestNavHostController.
  * Verifies that screen events map to the right routes and params on the
  * back stack — the layer between the screen test and end-to-end.
  */
+@RunWith(AndroidJUnit4::class)
 class FeedahNavHostTest {
 
     @get:Rule
@@ -38,9 +41,14 @@ class FeedahNavHostTest {
                 navController = navController,
                 tts = FeedahTts(ApplicationProvider.getApplicationContext()),
                 speechRate = 1.15f,
+                settingsReady = true,
+                autoSpeak = true,
+                tapToReveal = true,
                 theme = "system",
                 onThemeSelect = {},
                 onSpeechRateSelect = {},
+                onAutoSpeakChange = {},
+                onTapToRevealChange = {},
             )
         }
     }

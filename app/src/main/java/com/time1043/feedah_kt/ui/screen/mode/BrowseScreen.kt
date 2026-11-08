@@ -6,12 +6,18 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import com.time1043.feedah_kt.data.mock.findBucketByName
+import com.time1043.feedah_kt.data.mock.findWord
 import com.time1043.feedah_kt.platform.FeedahTts
+import com.time1043.feedah_kt.types.Word
 import com.time1043.feedah_kt.ui.components.WordCard
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
 fun BrowseScreen(
@@ -25,10 +31,16 @@ fun BrowseScreen(
 ) {
     val appContext = LocalContext.current.applicationContext
 
-    val words = findBucketByName(appContext, "2050").words
+    // The mock buckets load from assets: keep the parse off the main
+    // thread (the source imports them synchronously; same data, async).
+    val words by produceState(initialValue = emptyList(), key1 = appContext) {
+        value = withContext(Dispatchers.IO) {
+            findBucketByName(appContext, "2050").words
+        }
+    }
+
     // The opener may pass anything: guard the index, never trust the param.
-    val index = position - 1
-    val word = if (index >= 0 && index < words.size) words[index] else null
+    val word = findWord(bucket = findBucketByName(appContext, "2050"), position = position)
 
     // Opening the card speaks the word — the screen's speech policy; the
     // card stays a pure displayer. The deck takes this over when it lands.
@@ -42,15 +54,15 @@ fun BrowseScreen(
         tts.speakWord(current.word, speechRate)
     }
 
-    if (word != null) {
-        WordCard(
+    when {
+        words.isEmpty() -> Unit // still loading
+        word != null -> WordCard(
             word = word,
             tapToReveal = tapToReveal,
             onReplay = { tts.speakWord(word.word, speechRate) },
             modifier = modifier,
         )
-    } else {
-        Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        else -> Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
             Text(
                 text = "Word not found",
                 color = MaterialTheme.colorScheme.onSurfaceVariant,

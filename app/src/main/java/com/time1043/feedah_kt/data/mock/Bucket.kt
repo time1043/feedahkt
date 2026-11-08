@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.data.mock
 
 import android.content.Context
 import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.types.Word
 import kotlinx.serialization.json.Json
 
 private val json = Json { ignoreUnknownKeys = true }
@@ -25,3 +26,11 @@ fun loadBuckets(context: Context): List<Bucket> {
 /** Looks a bucket up by name, falling back to the first one. */
 fun findBucketByName(context: Context, name: String): Bucket =
     loadBuckets(context).find { it.name == name } ?: loadBuckets(context).first()
+
+/**
+ * Looks a word up by its 1-based position in the bucket, mirroring the
+ * source's browse screen. Out-of-range positions return null — the caller
+ * decides what to render.
+ */
+fun findWord(bucket: Bucket, position: Int): Word? =
+    bucket.words.getOrNull(position - 1)
