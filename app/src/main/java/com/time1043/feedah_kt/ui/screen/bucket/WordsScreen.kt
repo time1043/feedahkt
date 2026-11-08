@@ -1,24 +1,188 @@
 package com.time1043.feedah_kt.ui.screen.bucket
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.time1043.feedah_kt.R
+import com.time1043.feedah_kt.data.mock.loadBuckets
+import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.types.Word
+import com.time1043.feedah_kt.ui.components.ListHeader
+import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
+private const val ROW_HEIGHT = 52
+
+/** The word list of one bucket: every word in order, the meaning column
+ * behind the eye toggle. The eye is per-visit — it starts from the global
+ * word-meanings setting on every entry and never writes back to it. Tapping
+ * a row opens the word in the browse deck, by its card number. Pure lookup
+ * — nothing is recorded. */
 @Composable
 fun WordsScreen(
-    onOpenWord: () -> Unit,
+    name: String,
+    wordsMeaning: Boolean,
+    onOpenWord: (Int) -> Unit,
+    onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    Column(
-        modifier = modifier.padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        Text(text = "Words page")
-        Button(onClick = onOpenWord) { Text("Open Word") }
+    val appContext = LocalContext.current.applicationContext
+    val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {
+        value = withContext(Dispatchers.IO) { loadBuckets(appContext) }
+    }
+    // Honest guard: an unknown name is not found (no silent first-bucket
+    // fallback).
+    val bucket = buckets?.find { candidate -> candidate.name == name }
+    val words = bucket?.words ?: emptyList()
+    // The eye is per-visit: it starts from the stored setting and never
+    // writes back to it.
+    var showMeaning by remember { mutableStateOf(wordsMeaning) }
+    val guardOpenWord = rememberNavGuard()
+
+    Column(modifier = modifier) {
+        ListHeader(
+            title = bucket?.name,
+            onBack = onBack,
+            right = {
+                val interaction = remember { MutableInteractionSource() }
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .clickable(
+                            interactionSource = interaction,
+                            indication = null,
+                            onClick = { showMeaning = !showMeaning },
+                        ),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        painter = painterResource(
+                            if (showMeaning) R.drawable.ic_eye else R.drawable.ic_eye_off,
+                        ),
+                        contentDescription = "Toggle meanings",
+                        tint = if (showMeaning) {
+                            MaterialTheme.colorScheme.primary
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        modifier = Modifier.size(22.dp),
+                    )
+                }
+            },
+        )
+
+        when {
+            // Still loading the mock buckets: keep the frame empty.
+            buckets == null -> Unit
+            bucket == null -> Box(
+                Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "Bucket not found",
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            else -> LazyColumn(modifier = Modifier.fillMaxSize()) {
+                items(words, key = { it.position }) { word ->
+                    WordRow(
+                        word = word,
+                        showMeaning = showMeaning,
+                        onClick = { guardOpenWord { onOpenWord(word.position) } },
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** One list row: the card number, the word, and the meaning column behind
+ * the eye toggle. */
+@Composable
+private fun WordRow(
+    word: Word,
+    showMeaning: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val interaction = remember { MutableInteractionSource() }
+    val pressed by interaction.collectIsPressedAsState()
+    Column(modifier = modifier) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .height(ROW_HEIGHT.dp)
+                .alpha(if (pressed) 0.6f else 1f)
+                .clickable(interactionSource = interaction, indication = null, onClick = onClick)
+                .padding(horizontal = 16.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = word.position.toString(),
+                style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.width(48.dp), // w-12
+            )
+            Text(
+                text = word.word,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier
+                    .weight(if (showMeaning) 1f else 2.1f)
+                    .padding(end = 8.dp), // mr-2
+            )
+            if (showMeaning) {
+                Text(
+                    text = word.meaning,
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
+        // border-b
+        Box(
+            Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(MaterialTheme.colorScheme.outlineVariant),
+        )
     }
 }

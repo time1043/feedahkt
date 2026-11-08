@@ -30,6 +30,8 @@ fun SettingsScreen(
     onDeckProgressBarChange: (Boolean) -> Unit,
     hudPage: Boolean,
     onHudPageChange: (Boolean) -> Unit,
+    wordsMeaning: Boolean,
+    onWordsMeaningChange: (Boolean) -> Unit,
     tts: FeedahTts,
     modifier: Modifier = Modifier,
 ) {
@@ -55,6 +57,14 @@ fun SettingsScreen(
                 onValueChange = onDeckProgressBarChange,
             )
             SwitchRow(label = "Page footer", value = hudPage, onValueChange = onHudPageChange)
+        }
+
+        Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+            SwitchRow(
+                label = "Word list meanings",
+                value = wordsMeaning,
+                onValueChange = onWordsMeaningChange,
+            )
         }
 
         ThemeToggle(current = theme, onSelect = onThemeSelect)

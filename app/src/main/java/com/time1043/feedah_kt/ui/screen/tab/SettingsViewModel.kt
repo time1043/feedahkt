@@ -84,6 +84,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateWordsMeaning(wordsMeaning: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveWordsMeaning(wordsMeaning)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

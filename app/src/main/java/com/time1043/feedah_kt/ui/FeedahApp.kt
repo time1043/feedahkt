@@ -96,6 +96,7 @@ fun FeedahApp() {
                 autoSpeak = settings.autoSpeak,
                 tapToReveal = settings.tapToReveal,
                 chrome = deckChrome,
+                wordsMeaning = settings.wordsMeaning,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 onSpeechRateSelect = settingsViewModel::updateSpeechRate,
@@ -105,6 +106,7 @@ fun FeedahApp() {
                 onDeckTitleChange = settingsViewModel::updateDeckTitle,
                 onDeckProgressBarChange = settingsViewModel::updateDeckProgressBar,
                 onHudPageChange = settingsViewModel::updateHudPage,
+                onWordsMeaningChange = settingsViewModel::updateWordsMeaning,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

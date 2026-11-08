@@ -42,6 +42,7 @@ fun FeedahNavHost(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    wordsMeaning: Boolean,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
@@ -51,6 +52,7 @@ fun FeedahNavHost(
     onDeckTitleChange: (Boolean) -> Unit,
     onDeckProgressBarChange: (Boolean) -> Unit,
     onHudPageChange: (Boolean) -> Unit,
+    onWordsMeaningChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -81,6 +83,8 @@ fun FeedahNavHost(
             onDeckProgressBarChange = onDeckProgressBarChange,
             hudPage = chrome.showHudPage,
             onHudPageChange = onHudPageChange,
+            wordsMeaning = wordsMeaning,
+            onWordsMeaningChange = onWordsMeaningChange,
         )
         // mode
         studyScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
@@ -88,7 +92,7 @@ fun FeedahNavHost(
         reviewScreen()
         searchScreen(navController)
         // bucket
-        wordsScreen(navController)
+        wordsScreen(navController, wordsMeaning)
         roundsScreen(navController)
         bucketSettingsScreen()
     }
@@ -107,9 +111,7 @@ fun NavGraphBuilder.homeScreen(navController: NavController) {
 fun NavGraphBuilder.bucketScreen(navController: NavController) {
     composable<Bucket> {
         BucketScreen(
-            onOpenWords = { navController.navigate(WordsRoute("demo")) },
-            onOpenRounds = { navController.navigate(RoundsRoute("demo")) },
-            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
+            onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
         )
     }
 }
@@ -140,6 +142,8 @@ fun NavGraphBuilder.settingsScreen(
     onDeckProgressBarChange: (Boolean) -> Unit,
     hudPage: Boolean,
     onHudPageChange: (Boolean) -> Unit,
+    wordsMeaning: Boolean,
+    onWordsMeaningChange: (Boolean) -> Unit,
 ) {
     composable<Settings> {
         SettingsScreen(
@@ -160,6 +164,8 @@ fun NavGraphBuilder.settingsScreen(
             onDeckProgressBarChange = onDeckProgressBarChange,
             hudPage = hudPage,
             onHudPageChange = onHudPageChange,
+            wordsMeaning = wordsMeaning,
+            onWordsMeaningChange = onWordsMeaningChange,
         )
     }
 }
@@ -200,6 +206,7 @@ fun NavGraphBuilder.browseScreen(
         val route = entry.toRoute<BrowseRoute>()
         BrowseScreen(
             position = route.position,
+            bucketParam = route.bucket,
             tts = tts,
             speechRate = speechRate,
             settingsReady = settingsReady,
@@ -229,13 +236,16 @@ fun NavGraphBuilder.searchScreen(navController: NavController) {
     }
 }
 
-fun NavGraphBuilder.wordsScreen(navController: NavController) {
-    composable<WordsRoute> {
+fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Boolean) {
+    composable<WordsRoute> { entry ->
+        val route = entry.toRoute<WordsRoute>()
         WordsScreen(
-            // The browse param is the CARD NUMBER (the mock bucket's first
-            // card), not a list index — position 1 would open not-found.
-            // Once the word list is real, pass the tapped word's position.
-            onOpenWord = { navController.navigate(BrowseRoute(position = 1701, bucket = "demo")) },
+            name = route.name,
+            wordsMeaning = wordsMeaning,
+            onOpenWord = { position ->
+                navController.navigate(BrowseRoute(position = position, bucket = route.name))
+            },
+            onBack = { navController.popBackStack() },
         )
     }
 }
