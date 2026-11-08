@@ -43,6 +43,7 @@ fun FeedahNavHost(
     tapToReveal: Boolean,
     chrome: DeckChrome,
     wordsMeaning: Boolean,
+    activeBucket: String,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
@@ -87,8 +88,14 @@ fun FeedahNavHost(
             onWordsMeaningChange = onWordsMeaningChange,
         )
         // mode
-        studyScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
-        browseScreen(navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome)
+        studyScreen(
+            navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
+            activeBucket,
+        )
+        browseScreen(
+            navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
+            activeBucket,
+        )
         reviewScreen()
         searchScreen(navController)
         // bucket
@@ -180,6 +187,7 @@ fun NavGraphBuilder.studyScreen(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    activeBucket: String,
 ) {
     composable<StudyRoute> {
         StudyScreen(
@@ -189,6 +197,7 @@ fun NavGraphBuilder.studyScreen(
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
             chrome = chrome,
+            bucketName = activeBucket,
             onBack = { navController.popBackStack() },
             onSearch = { navController.navigate(SearchRoute()) },
         )
@@ -203,12 +212,14 @@ fun NavGraphBuilder.browseScreen(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    activeBucket: String,
 ) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
         BrowseScreen(
             position = route.position,
             bucketParam = route.bucket,
+            activeBucket = activeBucket,
             tts = tts,
             speechRate = speechRate,
             settingsReady = settingsReady,

@@ -97,6 +97,7 @@ fun FeedahApp() {
                 tapToReveal = settings.tapToReveal,
                 chrome = deckChrome,
                 wordsMeaning = settings.wordsMeaning,
+                activeBucket = settings.activeBucket,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 onSpeechRateSelect = settingsViewModel::updateSpeechRate,

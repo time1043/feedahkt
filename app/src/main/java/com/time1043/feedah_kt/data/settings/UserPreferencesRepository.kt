@@ -38,6 +38,8 @@ data class Settings(
     val hudPage: Boolean = true,
     /** Whether the word list shows the meaning column (default hidden). */
     val wordsMeaning: Boolean = false,
+    /** The bucket the home screen studies and the decks open on. */
+    val activeBucket: String = "2050",
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -52,6 +54,7 @@ internal val DECK_TITLE_KEY = booleanPreferencesKey("deck-title")
 internal val DECK_PROGRESS_BAR_KEY = booleanPreferencesKey("deck-progress-bar")
 internal val HUD_PAGE_KEY = booleanPreferencesKey("hud-page")
 internal val WORDS_MEANING_KEY = booleanPreferencesKey("words-meaning")
+internal val ACTIVE_BUCKET_KEY = stringPreferencesKey("active-bucket")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
@@ -63,6 +66,7 @@ internal fun Preferences.toSettings(): Settings = Settings(
     deckProgressBar = this[DECK_PROGRESS_BAR_KEY] ?: Settings().deckProgressBar,
     hudPage = this[HUD_PAGE_KEY] ?: Settings().hudPage,
     wordsMeaning = this[WORDS_MEANING_KEY] ?: Settings().wordsMeaning,
+    activeBucket = this[ACTIVE_BUCKET_KEY] ?: Settings().activeBucket,
 )
 
 /**
@@ -121,5 +125,9 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveWordsMeaning(wordsMeaning: Boolean) {
         dataStore.edit { it[WORDS_MEANING_KEY] = wordsMeaning }
+    }
+
+    suspend fun saveActiveBucket(activeBucket: String) {
+        dataStore.edit { it[ACTIVE_BUCKET_KEY] = activeBucket }
     }
 }

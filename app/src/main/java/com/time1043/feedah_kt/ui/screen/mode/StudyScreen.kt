@@ -29,6 +29,7 @@ fun StudyScreen(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    bucketName: String,
     onBack: () -> Unit,
     onSearch: () -> Unit,
     modifier: Modifier = Modifier,
@@ -38,7 +39,7 @@ fun StudyScreen(
     // The mock buckets load from assets, off the main thread.
     val words by produceState(initialValue = emptyList(), key1 = appContext) {
         value = withContext(Dispatchers.IO) {
-            findBucketByName(appContext, "2050").words
+            findBucketByName(appContext, bucketName).words
         }
     }
     // The deck's current card, mirrored out for the footer counter.
