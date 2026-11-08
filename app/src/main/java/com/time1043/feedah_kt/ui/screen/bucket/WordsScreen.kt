@@ -66,9 +66,12 @@ fun WordsScreen(
     // fallback).
     val bucket = buckets?.find { candidate -> candidate.name == name }
     val words = bucket?.words ?: emptyList()
-    // The eye is per-visit: it starts from the stored setting and never
-    // writes back to it.
-    var showMeaning by remember { mutableStateOf(wordsMeaning) }
+    // The eye follows the stored setting once it has hydrated — a mount-time
+    // seed would capture the factory value on a cold-start deep link — and a
+    // tap overrides it for this visit only (null = no override yet). It
+    // never writes back to the setting.
+    var override by remember { mutableStateOf<Boolean?>(null) }
+    val showMeaning = override ?: wordsMeaning
     val guardOpenWord = rememberNavGuard()
 
     Column(modifier = modifier) {
@@ -83,7 +86,7 @@ fun WordsScreen(
                         .clickable(
                             interactionSource = interaction,
                             indication = null,
-                            onClick = { showMeaning = !showMeaning },
+                            onClick = { override = !showMeaning },
                         ),
                     contentAlignment = Alignment.Center,
                 ) {
@@ -91,7 +94,7 @@ fun WordsScreen(
                         painter = painterResource(
                             if (showMeaning) R.drawable.ic_eye else R.drawable.ic_eye_off,
                         ),
-                        contentDescription = "Toggle meanings",
+                        contentDescription = if (showMeaning) "Hide meanings" else "Show meanings",
                         tint = if (showMeaning) {
                             MaterialTheme.colorScheme.primary
                         } else {
