@@ -79,6 +79,7 @@ fun FeedahApp() {
                 speechRate = settings.speechRate,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
+                onSpeechRateSelect = settingsViewModel::updateSpeechRate,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

@@ -33,6 +33,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateSpeechRate(rate: Float) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveSpeechRate(rate)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

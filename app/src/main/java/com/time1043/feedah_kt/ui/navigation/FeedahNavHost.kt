@@ -39,6 +39,7 @@ fun FeedahNavHost(
     speechRate: Float,
     theme: String,
     onThemeSelect: (String) -> Unit,
+    onSpeechRateSelect: (Float) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -55,6 +56,8 @@ fun FeedahNavHost(
             tts = tts,
             theme = theme,
             onThemeSelect = onThemeSelect,
+            speechRate = speechRate,
+            onSpeechRateSelect = onSpeechRateSelect,
         )
         // mode
         studyScreen(tts, speechRate)
@@ -100,12 +103,16 @@ fun NavGraphBuilder.settingsScreen(
     tts: FeedahTts,
     theme: String,
     onThemeSelect: (String) -> Unit,
+    speechRate: Float,
+    onSpeechRateSelect: (Float) -> Unit,
 ) {
     composable<Settings> {
         SettingsScreen(
             tts = tts,
             theme = theme,
             onThemeSelect = onThemeSelect,
+            speechRate = speechRate,
+            onSpeechRateSelect = onSpeechRateSelect,
         )
     }
 }
