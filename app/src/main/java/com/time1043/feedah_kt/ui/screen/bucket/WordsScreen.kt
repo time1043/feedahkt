@@ -88,8 +88,10 @@ fun WordsScreen(
     var index by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     // The source samples the offset at scroll end; the flow mirrors the top
-    // visible row as it settles — the same value at rest.
-    LaunchedEffect(listState) {
+    // visible row as it settles — the same value at rest. Keyed on words:
+    // the first composition races the async load, and the collector must
+    // not keep that composition's empty list.
+    LaunchedEffect(listState, words) {
         snapshotFlow { listState.firstVisibleItemIndex }.collect { top ->
             index = top.coerceIn(0, (words.size - 1).coerceAtLeast(0))
         }
