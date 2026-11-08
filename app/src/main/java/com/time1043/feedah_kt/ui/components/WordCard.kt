@@ -42,10 +42,15 @@ private const val FORMS_GRID_CELLS = 12
  *   - bottom 50%: the supplementary word forms, in the fixed grid, shown
  *     together with the meaning.
  * Tapping anywhere on the card reveals or hides the meaning and the forms —
- * recall first, then check.
+ * recall first, then check. The word and the ipa are their own taps and
+ * replay the pronunciation instead.
  */
 @Composable
-fun WordCard(word: Word, modifier: Modifier = Modifier) {
+fun WordCard(
+    word: Word,
+    onReplay: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
     var revealed by remember { mutableStateOf(false) }
 
     val interaction = remember { MutableInteractionSource() }
@@ -79,14 +84,29 @@ fun WordCard(word: Word, modifier: Modifier = Modifier) {
                     maxFontSize = 48.sp,
                     stepSize = 1.sp,
                 ),
-                modifier = Modifier.padding(top = 16.dp),
+                modifier = Modifier
+                    .clickable(
+                        interactionSource = interaction,
+                        indication = null,
+                        onClick = onReplay,
+                    )
+                    .padding(all = 12.dp) // hitSlop 12
+                    .padding(top = 16.dp),
             )
             if (word.ipa.isNotEmpty()) {
                 Text(
                     text = word.ipa,
                     style = TextStyle(fontSize = 18.sp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(top = 8.dp),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier
+                        .clickable(
+                            interactionSource = interaction,
+                            indication = null,
+                            onClick = onReplay,
+                        )
+                        .padding(all = 12.dp) // hitSlop 12
+                        .padding(top = 8.dp),
                 )
             }
             // Reserved slot: keeps number and word anchored while the meaning
