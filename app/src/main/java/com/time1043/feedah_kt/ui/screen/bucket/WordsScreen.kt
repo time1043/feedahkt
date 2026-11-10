@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.ui.screen.bucket
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.collectIsPressedAsState
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -31,6 +33,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.Role
@@ -41,21 +45,28 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import android.util.Log
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.db.repo.WordRow
-import com.time1043.feedah_kt.db.repo.getWordsByBucket
+import com.time1043.feedah_kt.db.repo.RoundWordRow
+import com.time1043.feedah_kt.db.repo.getProgress
+import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.components.ProgressBar
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
+import com.time1043.feedah_kt.ui.theme.FLAG_RED
 import kotlinx.coroutines.launch
 
 private const val ROW_HEIGHT = 52
 
+private const val TAG = "words"
+
 /** The word list of one bucket: every word in order, the meaning column
- * behind the eye toggle. The eye is per-visit — it starts from the global
+ * behind the eye toggle, and a progress bar that mirrors the top visible
+ * row and scrubs the list. The eye is per-visit — it starts from the global
  * word-meanings setting on every entry and never writes back to it. Tapping
- * a row opens the word in the browse deck, by its card number. Pure lookup
- * — nothing is recorded. The rows load from the database. */
+ * a row opens the word in the browse deck, by its card number. Pure lookup —
+ * nothing is written here. The rows load from the database, flagged with the
+ * CURRENT round's marks — the same rows the study deck and browse write. */
 @Composable
 fun WordsScreen(
     name: String,
@@ -69,7 +80,7 @@ fun WordsScreen(
     // (no silent first-bucket fallback) — the load distinguishes a missing
     // bucket from an existing-but-empty one.
     var bucketExists by remember { mutableStateOf(false) }
-    var words by remember { mutableStateOf<List<WordRow>>(emptyList()) }
+    var words by remember { mutableStateOf<List<RoundWordRow>>(emptyList()) }
     // The eye follows the stored setting once it has hydrated — a mount-time
     // seed would capture the factory value on a cold-start deep link — and a
     // tap overrides it for this visit only (null = no override yet). It
@@ -81,11 +92,18 @@ fun WordsScreen(
     val listState = rememberLazyListState()
     var index by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
-    // Loads on every focus: the rows follow the database.
+    // Loads on every focus: the rows and their flags follow the database, so
+    // a mark made in the study deck is here on the way back out.
     LaunchedEffect(name) {
-        val (exists, rows) = getWordsByBucket(appContext, name)
-        bucketExists = exists
-        words = rows
+        try {
+            // The round is what the flags are keyed by, so it is read first.
+            val progress = getProgress(appContext, name)
+            val (exists, rows) = getWordsWithRoundFlag(appContext, name, progress.round)
+            bucketExists = exists
+            words = rows
+        } catch (error: Exception) {
+            Log.e(TAG, "load failed", error)
+        }
     }
     // The source samples the offset at scroll end; the flow mirrors the top
     // visible row as it settles — the same value at rest. Keyed on words:
@@ -182,11 +200,12 @@ fun WordsScreen(
  * the eye toggle. */
 @Composable
 private fun WordListRow(
-    word: WordRow,
+    word: RoundWordRow,
     showMeaning: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val dark = isSystemInDarkTheme()
     val interaction = remember { MutableInteractionSource() }
     val pressed by interaction.collectIsPressedAsState()
     Column(modifier = modifier) {
@@ -210,6 +229,22 @@ private fun WordListRow(
                 style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.width(48.dp), // w-12
+            )
+            // The current round's mark. The slot is always reserved, so
+            // flagging a word never shifts the column: only the square fills
+            // in.
+            Box(
+                Modifier
+                    .padding(end = 6.dp) // mr-1.5
+                    .size(6.dp) // h-1.5 w-1.5
+                    .clip(RoundedCornerShape(2.dp)) // rounded-sm
+                    .background(
+                        if (word.flagged) {
+                            if (dark) FLAG_RED.dark else FLAG_RED.light
+                        } else {
+                            Color.Transparent
+                        },
+                    ),
             )
             Text(
                 text = word.word,
