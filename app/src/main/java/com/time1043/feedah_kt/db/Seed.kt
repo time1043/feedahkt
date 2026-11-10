@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.db
 
 import android.content.Context
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.time1043.feedah_kt.types.Bucket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -55,40 +56,48 @@ private fun contentHashOf(words: List<SeedWord>): String {
  * stored bucket.word_count + content hash, so an unchanged bucket is one
  * SELECT and a changed one is fully replaced inside a transaction. This
  * logic survives the Room stage verbatim — only the statements swap.
+ * Takes the OPEN handle: prepareDb runs inside getDb, and re-entering
+ * getDb here would recurse forever (the singleton isn't set yet).
  */
-suspend fun seedBuckets(context: Context): Unit = withContext(Dispatchers.IO) {
-    val db = getDb(context)
-
-    for (file in loadSeedFiles(context)) {
-        val hash = contentHashOf(file.words)
-        val existing = db.query(
-            "SELECT word_count, content_hash FROM bucket WHERE id = ?",
-            arrayOf(file.name),
-        ).use { cursor ->
-            if (cursor.moveToFirst()) cursor.getInt(0) to cursor.getString(1) else null
-        }
-        if (existing != null && existing.first == file.words.size && existing.second == hash) {
-            continue
-        }
-
-        db.beginTransaction()
-        try {
-            db.execSQL(
-                "INSERT OR REPLACE INTO bucket (id, word_count, content_hash) VALUES (?, ?, ?)",
-                arrayOf(file.name, file.words.size, hash),
-            )
-            // A re-seed replaces the words wholesale.
-            db.execSQL("DELETE FROM word WHERE bucket_id = ?", arrayOf(file.name))
-            for (w in file.words) {
-                db.execSQL(
-                    "INSERT INTO word (bucket_id, position, word, ipa, meaning, forms) " +
-                        "VALUES (?, ?, ?, ?, ?, ?)",
-                    arrayOf(file.name, w.position, w.word, w.ipa, w.meaning, json.encodeToString(w.forms)),
-                )
+suspend fun seedBuckets(context: Context, db: SupportSQLiteDatabase): Unit =
+    withContext(Dispatchers.IO) {
+        for (file in loadSeedFiles(context)) {
+            val hash = contentHashOf(file.words)
+            val existing = db.query(
+                "SELECT word_count, content_hash FROM bucket WHERE id = ?",
+                arrayOf(file.name),
+            ).use { cursor ->
+                if (cursor.moveToFirst()) cursor.getInt(0) to cursor.getString(1) else null
             }
-            db.setTransactionSuccessful()
-        } finally {
-            db.endTransaction()
+            if (existing != null && existing.first == file.words.size && existing.second == hash) {
+                continue
+            }
+
+            db.beginTransaction()
+            try {
+                db.execSQL(
+                    "INSERT OR REPLACE INTO bucket (id, word_count, content_hash) VALUES (?, ?, ?)",
+                    arrayOf(file.name, file.words.size, hash),
+                )
+                // A re-seed replaces the words wholesale.
+                db.execSQL("DELETE FROM word WHERE bucket_id = ?", arrayOf(file.name))
+                for (w in file.words) {
+                    db.execSQL(
+                        "INSERT INTO word (bucket_id, position, word, ipa, meaning, forms) " +
+                            "VALUES (?, ?, ?, ?, ?, ?)",
+                        arrayOf(
+                            file.name,
+                            w.position,
+                            w.word,
+                            w.ipa,
+                            w.meaning,
+                            json.encodeToString(w.forms),
+                        ),
+                    )
+                }
+                db.setTransactionSuccessful()
+            } finally {
+                db.endTransaction()
+            }
         }
     }
-}

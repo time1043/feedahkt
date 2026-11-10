@@ -79,7 +79,7 @@ private suspend fun prepareDb(context: Context): SupportSQLiteDatabase =
             .build()
         val db = FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase
 
-        seedBuckets(context)
+        seedBuckets(context, db)
 
         db
     }
