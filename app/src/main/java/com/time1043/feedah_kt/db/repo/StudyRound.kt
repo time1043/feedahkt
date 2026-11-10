@@ -4,6 +4,7 @@ import android.content.Context
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.db.withTransaction
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
+import com.time1043.feedah_kt.db.schema.RoundRecordEntity
 
 /**
  * The study probe, as the session carries it: the round being studied and
@@ -51,9 +52,10 @@ suspend fun settleCard(context: Context, bucketName: String, pointer: Int) {
 }
 
 /**
- * Completes the round: the probe steps to the next round and restarts at the
- * first card. Flags deliberately do not ride along here — the probe is this
- * table's only concern.
+ * Completes the round: the finished round is recorded (its start and this
+ * end stamp) and the probe steps to the next round at the first card. Both
+ * writes share one transaction — a round never advances without its record.
+ * Flags deliberately do not ride along here; they are another table.
  */
 suspend fun completeRound(context: Context, bucketName: String, now: Long) {
     val db = getDb(context)
@@ -61,8 +63,22 @@ suspend fun completeRound(context: Context, bucketName: String, now: Long) {
         val dao = db.studyRoundDao()
         val row = dao.getProgressRow(bucketName)
         // A completed round implies the probe exists (reaching the end needed
-        // settles), but a missing row still reads as round 1.
-        val next = (row?.round ?: 1) + 1
+        // settles), but a missing row still reads as round 1 with no start.
+        val finishedRound = row?.round ?: 1
+        val finishedStart = row?.roundStartedAt ?: 0
+        val next = finishedRound + 1
+
+        // One row per round, first write wins: a duplicate completion must
+        // not move the recorded span.
+        dao.insertRecord(
+            RoundRecordEntity(
+                bucketName = bucketName,
+                round = finishedRound,
+                startedAt = finishedStart,
+                endedAt = now,
+            ),
+        )
+
         if (row == null) {
             dao.insertProgress(
                 BucketProgressEntity(

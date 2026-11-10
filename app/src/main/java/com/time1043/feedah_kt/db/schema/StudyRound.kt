@@ -32,6 +32,28 @@ data class BucketProgressEntity(
     @ColumnInfo(name = "round_started_at", defaultValue = "0") val roundStartedAt: Long,
 )
 
+/** One finished round per bucket: the span the walk took, stamped at
+ * completion. One row per bucket + round. */
+@Entity(
+    tableName = "round_record",
+    primaryKeys = ["bucket_name", "round"],
+    foreignKeys = [
+        ForeignKey(
+            entity = BucketEntity::class,
+            parentColumns = ["name"],
+            childColumns = ["bucket_name"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("bucket_name")],
+)
+data class RoundRecordEntity(
+    @ColumnInfo(name = "bucket_name") val bucketName: String,
+    val round: Int,
+    @ColumnInfo(name = "started_at") val startedAt: Long,
+    @ColumnInfo(name = "ended_at") val endedAt: Long,
+)
+
 /** The bucket_progress table's write surface. */
 @Dao
 interface StudyRoundDao {
@@ -40,6 +62,11 @@ interface StudyRoundDao {
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertProgress(progress: BucketProgressEntity)
+
+    /** One row per round, first write wins: a duplicate completion must not
+     * move the recorded span. */
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertRecord(record: RoundRecordEntity)
 
     @Query("UPDATE bucket_progress SET pointer = :pointer WHERE bucket_name = :bucketName")
     suspend fun updatePointer(bucketName: String, pointer: Int)
