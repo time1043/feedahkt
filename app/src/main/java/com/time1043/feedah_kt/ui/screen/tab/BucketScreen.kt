@@ -32,18 +32,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.data.mock.loadBuckets
-import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.db.BucketRow
+import com.time1043.feedah_kt.db.getBuckets
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.TabHeader
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
-/** The bucket tab: one clean card per mock bucket — name plus word count.
- * The card's body opens the word list; its side opens the round list. The
- * reference's progress readout, import, delete and settings page all wait
- * for the session and the db. */
+/** The bucket tab: one clean card per bucket read from the database — name
+ * plus word count. The card's body opens the word list; its side opens the
+ * round list; the gear opens the settings. The reference's progress
+ * readout, import and delete all wait for the session and the db. */
 @Composable
 fun BucketScreen(
     onOpenBucket: (String) -> Unit,
@@ -52,8 +50,10 @@ fun BucketScreen(
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
-    val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {
-        value = withContext(Dispatchers.IO) { loadBuckets(appContext) }
+    // Reloads on every focus: the list follows the database, which later
+    // grows (import, delete) without this screen knowing.
+    val buckets by produceState(initialValue = emptyList<BucketRow>()) {
+        value = getBuckets(appContext)
     }
     val guardOpenBucket = rememberNavGuard()
 
@@ -68,7 +68,7 @@ fun BucketScreen(
                 )
             },
         )
-        for (bucket in buckets ?: emptyList()) {
+        for (bucket in buckets) {
             Row(
                 Modifier
                     .fillMaxWidth()
@@ -94,7 +94,7 @@ fun BucketScreen(
                         }
                         .padding(16.dp) // p-4
                         .semantics {
-                            contentDescription = "${bucket.name}, ${bucket.words.size} words"
+                            contentDescription = "${bucket.name}, ${bucket.wordCount} words"
                         },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically,
@@ -106,7 +106,7 @@ fun BucketScreen(
                         color = MaterialTheme.colorScheme.onSurface,
                     )
                     Text(
-                        text = "${bucket.words.size} words",
+                        text = "${bucket.wordCount} words",
                         style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -130,6 +130,14 @@ fun BucketScreen(
                     )
                 }
             }
+        }
+        if (buckets.isEmpty()) {
+            Text(
+                text = "No buckets yet — they seed on the first database open.",
+                fontSize = 15.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(16.dp), // p-4
+            )
         }
     }
 }
