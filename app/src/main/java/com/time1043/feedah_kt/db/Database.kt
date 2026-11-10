@@ -77,7 +77,11 @@ private suspend fun prepareDb(context: Context): SupportSQLiteDatabase =
                 }
             })
             .build()
-        FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase
+        val db = FrameworkSQLiteOpenHelperFactory().create(configuration).writableDatabase
+
+        seedBuckets(context)
+
+        db
     }
 
 private val mutex = Mutex()
