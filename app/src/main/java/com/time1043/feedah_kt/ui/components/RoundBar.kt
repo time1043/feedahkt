@@ -22,25 +22,37 @@ import androidx.compose.ui.unit.dp
 import com.time1043.feedah_kt.logic.RoundWordStatus
 import com.time1043.feedah_kt.logic.RoundWordStatus.GRAY
 import com.time1043.feedah_kt.logic.RoundWordStatus.GREEN
+import com.time1043.feedah_kt.logic.RoundWordStatus.RED
+import com.time1043.feedah_kt.ui.theme.FLAG_RED
 import kotlin.math.min
 import kotlin.math.roundToInt
 
 /** One scheme's sweep palette. */
-data class RoundPalette(val green: Color, val gray: Color)
+data class RoundPalette(val green: Color, val red: Color, val gray: Color)
 
-/** The sweep's palette, shared with the round list's legend dots. */
+/** The sweep's palette, shared with the round list's legend dots. The red is
+ * the flag's own red, so a marked card and its legend agree. */
 data class RoundColors(val light: RoundPalette, val dark: RoundPalette)
 
 val ROUND_COLORS = RoundColors(
-    light = RoundPalette(green = Color(0xFF3D9A50), gray = Color(0xFFD9D9DE)),
-    dark = RoundPalette(green = Color(0xFF5BB96F), gray = Color(0xFF3A3D42)),
+    light = RoundPalette(
+        green = Color(0xFF3D9A50),
+        red = FLAG_RED.light,
+        gray = Color(0xFFD9D9DE),
+    ),
+    dark = RoundPalette(
+        green = Color(0xFF5BB96F),
+        red = FLAG_RED.dark,
+        gray = Color(0xFF3A3D42),
+    ),
 )
 
 /**
  * Horizontal timeline of a round, drawn with plain boxes. Words are
- * aggregated into one two-pixel column (green wins over gray): a 2000-word
- * bucket cannot be resolved per word on a ~360dp bar, and one column per two
- * pixels keeps the draw cheap.
+ * aggregated into one two-pixel column (red wins over green over gray): a
+ * 2000-word bucket cannot be resolved per word on a ~360dp bar, one column
+ * per two pixels keeps the draw cheap, and a column takes the loudest status
+ * of the words it covers so every flagged word stays visible.
  */
 @Composable
 fun RoundBar(
@@ -66,10 +78,11 @@ fun RoundBar(
                 }
                 var column = GRAY
                 for (i in start until end) {
-                    if (statuses[i] == GREEN) {
-                        column = GREEN
+                    if (statuses[i] == RED) {
+                        column = RED
                         break
                     }
+                    if (statuses[i] == GREEN) column = GREEN
                 }
                 add(column)
             }
@@ -91,6 +104,7 @@ fun RoundBar(
                     .fillMaxHeight()
                     .background(
                         when (column) {
+                            RED -> palette.red
                             GREEN -> palette.green
                             GRAY -> palette.gray
                         },

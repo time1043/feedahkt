@@ -25,6 +25,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -35,18 +36,19 @@ import com.time1043.feedah_kt.db.repo.getRoundsByBucket
 import com.time1043.feedah_kt.logic.formatSpan
 import com.time1043.feedah_kt.logic.formatStamp
 import com.time1043.feedah_kt.logic.roundStatuses
+import com.time1043.feedah_kt.logic.RoundSweep
+import com.time1043.feedah_kt.logic.RoundWordStatus
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.components.ROUND_COLORS
 import com.time1043.feedah_kt.ui.components.RoundBar
 
 /**
  * The round list of one bucket: every round the probe has entered, newest
- * first — its state, how far the walk got, and for a finished round when it
- * ran and how long it took.
+ * first — its state, its red/green/gray sweep, and for a finished round when
+ * it ran and how long it took.
  *
- * Flags are not part of this page yet: the red marks and the per-round drill
- * review arrive with the round-flag table, so a round here is green/gray only
- * and no row is tappable.
+ * A round is not tappable yet: the review of its flag list is the drill mode,
+ * which lands on its own.
  */
 @Composable
 fun RoundsScreen(
@@ -103,6 +105,9 @@ fun RoundsScreen(
 private fun RoundItem(row: RoundRow, studying: Boolean) {
     val dark = isSystemInDarkTheme()
     val timeLine = timeLineOf(row)
+    val statuses = roundStatuses(row.wordCount, RoundSweep(row.swept, row.flags))
+    val green = statuses.count { it == RoundWordStatus.GREEN }
+    val red = statuses.count { it == RoundWordStatus.RED }
 
     Column {
         Row(
@@ -122,7 +127,7 @@ private fun RoundItem(row: RoundRow, studying: Boolean) {
             )
         }
         Box(Modifier.padding(top = 8.dp)) { // mt-2
-            RoundBar(statuses = roundStatuses(row.wordCount, row.swept))
+            RoundBar(statuses = statuses)
         }
         Row(
             modifier = Modifier
@@ -131,23 +136,20 @@ private fun RoundItem(row: RoundRow, studying: Boolean) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            // The dot is green-only until flags land; the red one joins it then.
+            // The legend counts the same statuses the bar paints: a flagged
+            // card is red and no longer green, so the two never double-count
+            // it.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(6.dp), // gap-1.5
+                horizontalArrangement = Arrangement.spacedBy(16.dp), // gap-4
             ) {
-                Box(
-                    Modifier
-                        .size(6.dp) // h-1.5 w-1.5
-                        .clip(RoundedCornerShape(2.dp)) // rounded-sm
-                        .background(
-                            if (dark) ROUND_COLORS.dark.green else ROUND_COLORS.light.green,
-                        ),
+                CountDot(
+                    color = if (dark) ROUND_COLORS.dark.green else ROUND_COLORS.light.green,
+                    value = "$green / ${row.wordCount}",
                 )
-                Text(
-                    text = "${row.swept} / ${row.wordCount}",
-                    style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                CountDot(
+                    color = if (dark) ROUND_COLORS.dark.red else ROUND_COLORS.light.red,
+                    value = "$red",
                 )
             }
             timeLine?.let {
@@ -158,6 +160,26 @@ private fun RoundItem(row: RoundRow, studying: Boolean) {
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun CountDot(color: Color, value: String) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp), // gap-1.5
+    ) {
+        Box(
+            Modifier
+                .size(6.dp) // h-1.5 w-1.5
+                .clip(RoundedCornerShape(2.dp)) // rounded-sm
+                .background(color),
+        )
+        Text(
+            text = value,
+            style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

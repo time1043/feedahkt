@@ -99,16 +99,19 @@ suspend fun completeRound(context: Context, bucketName: String, now: Long) {
 }
 
 /** One row of the round list: a round the probe has entered, with what the
- * walk did in it. Flags are absent on purpose — they get their own table and
- * their own page section later. */
+ * walk did in it and which cards it flagged. */
 data class RoundRow(
     val round: Int,
     /** The probe has moved past it: the round was walked to the end. */
     val done: Boolean,
-    /** The bucket's list length — the timeline's denominator. */
+    /** The bucket's word count — the timeline's denominator. */
     val wordCount: Int,
     /** Cards the walk reached, as a COUNT (not a word position). */
     val swept: Int,
+    /** The round's flagged cards as 0-based ORDINALS into the position-ordered
+     * list — what the timeline paints. The table itself keeps word positions,
+     * so the translation happens here. */
+    val flags: List<Int>,
     /** 0 when unrecorded — a round that has not been entered yet. */
     val startedAt: Long,
     /** The finishing stamp; null while the round is still in progress. */
@@ -123,14 +126,26 @@ data class RoundRow(
  */
 suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolean, List<RoundRow>> {
     val db = getDb(context)
-    // The bucket row is the existence check AND the list length: a re-seed
-    // keeps it in step with the words.
-    val wordCount = db.bucketWordDao().getWordCount(bucketName)
-        ?: return false to emptyList()
+    // The bucket row is the existence check; the timeline's denominator (and
+    // the ordinal map) comes from the words themselves.
+    db.bucketWordDao().getWordCount(bucketName) ?: return false to emptyList()
+    val positions = db.bucketWordDao().getPositions(bucketName)
+    val wordCount = positions.size
 
     val probe = getProgress(context, bucketName)
     val records = db.studyRoundDao().getRecordSpans(bucketName)
+    val flagRows = db.studyRoundDao().getFlags(bucketName)
     val spanOf = records.associateBy { it.round }
+    // The table stores word positions; the timeline speaks in ordinals (the
+    // deck's card order). A flag whose word no longer exists is skipped
+    // rather than painted into a neighbour's column.
+    val ordinalOf = positions.withIndex().associate { (ordinal, position) -> position to ordinal }
+    val flagsOf = mutableMapOf<Int, MutableList<Int>>()
+    for (flag in flagRows) {
+        val ordinal = ordinalOf[flag.position] ?: continue
+        flagsOf.getOrPut(flag.round) { mutableListOf() }.add(ordinal)
+    }
+    for (ordinals in flagsOf.values) ordinals.sort()
 
     val rows = (probe.round downTo 1).map { round ->
         val done = round < probe.round
@@ -144,6 +159,7 @@ suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolea
             // settled (roundStartedAt 0) has reached none. A finished round
             // reached all.
             swept = if (done) wordCount else sweptOf(probe, wordCount),
+            flags = flagsOf[round] ?: emptyList(),
             startedAt = span?.startedAt ?: if (done) 0 else probe.roundStartedAt,
             endedAt = span?.endedAt,
         )

@@ -61,6 +61,9 @@ data class RecordSpan(
     val endedAt: Long,
 )
 
+/** One flagged word, as the timeline's ordinal translation reads it. */
+data class FlagRef(val round: Int, val position: Int)
+
 /** A word flagged within one round of one bucket. A flag belongs to its round,
  * not to the bucket: the next round starts clean unless the completion copies
  * it forward. The row's absence IS the unflagged state, so marking is an
@@ -139,6 +142,9 @@ interface StudyRoundDao {
             "WHERE word.bucket_name = :bucketName ORDER BY word.position",
     )
     suspend fun getWordsWithRoundFlag(bucketName: String, round: Int): List<RoundWordData>
+
+    @Query("SELECT round, position FROM round_flag WHERE bucket_name = :bucketName")
+    suspend fun getFlags(bucketName: String): List<FlagRef>
 
     @Query("UPDATE bucket_progress SET pointer = :pointer WHERE bucket_name = :bucketName")
     suspend fun updatePointer(bucketName: String, pointer: Int)
