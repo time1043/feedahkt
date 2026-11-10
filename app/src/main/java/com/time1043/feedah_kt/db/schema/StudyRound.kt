@@ -54,6 +54,13 @@ data class RoundRecordEntity(
     @ColumnInfo(name = "ended_at") val endedAt: Long,
 )
 
+/** One recorded round's span, as the round list reads it. */
+data class RecordSpan(
+    val round: Int,
+    val startedAt: Long,
+    val endedAt: Long,
+)
+
 /** The bucket_progress table's write surface. */
 @Dao
 interface StudyRoundDao {
@@ -67,6 +74,12 @@ interface StudyRoundDao {
      * move the recorded span. */
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertRecord(record: RoundRecordEntity)
+
+    @Query(
+        "SELECT round, started_at AS startedAt, ended_at AS endedAt " +
+            "FROM round_record WHERE bucket_name = :bucketName",
+    )
+    suspend fun getRecordSpans(bucketName: String): List<RecordSpan>
 
     @Query("UPDATE bucket_progress SET pointer = :pointer WHERE bucket_name = :bucketName")
     suspend fun updatePointer(bucketName: String, pointer: Int)

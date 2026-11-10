@@ -60,6 +60,11 @@ interface BucketWordDao {
     @Query("SELECT * FROM bucket WHERE name = :name LIMIT 1")
     suspend fun getSeedState(name: String): BucketEntity?
 
+    /** The list length for the round timeline's denominator (the existence
+     * check and the count in one read). */
+    @Query("SELECT word_count FROM bucket WHERE name = :bucketName LIMIT 1")
+    suspend fun getWordCount(bucketName: String): Int?
+
     @Upsert
     suspend fun upsertBucket(bucket: BucketEntity)
 
