@@ -105,15 +105,21 @@ fun StudyScreen(
             // back to the probe.
             onScrub = { controller.startBrowsing() },
             // The footer line pairs the two: the probe's round on the left,
-            // the pagination ordinal on the right. R{n} advances the moment
-            // a walk-through completes, agreeing with the end page's
+            // the pagination ordinal on the right. R{n} advances the moment a
+            // walk-through completes, agreeing with the end page's
             // promise. (3f04993 — the round moved out of the title.)
-            hudLeft = {
-                Text(
-                    text = "R${ready.progress.round}",
-                    style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
+            // The footer switch gates the whole bottom line: the round on the
+            // left and the pagination ordinal on the right. (b2b5cfe)
+            hudLeft = if (chrome.showHudPage) {
+                {
+                    Text(
+                        text = "R${ready.progress.round}",
+                        style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            } else {
+                null
             },
             banner = if (ready.browsing) {
                 {
