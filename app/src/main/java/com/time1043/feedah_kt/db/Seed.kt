@@ -64,7 +64,7 @@ suspend fun seedBuckets(context: Context, db: SupportSQLiteDatabase): Unit =
         for (file in loadSeedFiles(context)) {
             val hash = contentHashOf(file.words)
             val existing = db.query(
-                "SELECT word_count, content_hash FROM bucket WHERE id = ?",
+                "SELECT word_count, content_hash FROM bucket WHERE name = ?",
                 arrayOf(file.name),
             ).use { cursor ->
                 if (cursor.moveToFirst()) cursor.getInt(0) to cursor.getString(1) else null
@@ -76,14 +76,14 @@ suspend fun seedBuckets(context: Context, db: SupportSQLiteDatabase): Unit =
             db.beginTransaction()
             try {
                 db.execSQL(
-                    "INSERT OR REPLACE INTO bucket (id, word_count, content_hash) VALUES (?, ?, ?)",
+                    "INSERT OR REPLACE INTO bucket (name, word_count, content_hash) VALUES (?, ?, ?)",
                     arrayOf(file.name, file.words.size, hash),
                 )
                 // A re-seed replaces the words wholesale.
-                db.execSQL("DELETE FROM word WHERE bucket_id = ?", arrayOf(file.name))
+                db.execSQL("DELETE FROM word WHERE bucket_name = ?", arrayOf(file.name))
                 for (w in file.words) {
                     db.execSQL(
-                        "INSERT INTO word (bucket_id, position, word, ipa, meaning, forms) " +
+                        "INSERT INTO word (bucket_name, position, word, ipa, meaning, forms) " +
                             "VALUES (?, ?, ?, ?, ?, ?)",
                         arrayOf(
                             file.name,
