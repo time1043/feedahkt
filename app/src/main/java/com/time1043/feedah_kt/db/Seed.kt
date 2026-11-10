@@ -11,7 +11,7 @@ import kotlinx.serialization.json.Json
 
 private val json = Json { ignoreUnknownKeys = true }
 
-/** The bundled seed files, in tab order. */
+/** The bundled seed files, in tab order (the mock dataset). */
 private val SEED_FILES = listOf("2050", "370", "700")
 
 /** One seed word: the JSON entry narrowed to the seeded columns. */
@@ -35,7 +35,7 @@ private data class SeedFileJson(val name: String, val words: List<SeedWord> = em
 /** Reads the bundled data JSON files — the AN stand-in for RN's
  * bundle-time imports from the data directory. */
 private fun loadSeedFiles(context: Context): List<SeedFile> = SEED_FILES.map { name ->
-    val raw = context.assets.open("data/$name.json").bufferedReader().use { it.readText() }
+    val raw = context.assets.open("data/mock/$name.json").bufferedReader().use { it.readText() }
     val bucket = json.decodeFromString<SeedFileJson>(raw)
     SeedFile(name = bucket.name, words = bucket.words)
 }
