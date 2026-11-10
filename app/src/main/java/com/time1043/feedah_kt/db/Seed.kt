@@ -1,7 +1,6 @@
 package com.time1043.feedah_kt.db
 
 import android.content.Context
-import androidx.sqlite.db.SupportSQLiteDatabase
 import com.time1043.feedah_kt.types.Bucket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -54,50 +53,48 @@ private fun contentHashOf(words: List<SeedWord>): String {
 /**
  * Seeds the bundled buckets on every cold start; idempotent against the
  * stored bucket.word_count + content hash, so an unchanged bucket is one
- * SELECT and a changed one is fully replaced inside a transaction. This
- * logic survives the Room stage verbatim — only the statements swap.
- * Takes the OPEN handle: prepareDb runs inside getDb, and re-entering
- * getDb here would recurse forever (the singleton isn't set yet).
+ * SELECT and a changed one is fully replaced inside a transaction. The
+ * statements are Room now — the idempotency logic is what survived the
+ * raw-sqlite stage.
  */
-suspend fun seedBuckets(context: Context, db: SupportSQLiteDatabase): Unit =
+suspend fun seedBuckets(context: Context, db: FeedahDb): Unit =
     withContext(Dispatchers.IO) {
+        val dao = db.bucketWordDao()
         for (file in loadSeedFiles(context)) {
             val hash = contentHashOf(file.words)
-            val existing = db.query(
-                "SELECT word_count, content_hash FROM bucket WHERE name = ?",
-                arrayOf(file.name),
-            ).use { cursor ->
-                if (cursor.moveToFirst()) cursor.getInt(0) to cursor.getString(1) else null
-            }
-            if (existing != null && existing.first == file.words.size && existing.second == hash) {
+            val existing = dao.getSeedState(file.name)
+            if (existing != null &&
+                existing.wordCount == file.words.size &&
+                existing.contentHash == hash
+            ) {
                 continue
             }
 
-            db.beginTransaction()
-            try {
-                db.execSQL(
-                    "INSERT OR REPLACE INTO bucket (name, word_count, content_hash) VALUES (?, ?, ?)",
-                    arrayOf(file.name, file.words.size, hash),
+            withTransaction {
+                // An UPSERT, not INSERT OR REPLACE: with foreign_keys ON,
+                // REPLACE would cascade-delete the words we are about to
+                // reseed anyway — keeping the intent explicit.
+                dao.upsertBucket(
+                    BucketEntity(
+                        name = file.name,
+                        wordCount = file.words.size,
+                        contentHash = hash,
+                    ),
                 )
                 // A re-seed replaces the words wholesale.
-                db.execSQL("DELETE FROM word WHERE bucket_name = ?", arrayOf(file.name))
-                for (w in file.words) {
-                    db.execSQL(
-                        "INSERT INTO word (bucket_name, position, word, ipa, meaning, forms) " +
-                            "VALUES (?, ?, ?, ?, ?, ?)",
-                        arrayOf(
-                            file.name,
-                            w.position,
-                            w.word,
-                            w.ipa,
-                            w.meaning,
-                            json.encodeToString(w.forms),
-                        ),
-                    )
-                }
-                db.setTransactionSuccessful()
-            } finally {
-                db.endTransaction()
+                dao.deleteWords(file.name)
+                dao.insertWords(
+                    file.words.map { w ->
+                        WordEntity(
+                            bucketName = file.name,
+                            position = w.position,
+                            word = w.word,
+                            ipa = w.ipa,
+                            meaning = w.meaning,
+                            forms = json.encodeToString(w.forms),
+                        )
+                    },
+                )
             }
         }
     }

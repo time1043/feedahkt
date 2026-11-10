@@ -1,10 +1,14 @@
 package com.time1043.feedah_kt.db
 
 import androidx.room.ColumnInfo
+import androidx.room.Dao
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
+import androidx.room.Query
+import androidx.room.Insert
+import androidx.room.Upsert
 
 @Entity(tableName = "bucket")
 data class BucketEntity(
@@ -38,3 +42,30 @@ data class WordEntity(
      * the drill stage brings typed columns. */
     @ColumnInfo(name = "forms", defaultValue = "[]") val forms: String,
 )
+
+/** The bucket-word tables' read/write surface — where drizzle's query
+ * builder calls land as Room statements. */
+@Dao
+interface BucketWordDao {
+    @Query("SELECT * FROM bucket ORDER BY name")
+    suspend fun getBuckets(): List<BucketEntity>
+
+    /** The existence probe (mirror of drizzle's `select({ id: bucket.name })`). */
+    @Query("SELECT name AS id FROM bucket WHERE name = :bucketId LIMIT 1")
+    suspend fun findNameById(bucketId: String): String?
+
+    @Query("SELECT * FROM word WHERE bucket_name = :bucketId ORDER BY position")
+    suspend fun getWordsByBucket(bucketId: String): List<WordEntity>
+
+    @Query("SELECT * FROM bucket WHERE name = :name LIMIT 1")
+    suspend fun getSeedState(name: String): BucketEntity?
+
+    @Upsert
+    suspend fun upsertBucket(bucket: BucketEntity)
+
+    @Query("DELETE FROM word WHERE bucket_name = :bucketName")
+    suspend fun deleteWords(bucketName: String)
+
+    @Insert
+    suspend fun insertWords(words: List<WordEntity>)
+}
