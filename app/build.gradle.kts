@@ -6,10 +6,28 @@ plugins {
     alias(libs.plugins.ksp)
 }
 
+// Which word data the app is built with: `mock` (the committed samples, in
+// src/mock/assets) or `real` (a local-only directory, src/real/assets). This
+// is the single place the choice is made — the code only ever reads
+// assets/data/<bucket>.json.
+//
+//   ./gradlew :app:assembleDebug                      → mock
+//   ./gradlew :app:assembleDebug -PfeedahDataset=real → real
+//
+// Unresolved on a machine without src/real/assets, which is why `mock` is
+// the default: the repo always builds.
+val feedahDataset = (project.findProperty("feedahDataset") as String?)?.takeIf { it.isNotEmpty() } ?: "mock"
+
 android {
     namespace = "com.time1043.feedah_kt"
     compileSdk {
         version = release(37)
+    }
+
+    sourceSets {
+        getByName("main") {
+            assets.srcDir("src/$feedahDataset/assets")
+        }
     }
 
     defaultConfig {

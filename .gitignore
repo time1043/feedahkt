@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# the real dataset is a local-only directory (see app/build.gradle.kts)
+/app/src/real/assets
