@@ -31,12 +31,12 @@ data class WordRow(
  * separates a missing bucket from an existing-but-empty one — the caller's
  * not-found state must not lie about which one happened.
  */
-suspend fun getWordsByBucket(context: Context, bucketId: String): Pair<Boolean, List<WordRow>> {
+suspend fun getWordsByBucket(context: Context, bucketName: String): Pair<Boolean, List<WordRow>> {
     val db = getDb(context)
     val dao = db.bucketWordDao()
-    val exists = dao.findNameById(bucketId)
+    val exists = dao.findNameById(bucketName)
     if (exists == null) return false to emptyList()
-    val rows = dao.getWordsByBucket(bucketId)
+    val rows = dao.getWordsByBucket(bucketName)
     return true to rows.map { row ->
         WordRow(
             position = row.position,
