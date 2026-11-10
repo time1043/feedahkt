@@ -6,6 +6,9 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.time1043.feedah_kt.db.schema.BucketEntity
+import com.time1043.feedah_kt.db.schema.BucketWordDao
+import com.time1043.feedah_kt.db.schema.WordEntity
 
 const val DB_NAME = "feedah.db"
 

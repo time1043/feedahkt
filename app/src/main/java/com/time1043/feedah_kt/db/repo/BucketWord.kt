@@ -1,6 +1,7 @@
-package com.time1043.feedah_kt.db
+package com.time1043.feedah_kt.db.repo
 
 import android.content.Context
+import com.time1043.feedah_kt.db.getDb
 import kotlinx.serialization.json.Json
 
 private val json = Json

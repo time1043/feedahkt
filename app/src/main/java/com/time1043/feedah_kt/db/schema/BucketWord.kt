@@ -1,4 +1,4 @@
-package com.time1043.feedah_kt.db
+package com.time1043.feedah_kt.db.schema
 
 import androidx.room.ColumnInfo
 import androidx.room.Dao
