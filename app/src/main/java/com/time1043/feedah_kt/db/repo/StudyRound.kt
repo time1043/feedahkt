@@ -10,6 +10,10 @@ import kotlinx.serialization.json.Json
 
 private val json = Json
 
+/** How many flag rows one carried-over INSERT may bind: 4 values each, kept
+ * well under SQLite's variable limit. */
+private const val CARRY_CHUNK = 200
+
 /**
  * The study probe, as the session carries it: the round being studied and
  * the card index (0-based, the same number the reducer holds) the walk is
@@ -56,10 +60,10 @@ suspend fun settleCard(context: Context, bucketName: String, pointer: Int) {
 }
 
 /**
- * Completes the round: the finished round is recorded (its start and this
- * end stamp) and the probe steps to the next round at the first card. Both
- * writes share one transaction — a round never advances without its record.
- * Flags deliberately do not ride along here; they are another table.
+ * Completes the round: the finished round is recorded (its start and this end
+ * stamp), its flags are carried into the next round, and the probe steps on at
+ * the first card. All of it shares one transaction — a round never advances
+ * without its record, and never starts without the marks it inherited.
  */
 suspend fun completeRound(context: Context, bucketName: String, now: Long) {
     val db = getDb(context)
@@ -82,6 +86,27 @@ suspend fun completeRound(context: Context, bucketName: String, now: Long) {
                 endedAt = now,
             ),
         )
+
+        // Carry the marks forward: the words you flagged are exactly what the
+        // next round should open on, and the deck reloads its flags from this
+        // table. The new round owns its own rows, so clearing or adding a
+        // mark there never rewrites the finished round's history.
+        val flags = dao.getFlagPositions(bucketName, finishedRound)
+        // Chunked: a bucket can hold thousands of words, and one INSERT
+        // carries four bound values per row — past a few hundred rows it
+        // would exceed SQLite's variable limit.
+        for (start in flags.indices step CARRY_CHUNK) {
+            dao.insertFlags(
+                flags.drop(start).take(CARRY_CHUNK).map { position ->
+                    RoundFlagEntity(
+                        bucketName = bucketName,
+                        round = next,
+                        position = position,
+                        flaggedAt = now,
+                    )
+                },
+            )
+        }
 
         if (row == null) {
             dao.insertProgress(
