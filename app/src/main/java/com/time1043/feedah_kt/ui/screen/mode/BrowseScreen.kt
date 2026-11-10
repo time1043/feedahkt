@@ -12,6 +12,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,10 +64,16 @@ fun BrowseScreen(
     // Honest guard: an unknown name is not found (no silent first-bucket
     // fallback).
     val bucket = buckets?.find { candidate -> candidate.name == bucketName }
-    // Browse is pure lookup: no flags, no bookmark — the deck hides it when no
-    // toggle callback is passed. The map only satisfies the deck's per-word
-    // flag state; nothing here reads or writes it.
-    val words = bucket?.words?.map { it.withFlag(false) } ?: emptyList()
+    // The bookmark marks a word IN the bucket's current round — the same object
+    // study writes, not a per-visit toggle. Until round_flag lands the store is
+    // this screen's memory (so a mark is lost when browse closes); the shape is
+    // already the table's, keyed by the word's position, and the round will come
+    // from the probe.
+    var flags by remember { mutableStateOf(emptySet<Int>()) }
+    val words = bucket?.words?.map { it.withFlag(it.position in flags) } ?: emptyList()
+    val toggleFlag: (Int) -> Unit = { position ->
+        flags = if (position in flags) flags - position else flags + position
+    }
 
     // The param is the CARD NUMBER — the data position printed on the card
     // (1701+ for the mock bucket), not a list index. It is the identifier
@@ -107,6 +114,7 @@ fun BrowseScreen(
                     onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
                     canSpeak = settingsReady && autoSpeak,
                     tapToReveal = tapToReveal,
+                    onToggleFlag = { spoken -> toggleFlag(spoken.position) },
                     progressBar = chrome.showProgressBar,
                     onIndexChange = { current = it },
                     hudRight = if (chrome.showHudPage) {

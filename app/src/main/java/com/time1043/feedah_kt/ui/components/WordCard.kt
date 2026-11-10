@@ -127,8 +127,7 @@ fun WordCard(
     tapToReveal: Boolean = true,
     /** The word's current flag state; the bookmark reflects it. */
     flagged: Boolean = false,
-    /** Tapping the bookmark toggles the flag; omit it to hide the bookmark
-     * (browse is pure lookup and passes no callback). */
+    /** Tapping the bookmark toggles the flag; omit it to hide the bookmark. */
     onToggleFlag: (() -> Unit)? = null,
     onReplay: () -> Unit,
     modifier: Modifier = Modifier,
