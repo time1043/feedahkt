@@ -24,11 +24,11 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.data.mock.findWord
 import com.time1043.feedah_kt.data.mock.loadBuckets
 import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.types.withFlag
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
@@ -63,14 +63,17 @@ fun BrowseScreen(
     // Honest guard: an unknown name is not found (no silent first-bucket
     // fallback).
     val bucket = buckets?.find { candidate -> candidate.name == bucketName }
-    val words = bucket?.words ?: emptyList()
+    // Browse is pure lookup: no flags, no bookmark — the deck hides it when no
+    // toggle callback is passed. The map only satisfies the deck's per-word
+    // flag state; nothing here reads or writes it.
+    val words = bucket?.words?.map { it.withFlag(false) } ?: emptyList()
 
     // The param is the CARD NUMBER — the data position printed on the card
     // (1701+ for the mock bucket), not a list index. It is the identifier
     // every surface shares: what the card shows is what opens here, and
     // what search/review will carry. The footer, by contrast, is a 1-based
     // pagination ordinal.
-    val word = bucket?.let { findWord(it, position) }
+    val word = words.find { it.position == position }
     val initialIndex = word?.let(words::indexOf) ?: 0
 
     // The deck's current card, mirrored out for the footer counter. Re-read

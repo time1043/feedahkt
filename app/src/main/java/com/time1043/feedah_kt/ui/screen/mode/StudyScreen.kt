@@ -91,7 +91,7 @@ fun StudyScreen(
         }
         WordDeck(
             handle = deckHandle,
-            words = ready.words.map { it.toWord() },
+            words = ready.words,
             initialIndex = frontier,
             progressBar = chrome.showProgressBar,
             tapToReveal = tapToReveal,
@@ -102,6 +102,7 @@ fun StudyScreen(
             // not the header, which the settings can hide — and is the way
             // back to the probe.
             onScrub = { controller.startBrowsing() },
+            onToggleFlag = controller::toggleFlag,
             // The footer line pairs the two: the probe's round on the left,
             // the pagination ordinal on the right. R{n} advances the moment a
             // walk-through completes, agreeing with the end page's

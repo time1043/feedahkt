@@ -128,8 +128,16 @@ class StudySessionController internal constructor(
         StudyAction.Drafted(position = word.position, value = value),
     )
 
-    /** Session-local for now: the round-flag table is a later phase, so the
-     * mark never reaches the database. */
+    /**
+     * Toggles the round's flag. Frontend-only for now: the mark lives on the
+     * session's words, so it survives browsing and round advances but not a
+     * reload.
+     *
+     * The gap for the next commit is right here — the round_flag write
+     * (`setRoundFlag(bucketName, session.progress.round, position, !flagged)`)
+     * and, above, a load path that reads the round's flags instead of
+     * hard-coding `flagged: false`.
+     */
     fun toggleFlag(word: DeckWord) = dispatch(
         StudyAction.FlagToggled(position = word.position),
     )
