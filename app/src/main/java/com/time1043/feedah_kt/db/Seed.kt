@@ -1,6 +1,8 @@
 package com.time1043.feedah_kt.db
 
 import android.content.Context
+import com.time1043.feedah_kt.db.schema.BucketEntity
+import com.time1043.feedah_kt.db.schema.WordEntity
 import com.time1043.feedah_kt.types.Bucket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

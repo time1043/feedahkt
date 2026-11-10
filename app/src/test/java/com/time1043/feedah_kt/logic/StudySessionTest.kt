@@ -3,6 +3,7 @@ package com.time1043.feedah_kt.logic
 import com.time1043.feedah_kt.types.DeckWord
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertSame
 import org.junit.Test
 
 /** The study session reducer's decisions (the source's jest suite). */
@@ -191,5 +192,29 @@ class StudySessionTest {
     fun guardsAgainstActionsOnALoadingSession() {
         val s = studyReducer(LOADING_SESSION, StudyAction.BrowsingStarted)
         assertEquals(LOADING_SESSION, s)
+    }
+}
+
+class ClampProgressTest {
+
+    @Test
+    fun leavesAProbeInsideTheWordListUntouched() {
+        val probe = Progress(round = 2, pointer = 3, roundStartedAt = 9)
+        assertSame(probe, clampProgress(probe, 10))
+    }
+
+    @Test
+    fun pullsAnOverLongPointerBackToTheLastCard() {
+        // A re-seed can shrink the list under a stored pointer; the stale
+        // probe must not read as an already-finished round.
+        assertEquals(
+            Progress(round = 4, pointer = 4, roundStartedAt = 1),
+            clampProgress(Progress(round = 4, pointer = 99, roundStartedAt = 1), 5),
+        )
+    }
+
+    @Test
+    fun keepsAnEmptyBucketAtCard0() {
+        assertEquals(0, clampProgress(Progress(round = 1, pointer = 3, roundStartedAt = 0), 0).pointer)
     }
 }

@@ -42,8 +42,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.db.WordRow
-import com.time1043.feedah_kt.db.getWordsByBucket
+import com.time1043.feedah_kt.db.repo.WordRow
+import com.time1043.feedah_kt.db.repo.getWordsByBucket
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.components.ProgressBar
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard

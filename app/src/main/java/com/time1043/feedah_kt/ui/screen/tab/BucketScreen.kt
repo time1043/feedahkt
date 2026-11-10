@@ -32,8 +32,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.db.BucketRow
-import com.time1043.feedah_kt.db.getBuckets
+import com.time1043.feedah_kt.db.repo.BucketRow
+import com.time1043.feedah_kt.db.repo.getBuckets
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.TabHeader
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard

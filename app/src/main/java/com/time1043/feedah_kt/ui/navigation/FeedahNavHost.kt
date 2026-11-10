@@ -101,7 +101,7 @@ fun FeedahNavHost(
         searchScreen(navController)
         // bucket
         wordsScreen(navController, wordsMeaning)
-        roundsScreen(navController)
+        roundsScreen(navController, activeBucket)
         bucketSettingsScreen(navController, activeBucket, onActiveBucketChange)
     }
 }
@@ -264,11 +264,12 @@ fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Bool
     }
 }
 
-fun NavGraphBuilder.roundsScreen(navController: NavController) {
+fun NavGraphBuilder.roundsScreen(navController: NavController, activeBucket: String) {
     composable<RoundsRoute> { entry ->
         val route = entry.toRoute<RoundsRoute>()
         RoundsScreen(
             name = route.name,
+            activeBucket = activeBucket,
             onBack = navController::goBack,
         )
     }
