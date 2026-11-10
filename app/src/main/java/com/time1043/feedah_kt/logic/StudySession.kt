@@ -194,6 +194,10 @@ fun studyReducer(session: StudySession, action: StudyAction): StudySession {
                 // moment is the completed one's successor.
                 nextRound = ready.progress.round + 1,
             ),
+            // `words` is left alone on purpose: the flags it carries are the
+            // marks the next round inherits — the same copy the database
+            // makes when it completes the round — and the user clears them
+            // there.
         )
 
         is StudyAction.AutoAdvanceDone -> ready.copy(pendingAutoAdvance = null)

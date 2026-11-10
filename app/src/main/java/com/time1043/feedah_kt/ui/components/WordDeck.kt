@@ -20,7 +20,8 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import com.time1043.feedah_kt.types.Word
+import com.time1043.feedah_kt.types.DeckWord
+import com.time1043.feedah_kt.types.toWord
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -97,11 +98,13 @@ class WordDeckEnd(
  */
 @Composable
 fun WordDeck(
-    words: List<Word>,
+    /** The deck's words carry their live flag state: the card's bookmark is
+     * the deck's only write. */
+    words: List<DeckWord>,
     /** The deck decides WHEN to speak — the card it opens on, every card it
      * lands on, and replay taps; the screen decides HOW and WHETHER (its
      * callback carries the rate and the settings). */
-    onSpeak: ((Word) -> Unit)?,
+    onSpeak: ((DeckWord) -> Unit)?,
     /** Whether the deck's own speak calls (open + settle) may proceed; replay
      * taps bypass this and always reach onSpeak. The screen holds it closed
      * until its settings have hydrated and its policy allows speaking; when
@@ -110,6 +113,9 @@ fun WordDeck(
     canSpeak: Boolean = true,
     /** Whether the meaning waits for a tap; forwarded to every card. */
     tapToReveal: Boolean,
+    /** The words' flag state forwarded to every card: the bookmark shows when
+     * the screen passes a toggle, and the deck hides it otherwise. */
+    onToggleFlag: ((DeckWord) -> Unit)? = null,
     /** Card to open on, clamped into range; read once on mount. */
     initialIndex: Int = 0,
     /** Whether the scrubbable progress bar renders above the cards. */
@@ -292,8 +298,10 @@ fun WordDeck(
                     val word = currentWords.getOrNull(page)
                     if (word != null) {
                         WordCard(
-                            word = word,
+                            word = word.toWord(),
                             tapToReveal = tapToReveal,
+                            flagged = word.flagged,
+                            onToggleFlag = onToggleFlag?.let { toggle -> { toggle(word) } },
                             // Replay taps bypass the gate and always reach
                             // onSpeak.
                             onReplay = { currentOnSpeak?.invoke(word) },

@@ -57,6 +57,10 @@ interface BucketWordDao {
     @Query("SELECT * FROM word WHERE bucket_name = :bucketId ORDER BY position")
     suspend fun getWordsByBucket(bucketId: String): List<WordEntity>
 
+    /** The words' positions in deck order — the timeline's ordinal map. */
+    @Query("SELECT position FROM word WHERE bucket_name = :bucketName ORDER BY position")
+    suspend fun getPositions(bucketName: String): List<Int>
+
     @Query("SELECT * FROM bucket WHERE name = :name LIMIT 1")
     suspend fun getSeedState(name: String): BucketEntity?
 

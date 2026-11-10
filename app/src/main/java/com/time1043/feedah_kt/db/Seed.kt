@@ -3,7 +3,6 @@ package com.time1043.feedah_kt.db
 import android.content.Context
 import com.time1043.feedah_kt.db.schema.BucketEntity
 import com.time1043.feedah_kt.db.schema.WordEntity
-import com.time1043.feedah_kt.types.Bucket
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -12,7 +11,7 @@ import kotlinx.serialization.json.Json
 
 private val json = Json { ignoreUnknownKeys = true }
 
-/** The bundled seed files, in tab order. */
+/** The bundled seed files, in tab order (the mock dataset). */
 private val SEED_FILES = listOf("2050", "370", "700")
 
 /** One seed word: the JSON entry narrowed to the seeded columns. */
@@ -28,17 +27,17 @@ private data class SeedWord(
 /** A seed file: the bundled bucket JSON, narrowed to name + words. */
 private data class SeedFile(val name: String, val words: List<SeedWord>)
 
-/** Reads the bundled data JSON files — the AN stand-in for RN's
- * bundle-time imports from the data directory. */
+/** The bundled JSON file's shape, narrowed to the seeded fields (the mock
+ * Bucket type is gone — the seed owns its decode). */
+@Serializable
+private data class SeedFileJson(val name: String, val words: List<SeedWord> = emptyList())
+
+/** Reads the bundled data JSON files — the chosen dataset's assets (the AN
+ * stand-in for RN's bundle-time data-alias imports). */
 private fun loadSeedFiles(context: Context): List<SeedFile> = SEED_FILES.map { name ->
     val raw = context.assets.open("data/$name.json").bufferedReader().use { it.readText() }
-    val bucket = json.decodeFromString<Bucket>(raw)
-    SeedFile(
-        name = bucket.name,
-        words = bucket.words.map {
-            SeedWord(it.position, it.word, it.ipa, it.meaning, it.forms)
-        },
-    )
+    val bucket = json.decodeFromString<SeedFileJson>(raw)
+    SeedFile(name = bucket.name, words = bucket.words)
 }
 
 /** A deterministic content hash of the seed words: data-only changes (new

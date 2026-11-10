@@ -30,13 +30,3 @@ data class DeckWord(
 fun Word.withFlag(flagged: Boolean): DeckWord = DeckWord(position, word, ipa, meaning, forms, distractors, flagged)
 
 fun DeckWord.toWord(): Word = Word(position, word, ipa, meaning, forms, distractors)
-
-/**
- * A named word list. The mock-data container until the drizzle schema
- * replaces it; then buckets become rows and this type dissolves.
- */
-@Serializable
-data class Bucket(
-    val name: String,
-    val words: List<Word> = emptyList(),
-)

@@ -40,8 +40,8 @@ import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
 
 /** The bucket tab: one clean card per bucket read from the database — name
  * plus word count. The card's body opens the word list; its side opens the
- * round list; the gear opens the settings. The reference's progress
- * readout, import and delete all wait for the session and the db. */
+ * round list; the gear opens the settings. The per-bucket progress readout,
+ * import and delete are still to come. */
 @Composable
 fun BucketScreen(
     onOpenBucket: (String) -> Unit,

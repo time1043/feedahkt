@@ -4,7 +4,15 @@ import android.content.Context
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.db.withTransaction
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
+import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
+import kotlinx.serialization.json.Json
+
+private val json = Json
+
+/** How many flag rows one carried-over INSERT may bind: 4 values each, kept
+ * well under SQLite's variable limit. */
+private const val CARRY_CHUNK = 200
 
 /**
  * The study probe, as the session carries it: the round being studied and
@@ -52,10 +60,10 @@ suspend fun settleCard(context: Context, bucketName: String, pointer: Int) {
 }
 
 /**
- * Completes the round: the finished round is recorded (its start and this
- * end stamp) and the probe steps to the next round at the first card. Both
- * writes share one transaction — a round never advances without its record.
- * Flags deliberately do not ride along here; they are another table.
+ * Completes the round: the finished round is recorded (its start and this end
+ * stamp), its flags are carried into the next round, and the probe steps on at
+ * the first card. All of it shares one transaction — a round never advances
+ * without its record, and never starts without the marks it inherited.
  */
 suspend fun completeRound(context: Context, bucketName: String, now: Long) {
     val db = getDb(context)
@@ -79,6 +87,27 @@ suspend fun completeRound(context: Context, bucketName: String, now: Long) {
             ),
         )
 
+        // Carry the marks forward: the words you flagged are exactly what the
+        // next round should open on, and the deck reloads its flags from this
+        // table. The new round owns its own rows, so clearing or adding a
+        // mark there never rewrites the finished round's history.
+        val flags = dao.getFlagPositions(bucketName, finishedRound)
+        // Chunked: a bucket can hold thousands of words, and one INSERT
+        // carries four bound values per row — past a few hundred rows it
+        // would exceed SQLite's variable limit.
+        for (start in flags.indices step CARRY_CHUNK) {
+            dao.insertFlags(
+                flags.drop(start).take(CARRY_CHUNK).map { position ->
+                    RoundFlagEntity(
+                        bucketName = bucketName,
+                        round = next,
+                        position = position,
+                        flaggedAt = now,
+                    )
+                },
+            )
+        }
+
         if (row == null) {
             dao.insertProgress(
                 BucketProgressEntity(
@@ -95,16 +124,19 @@ suspend fun completeRound(context: Context, bucketName: String, now: Long) {
 }
 
 /** One row of the round list: a round the probe has entered, with what the
- * walk did in it. Flags are absent on purpose — they get their own table and
- * their own page section later. */
+ * walk did in it and which cards it flagged. */
 data class RoundRow(
     val round: Int,
     /** The probe has moved past it: the round was walked to the end. */
     val done: Boolean,
-    /** The bucket's list length — the timeline's denominator. */
+    /** The bucket's word count — the timeline's denominator. */
     val wordCount: Int,
     /** Cards the walk reached, as a COUNT (not a word position). */
     val swept: Int,
+    /** The round's flagged cards as 0-based ORDINALS into the position-ordered
+     * list — what the timeline paints. The table itself keeps word positions,
+     * so the translation happens here. */
+    val flags: List<Int>,
     /** 0 when unrecorded — a round that has not been entered yet. */
     val startedAt: Long,
     /** The finishing stamp; null while the round is still in progress. */
@@ -119,14 +151,26 @@ data class RoundRow(
  */
 suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolean, List<RoundRow>> {
     val db = getDb(context)
-    // The bucket row is the existence check AND the list length: a re-seed
-    // keeps it in step with the words.
-    val wordCount = db.bucketWordDao().getWordCount(bucketName)
-        ?: return false to emptyList()
+    // The bucket row is the existence check; the timeline's denominator (and
+    // the ordinal map) comes from the words themselves.
+    db.bucketWordDao().getWordCount(bucketName) ?: return false to emptyList()
+    val positions = db.bucketWordDao().getPositions(bucketName)
+    val wordCount = positions.size
 
     val probe = getProgress(context, bucketName)
     val records = db.studyRoundDao().getRecordSpans(bucketName)
+    val flagRows = db.studyRoundDao().getFlags(bucketName)
     val spanOf = records.associateBy { it.round }
+    // The table stores word positions; the timeline speaks in ordinals (the
+    // deck's card order). A flag whose word no longer exists is skipped
+    // rather than painted into a neighbour's column.
+    val ordinalOf = positions.withIndex().associate { (ordinal, position) -> position to ordinal }
+    val flagsOf = mutableMapOf<Int, MutableList<Int>>()
+    for (flag in flagRows) {
+        val ordinal = ordinalOf[flag.position] ?: continue
+        flagsOf.getOrPut(flag.round) { mutableListOf() }.add(ordinal)
+    }
+    for (ordinals in flagsOf.values) ordinals.sort()
 
     val rows = (probe.round downTo 1).map { round ->
         val done = round < probe.round
@@ -140,6 +184,7 @@ suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolea
             // settled (roundStartedAt 0) has reached none. A finished round
             // reached all.
             swept = if (done) wordCount else sweptOf(probe, wordCount),
+            flags = flagsOf[round] ?: emptyList(),
             startedAt = span?.startedAt ?: if (done) 0 else probe.roundStartedAt,
             endedAt = span?.endedAt,
         )
@@ -151,4 +196,66 @@ suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolea
 private fun sweptOf(probe: ProgressRow, wordCount: Int): Int {
     if (probe.roundStartedAt == 0L) return 0
     return minOf(probe.pointer + 1, wordCount)
+}
+
+/** A word of one round: the static entry plus that round's flag state. */
+data class RoundWordRow(
+    val position: Int,
+    val word: String,
+    val ipa: String,
+    val meaning: String,
+    val forms: List<String>,
+    val flagged: Boolean,
+)
+
+/**
+ * Flags a word within one round: an INSERT when marking, a DELETE when
+ * clearing (the row's absence IS the unflagged state). Touches round_flag
+ * only — the probe belongs to settling and completing, nothing else.
+ */
+suspend fun setRoundFlag(
+    context: Context,
+    bucketName: String,
+    round: Int,
+    position: Int,
+    flagged: Boolean,
+) {
+    val db = getDb(context)
+    if (flagged) {
+        // Re-marking an already flagged word keeps its first stamp.
+        db.studyRoundDao().insertFlag(
+            RoundFlagEntity(
+                bucketName = bucketName,
+                round = round,
+                position = position,
+                flaggedAt = System.currentTimeMillis(),
+            ),
+        )
+        return
+    }
+    db.studyRoundDao().deleteFlag(bucketName, round, position)
+}
+
+/** The bucket's words with their flag state IN one round — the deck's words
+ * for study and browse. The join is a left one: the flag row's absence is the
+ * unflagged state. */
+suspend fun getWordsWithRoundFlag(
+    context: Context,
+    bucketName: String,
+    round: Int,
+): Pair<Boolean, List<RoundWordRow>> {
+    val db = getDb(context)
+    val exists = db.bucketWordDao().findNameById(bucketName)
+    if (exists == null) return false to emptyList()
+    val rows = db.studyRoundDao().getWordsWithRoundFlag(bucketName, round)
+    return true to rows.map { row ->
+        RoundWordRow(
+            position = row.position,
+            word = row.word,
+            ipa = row.ipa,
+            meaning = row.meaning,
+            forms = json.decodeFromString(row.forms),
+            flagged = row.flagPosition != null,
+        )
+    }
 }

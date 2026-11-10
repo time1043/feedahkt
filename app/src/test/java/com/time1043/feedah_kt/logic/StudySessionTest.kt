@@ -141,7 +141,8 @@ class StudySessionTest {
         s = reduce(s, StudyAction.RoundAdvanced(now = 5, answered = 0, correct = 0))
         assertEquals(2, s.progress.round)
         assertEquals(0, s.progress.pointer)
-        // The flags ride into the next round (the db carries them too later).
+        // The flags ride into the next round — the database carries them the
+        // same way (completeRound copies the round's flag rows forward).
         assertEquals(true, s.words.find { it.position == 1702 }?.flagged)
     }
 

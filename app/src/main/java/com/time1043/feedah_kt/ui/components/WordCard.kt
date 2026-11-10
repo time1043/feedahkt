@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -10,8 +11,10 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,13 +25,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.time1043.feedah_kt.R
 import com.time1043.feedah_kt.logic.meaningLines
+import com.time1043.feedah_kt.ui.theme.FLAG_RED
 import com.time1043.feedah_kt.types.Word
 
 // Word forms render in a fixed 2×6 grid (12 cells); empty cells keep the
@@ -61,6 +68,44 @@ private fun CardMeaning(meaning: String) {
     }
 }
 
+/** The bookmark, centered on the bottom edge. Only the icon itself toggles:
+ * the wrapper passes taps beside it through (the source's box-none) to
+ * whatever is underneath the card. */
+@Composable
+private fun BookmarkButton(
+    flagged: Boolean,
+    onToggleFlag: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val dark = isSystemInDarkTheme()
+    Box(
+        modifier
+            .fillMaxWidth()
+            .padding(bottom = 32.dp), // bottom-8
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            painter = painterResource(
+                if (flagged) R.drawable.ic_bookmark else R.drawable.ic_bookmark_outline,
+            ),
+            contentDescription = if (flagged) "Unflag word" else "Flag word",
+            tint = if (flagged) {
+                if (dark) FLAG_RED.dark else FLAG_RED.light
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            },
+            modifier = Modifier
+                .size(30.dp)
+                .clickable(
+                    role = Role.Button,
+                    onClickLabel = if (flagged) "Unflag word" else "Flag word",
+                    onClick = onToggleFlag,
+                )
+                .padding(8.dp), // p-2
+        )
+    }
+}
+
 /**
  * The full-screen word card, split into two fixed halves — the project's
  * layout convention, so nothing jitters as content changes:
@@ -72,11 +117,18 @@ private fun CardMeaning(meaning: String) {
  * Tapping anywhere on the card reveals or hides the meaning and the forms —
  * recall first, then check. The word and the ipa are their own taps and
  * replay the pronunciation instead.
+ *
+ * With a toggle callback the bookmark rides the card's bottom edge; the deck
+ * hides it whenever the screen passes none.
  */
 @Composable
 fun WordCard(
     word: Word,
     tapToReveal: Boolean = true,
+    /** The word's current flag state; the bookmark reflects it. */
+    flagged: Boolean = false,
+    /** Tapping the bookmark toggles the flag; omit it to hide the bookmark. */
+    onToggleFlag: (() -> Unit)? = null,
     onReplay: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -86,7 +138,8 @@ fun WordCard(
     val shown = !tapToReveal || revealed
     val toggle = { if (tapToReveal) revealed = !revealed }
 
-    Column(modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize()) {
+        Column(Modifier.fillMaxSize()) {
         Column(
             Modifier
                 .fillMaxWidth()
@@ -196,4 +249,12 @@ fun WordCard(
             }
         }
     }
+    if (onToggleFlag != null) {
+        BookmarkButton(
+            flagged = flagged,
+            onToggleFlag = onToggleFlag,
+            modifier = Modifier.align(Alignment.BottomCenter),
+        )
+    }
+}
 }
