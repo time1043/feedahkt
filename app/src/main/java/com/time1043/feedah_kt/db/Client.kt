@@ -10,6 +10,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.time1043.feedah_kt.db.schema.BucketEntity
 import com.time1043.feedah_kt.db.schema.BucketWordDao
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
+import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
 import com.time1043.feedah_kt.db.schema.StudyRoundDao
 import com.time1043.feedah_kt.db.schema.WordEntity
@@ -22,10 +23,15 @@ const val DB_NAME = "feedah.db"
         WordEntity::class,
         BucketProgressEntity::class,
         RoundRecordEntity::class,
+        RoundFlagEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    autoMigrations = [
+        AutoMigration(from = 1, to = 2),
+        AutoMigration(from = 2, to = 3),
+        AutoMigration(from = 3, to = 4),
+    ],
 )
 abstract class FeedahDb : RoomDatabase() {
     abstract fun bucketWordDao(): BucketWordDao

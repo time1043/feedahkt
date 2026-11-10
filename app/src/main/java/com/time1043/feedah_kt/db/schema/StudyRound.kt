@@ -61,6 +61,43 @@ data class RecordSpan(
     val endedAt: Long,
 )
 
+/** A word flagged within one round of one bucket. A flag belongs to its round,
+ * not to the bucket: the next round starts clean unless the completion copies
+ * it forward. The row's absence IS the unflagged state, so marking is an
+ * INSERT and clearing a DELETE — never a boolean column. */
+@Entity(
+    tableName = "round_flag",
+    primaryKeys = ["bucket_name", "round", "position"],
+    foreignKeys = [
+        ForeignKey(
+            entity = BucketEntity::class,
+            parentColumns = ["name"],
+            childColumns = ["bucket_name"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+    indices = [Index("bucket_name")],
+)
+data class RoundFlagEntity(
+    @ColumnInfo(name = "bucket_name") val bucketName: String,
+    val round: Int,
+    /** The word's card number (its position), the identifier every surface
+     * shares with the deck. */
+    val position: Int,
+    @ColumnInfo(name = "flagged_at") val flaggedAt: Long,
+)
+
+/** One joined row: the word's columns plus the round's flag row's position
+ * when the word is flagged (null = unflagged). */
+data class RoundWordData(
+    val position: Int,
+    val word: String,
+    val ipa: String,
+    val meaning: String,
+    val forms: String,
+    val flagPosition: Int?,
+)
+
 /** The bucket_progress table's write surface. */
 @Dao
 interface StudyRoundDao {
@@ -80,6 +117,28 @@ interface StudyRoundDao {
             "FROM round_record WHERE bucket_name = :bucketName",
     )
     suspend fun getRecordSpans(bucketName: String): List<RecordSpan>
+
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    suspend fun insertFlag(flag: RoundFlagEntity)
+
+    @Query(
+        "DELETE FROM round_flag WHERE bucket_name = :bucketName AND round = :round " +
+            "AND position = :position",
+    )
+    suspend fun deleteFlag(bucketName: String, round: Int, position: Int)
+
+    /** The bucket's words with their flag state IN one round — a left join:
+     * the flag row's absence is the unflagged state. */
+    @Query(
+        "SELECT word.position AS position, word.word AS word, word.ipa AS ipa, " +
+            "word.meaning AS meaning, word.forms AS forms, " +
+            "round_flag.position AS flagPosition " +
+            "FROM word LEFT JOIN round_flag " +
+            "ON round_flag.bucket_name = word.bucket_name " +
+            "AND round_flag.round = :round AND round_flag.position = word.position " +
+            "WHERE word.bucket_name = :bucketName ORDER BY word.position",
+    )
+    suspend fun getWordsWithRoundFlag(bucketName: String, round: Int): List<RoundWordData>
 
     @Query("UPDATE bucket_progress SET pointer = :pointer WHERE bucket_name = :bucketName")
     suspend fun updatePointer(bucketName: String, pointer: Int)

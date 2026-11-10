@@ -1,0 +1,306 @@
+{
+  "formatVersion": 1,
+  "database": {
+    "version": 4,
+    "identityHash": "63dc3323e26524c72e634dff65c86982",
+    "entities": [
+      {
+        "tableName": "bucket",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`name` TEXT NOT NULL, `word_count` INTEGER NOT NULL, `content_hash` TEXT NOT NULL DEFAULT '', PRIMARY KEY(`name`))",
+        "fields": [
+          {
+            "fieldPath": "name",
+            "columnName": "name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "wordCount",
+            "columnName": "word_count",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "contentHash",
+            "columnName": "content_hash",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "name"
+          ]
+        }
+      },
+      {
+        "tableName": "word",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`bucket_name` TEXT NOT NULL, `position` INTEGER NOT NULL, `word` TEXT NOT NULL, `ipa` TEXT NOT NULL DEFAULT '', `meaning` TEXT NOT NULL DEFAULT '', `forms` TEXT NOT NULL DEFAULT '[]', PRIMARY KEY(`bucket_name`, `position`), FOREIGN KEY(`bucket_name`) REFERENCES `bucket`(`name`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "bucketName",
+            "columnName": "bucket_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "word",
+            "columnName": "word",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "ipa",
+            "columnName": "ipa",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "meaning",
+            "columnName": "meaning",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "''"
+          },
+          {
+            "fieldPath": "forms",
+            "columnName": "forms",
+            "affinity": "TEXT",
+            "notNull": true,
+            "defaultValue": "'[]'"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "bucket_name",
+            "position"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_word_bucket_name",
+            "unique": false,
+            "columnNames": [
+              "bucket_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_word_bucket_name` ON `${TABLE_NAME}` (`bucket_name`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "bucket",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "bucket_name"
+            ],
+            "referencedColumns": [
+              "name"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "bucket_progress",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`bucket_name` TEXT NOT NULL, `round` INTEGER NOT NULL DEFAULT 1, `pointer` INTEGER NOT NULL DEFAULT 0, `round_started_at` INTEGER NOT NULL DEFAULT 0, PRIMARY KEY(`bucket_name`), FOREIGN KEY(`bucket_name`) REFERENCES `bucket`(`name`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "bucketName",
+            "columnName": "bucket_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "round",
+            "columnName": "round",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "1"
+          },
+          {
+            "fieldPath": "pointer",
+            "columnName": "pointer",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          },
+          {
+            "fieldPath": "roundStartedAt",
+            "columnName": "round_started_at",
+            "affinity": "INTEGER",
+            "notNull": true,
+            "defaultValue": "0"
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "bucket_name"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_bucket_progress_bucket_name",
+            "unique": false,
+            "columnNames": [
+              "bucket_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_bucket_progress_bucket_name` ON `${TABLE_NAME}` (`bucket_name`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "bucket",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "bucket_name"
+            ],
+            "referencedColumns": [
+              "name"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "round_record",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`bucket_name` TEXT NOT NULL, `round` INTEGER NOT NULL, `started_at` INTEGER NOT NULL, `ended_at` INTEGER NOT NULL, PRIMARY KEY(`bucket_name`, `round`), FOREIGN KEY(`bucket_name`) REFERENCES `bucket`(`name`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "bucketName",
+            "columnName": "bucket_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "round",
+            "columnName": "round",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "startedAt",
+            "columnName": "started_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "endedAt",
+            "columnName": "ended_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "bucket_name",
+            "round"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_round_record_bucket_name",
+            "unique": false,
+            "columnNames": [
+              "bucket_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_round_record_bucket_name` ON `${TABLE_NAME}` (`bucket_name`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "bucket",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "bucket_name"
+            ],
+            "referencedColumns": [
+              "name"
+            ]
+          }
+        ]
+      },
+      {
+        "tableName": "round_flag",
+        "createSql": "CREATE TABLE IF NOT EXISTS `${TABLE_NAME}` (`bucket_name` TEXT NOT NULL, `round` INTEGER NOT NULL, `position` INTEGER NOT NULL, `flagged_at` INTEGER NOT NULL, PRIMARY KEY(`bucket_name`, `round`, `position`), FOREIGN KEY(`bucket_name`) REFERENCES `bucket`(`name`) ON UPDATE NO ACTION ON DELETE CASCADE )",
+        "fields": [
+          {
+            "fieldPath": "bucketName",
+            "columnName": "bucket_name",
+            "affinity": "TEXT",
+            "notNull": true
+          },
+          {
+            "fieldPath": "round",
+            "columnName": "round",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "position",
+            "columnName": "position",
+            "affinity": "INTEGER",
+            "notNull": true
+          },
+          {
+            "fieldPath": "flaggedAt",
+            "columnName": "flagged_at",
+            "affinity": "INTEGER",
+            "notNull": true
+          }
+        ],
+        "primaryKey": {
+          "autoGenerate": false,
+          "columnNames": [
+            "bucket_name",
+            "round",
+            "position"
+          ]
+        },
+        "indices": [
+          {
+            "name": "index_round_flag_bucket_name",
+            "unique": false,
+            "columnNames": [
+              "bucket_name"
+            ],
+            "orders": [],
+            "createSql": "CREATE INDEX IF NOT EXISTS `index_round_flag_bucket_name` ON `${TABLE_NAME}` (`bucket_name`)"
+          }
+        ],
+        "foreignKeys": [
+          {
+            "table": "bucket",
+            "onDelete": "CASCADE",
+            "onUpdate": "NO ACTION",
+            "columns": [
+              "bucket_name"
+            ],
+            "referencedColumns": [
+              "name"
+            ]
+          }
+        ]
+      }
+    ],
+    "setupQueries": [
+      "CREATE TABLE IF NOT EXISTS room_master_table (id INTEGER PRIMARY KEY,identity_hash TEXT)",
+      "INSERT OR REPLACE INTO room_master_table (id,identity_hash) VALUES(42, '63dc3323e26524c72e634dff65c86982')"
+    ]
+  }
+}

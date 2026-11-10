@@ -9,10 +9,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
-import com.time1043.feedah_kt.db.repo.WordRow
+import com.time1043.feedah_kt.db.repo.RoundWordRow
 import com.time1043.feedah_kt.db.repo.completeRound
 import com.time1043.feedah_kt.db.repo.getProgress
-import com.time1043.feedah_kt.db.repo.getWordsByBucket
+import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
+import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleCard
 import com.time1043.feedah_kt.logic.LOADING_SESSION
 import com.time1043.feedah_kt.logic.Progress
@@ -25,8 +26,6 @@ import com.time1043.feedah_kt.types.DeckWord
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.async
-import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 
 /**
@@ -34,12 +33,9 @@ import kotlinx.coroutines.launch
  * policy triggers. Timers, the deck handle and chrome stay in the screen.
  *
  * The reload on entry restarts the session's local state (answers/drafts
- * are session-local) while the probe (round/pointer) lives in the database
- * and survives — killing the app mid-round resumes at the frontier.
- *
- * Flags are a later feature and are deliberately NOT part of this: they
- * start clear on every load and stay session-local, so the probe's
- * persistence is not entangled with their table.
+ * are session-local) while the probe (round/pointer) and the round's flags
+ * live in the database and survive — killing the app mid-round resumes at
+ * the frontier, with the same cards marked.
  */
 class StudySessionController internal constructor(
     private val bucketName: String,
@@ -56,31 +52,23 @@ class StudySessionController internal constructor(
         session = studyReducer(session, action)
     }
 
-    /** The focus-reload: the probe and the words both come from the db. */
+    /** The focus-reload: the probe, the words and the round's flags all come
+     * from the db. */
     suspend fun load() {
         try {
-            coroutineScope {
-                // The round is what the flags will be keyed by (later); the
-                // words and the probe are read in parallel.
-                val wordsDeferred = async { getWordsByBucket(appContext, bucketName) }
-                val progressDeferred = async { getProgress(appContext, bucketName) }
-                // The tuple's first element (the bucket exists) is ignored on
-                // purpose: an unknown bucket simply has no words to study.
-                val (_, rows) = wordsDeferred.await()
-                val progress = progressDeferred.await()
-                // An unknown bucket has no words and nothing to settle; the
-                // empty deck is inert (reachEnd refuses it) instead of writing
-                // a probe row that would violate the foreign key.
-                val words = rows.map { it.toDeckWord() }
-                dispatch(
-                    StudyAction.Loaded(
-                        words = words,
-                        // The row and the reducer's probe say the same thing;
-                        // the reducer only knows its own type.
-                        progress = clampProgress(progress.toProbe(), words.size),
-                    ),
-                )
-            }
+            // The round is what the flags are keyed by, so it is read first.
+            val progress = getProgress(appContext, bucketName)
+            // The first element (the bucket exists) is ignored on purpose: an
+            // unknown bucket simply has no words to study, and the empty deck
+            // is inert (reachEnd refuses it) instead of writing a probe row
+            // that would violate the foreign key.
+            val (_, rows) = getWordsWithRoundFlag(appContext, bucketName, progress.round)
+            dispatch(
+                StudyAction.Loaded(
+                    words = rows.map { it.toDeckWord() },
+                    progress = clampProgress(progress.toProbe(), rows.size),
+                ),
+            )
         } catch (error: Exception) {
             Log.e(TAG, "session load failed", error)
         }
@@ -107,7 +95,9 @@ class StudySessionController internal constructor(
     /**
      * Records an answer; auto-flags wrong picks when the mode says so. The
      * policy comes from the drill once the registry lands — until then,
-     * neutral: no auto-flag, no auto-advance.
+     * neutral: no auto-flag, no auto-advance. A drill that does turn
+     * autoFlag on must also write the round_flag row, or the mark lives only
+     * on screen.
      */
     fun answer(word: DeckWord, correct: Boolean, picked: String? = null) = dispatch(
         StudyAction.Answered(
@@ -129,18 +119,18 @@ class StudySessionController internal constructor(
     )
 
     /**
-     * Toggles the round's flag. Frontend-only for now: the mark lives on the
-     * session's words, so it survives browsing and round advances but not a
-     * reload.
-     *
-     * The gap for the next commit is right here — the round_flag write
-     * (`setRoundFlag(bucketName, session.progress.round, position, !flagged)`)
-     * and, above, a load path that reads the round's flags instead of
-     * hard-coding `flagged: false`.
+     * Toggles the round's flag: the session flips it for the deck and the
+     * round_flag row follows (insert or delete) — one write per tap, two
+     * stores that say the same thing.
      */
-    fun toggleFlag(word: DeckWord) = dispatch(
-        StudyAction.FlagToggled(position = word.position),
-    )
+    fun toggleFlag(word: DeckWord) {
+        val round = (session as? StudySession.Ready)?.progress?.round ?: 1
+        dispatch(StudyAction.FlagToggled(position = word.position))
+        writeScope.launch {
+            runCatching { setRoundFlag(appContext, bucketName, round, word.position, !word.flagged) }
+                .onFailure { error -> Log.e(TAG, "flag write failed", error) }
+        }
+    }
 
     /**
      * The end page was reached. Returns false to veto the landing (browsing,
@@ -175,15 +165,15 @@ class StudySessionController internal constructor(
     }
 }
 
-/** The deck's word from the db row: the static entry, flags start clear. */
-private fun WordRow.toDeckWord(): DeckWord = DeckWord(
+/** The deck's word from the db row: the static entry plus the flag state. */
+internal fun RoundWordRow.toDeckWord(): DeckWord = DeckWord(
     position = position,
     word = word,
     ipa = ipa,
     meaning = meaning,
     forms = forms,
     distractors = emptyList(),
-    flagged = false,
+    flagged = flagged,
 )
 
 /** The db probe row as the reducer's Progress — same fields, same meaning. */

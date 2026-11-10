@@ -4,7 +4,11 @@ import android.content.Context
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.db.withTransaction
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
+import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
+import kotlinx.serialization.json.Json
+
+private val json = Json
 
 /**
  * The study probe, as the session carries it: the round being studied and
@@ -151,4 +155,66 @@ suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolea
 private fun sweptOf(probe: ProgressRow, wordCount: Int): Int {
     if (probe.roundStartedAt == 0L) return 0
     return minOf(probe.pointer + 1, wordCount)
+}
+
+/** A word of one round: the static entry plus that round's flag state. */
+data class RoundWordRow(
+    val position: Int,
+    val word: String,
+    val ipa: String,
+    val meaning: String,
+    val forms: List<String>,
+    val flagged: Boolean,
+)
+
+/**
+ * Flags a word within one round: an INSERT when marking, a DELETE when
+ * clearing (the row's absence IS the unflagged state). Touches round_flag
+ * only — the probe belongs to settling and completing, nothing else.
+ */
+suspend fun setRoundFlag(
+    context: Context,
+    bucketName: String,
+    round: Int,
+    position: Int,
+    flagged: Boolean,
+) {
+    val db = getDb(context)
+    if (flagged) {
+        // Re-marking an already flagged word keeps its first stamp.
+        db.studyRoundDao().insertFlag(
+            RoundFlagEntity(
+                bucketName = bucketName,
+                round = round,
+                position = position,
+                flaggedAt = System.currentTimeMillis(),
+            ),
+        )
+        return
+    }
+    db.studyRoundDao().deleteFlag(bucketName, round, position)
+}
+
+/** The bucket's words with their flag state IN one round — the deck's words
+ * for study and browse. The join is a left one: the flag row's absence is the
+ * unflagged state. */
+suspend fun getWordsWithRoundFlag(
+    context: Context,
+    bucketName: String,
+    round: Int,
+): Pair<Boolean, List<RoundWordRow>> {
+    val db = getDb(context)
+    val exists = db.bucketWordDao().findNameById(bucketName)
+    if (exists == null) return false to emptyList()
+    val rows = db.studyRoundDao().getWordsWithRoundFlag(bucketName, round)
+    return true to rows.map { row ->
+        RoundWordRow(
+            position = row.position,
+            word = row.word,
+            ipa = row.ipa,
+            meaning = row.meaning,
+            forms = json.decodeFromString(row.forms),
+            flagged = row.flagPosition != null,
+        )
+    }
 }

@@ -1,8 +1,10 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
@@ -10,11 +12,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -25,16 +27,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.data.mock.loadBuckets
 import com.time1043.feedah_kt.data.settings.DeckChrome
+import com.time1043.feedah_kt.db.repo.getProgress
+import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
+import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.platform.FeedahTts
-import com.time1043.feedah_kt.types.Bucket
-import com.time1043.feedah_kt.types.withFlag
+import com.time1043.feedah_kt.types.DeckWord
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.launch
 
 @Composable
 fun BrowseScreen(
@@ -56,41 +58,63 @@ fun BrowseScreen(
     // The bucket the opener came from (the word list passes it); no param
     // means the home screen's default bucket.
     val bucketName = bucketParam?.takeIf { it.isNotEmpty() } ?: activeBucket
-    // The mock buckets load from assets: keep the parse off the main
-    // thread (the source imports them synchronously; same data, async).
-    val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {
-        value = withContext(Dispatchers.IO) { loadBuckets(appContext) }
-    }
-    // Honest guard: an unknown name is not found (no silent first-bucket
-    // fallback).
-    val bucket = buckets?.find { candidate -> candidate.name == bucketName }
-    // The bookmark marks a word IN the bucket's current round — the same object
-    // study writes, not a per-visit toggle. Until round_flag lands the store is
-    // this screen's memory (so a mark is lost when browse closes); the shape is
-    // already the table's, keyed by the word's position, and the round will come
-    // from the probe.
-    var flags by remember { mutableStateOf(emptySet<Int>()) }
-    val words = bucket?.words?.map { it.withFlag(it.position in flags) } ?: emptyList()
-    val toggleFlag: (Int) -> Unit = { position ->
-        flags = if (position in flags) flags - position else flags + position
+    // null = the database has not answered yet: the not-found pages must not
+    // flash before it does.
+    var words by remember { mutableStateOf<List<DeckWord>?>(null) }
+    var bucketExists by remember { mutableStateOf(true) }
+    // The probe's round — the flags browse shows and writes are keyed by it,
+    // so this screen marks the same cards study does, in the same round.
+    var round by remember { mutableStateOf(1) }
+
+    // Reloads on every focus: the words and their flags follow the database,
+    // so a mark made in the study deck is here when browse opens.
+    LaunchedEffect(bucketName) {
+        try {
+            val progress = getProgress(appContext, bucketName)
+            val (exists, rows) = getWordsWithRoundFlag(appContext, bucketName, progress.round)
+            bucketExists = exists
+            round = progress.round
+            words = rows.map { it.toDeckWord() }
+        } catch (error: Exception) {
+            Log.e(TAG, "load failed", error)
+        }
     }
 
     // The param is the CARD NUMBER — the data position printed on the card
-    // (1701+ for the mock bucket), not a list index. It is the identifier
-    // every surface shares: what the card shows is what opens here, and
-    // what search/review will carry. The footer, by contrast, is a 1-based
+    // (1701+ for the 2050 bucket), not a list index. It is the identifier
+    // every surface shares: what the card shows is what opens here, and what
+    // search/review will carry. The footer, by contrast, is a 1-based
     // pagination ordinal.
-    val word = words.find { it.position == position }
-    val initialIndex = word?.let(words::indexOf) ?: 0
+    val currentWords = words
+    val word = currentWords?.find { it.position == position }
+    val initialIndex = if (word != null && currentWords != null) currentWords.indexOf(word) else 0
+    // The deck's current card, mirrored out for the footer counter. It stays
+    // null until the user swipes: the card the deck opens on is the one the
+    // param named, which the load settles a frame later.
+    var swiped by remember { mutableStateOf<Int?>(null) }
+    val shownIndex = swiped ?: initialIndex
 
-    // The deck's current card, mirrored out for the footer counter. Re-read
-    // when the buckets land: the first composition races the async load.
-    var current by remember(bucket) { mutableIntStateOf(initialIndex) }
+    val scope = rememberCoroutineScope()
+    val toggleFlag: (DeckWord) -> Unit = { target ->
+        val flagged = !target.flagged
+        // Optimistic: the bookmark must flip on the tap; the row follows.
+        words = words?.map { row ->
+            if (row.position == target.position) row.copy(flagged = flagged) else row
+        }
+        scope.launch {
+            runCatching { setRoundFlag(appContext, bucketName, round, target.position, flagged) }
+                .onFailure { error -> Log.e(TAG, "flag write failed", error) }
+        }
+    }
+
+    if (words == null) {
+        // The database has not answered yet: an empty frame, like the source.
+        Box(modifier = modifier.fillMaxSize())
+        return
+    }
 
     Column(modifier = modifier) {
         when {
-            // Still loading the mock buckets: keep the frame empty.
-            buckets == null -> Unit
             // Mirror of 4d56bce: browse swipes through the deck from its
             // position. Same seams as study — the deck decides when to
             // speak, the screen decides how and whether.
@@ -99,28 +123,24 @@ fun BrowseScreen(
                 // settings (the header rides with the deck, per 90b8051).
                 if (chrome.showHeader) {
                     ScreenHeader(
-                        title = if (chrome.showTitle && bucket != null) {
-                            "Browse ${bucket.name}"
-                        } else {
-                            null
-                        },
+                        title = if (chrome.showTitle) "Browse $bucketName" else null,
                         onBack = onBack,
                         onSearch = onSearch,
                     )
                 }
                 WordDeck(
-                    words = words,
+                    words = currentWords,
                     initialIndex = initialIndex,
                     onSpeak = { spoken -> tts.speakWord(spoken.word, speechRate) },
                     canSpeak = settingsReady && autoSpeak,
                     tapToReveal = tapToReveal,
-                    onToggleFlag = { spoken -> toggleFlag(spoken.position) },
+                    onToggleFlag = toggleFlag,
                     progressBar = chrome.showProgressBar,
-                    onIndexChange = { current = it },
+                    onIndexChange = { swiped = it },
                     hudRight = if (chrome.showHudPage) {
                         {
                             Text(
-                                text = "${current + 1}/${words.size}",
+                                text = "${shownIndex + 1}/${currentWords.size}",
                                 style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -151,7 +171,7 @@ fun BrowseScreen(
                         // The message names the entity that is actually
                         // missing (the source's 90b8051; the header row itself
                         // landed with the word-desk port).
-                        text = if (bucket == null) "Bucket not found" else "Word not found",
+                        text = if (!bucketExists) "Bucket not found" else "Word not found",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -165,3 +185,5 @@ fun BrowseScreen(
         }
     }
 }
+
+private const val TAG = "browse"
