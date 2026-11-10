@@ -1,5 +1,6 @@
 package com.time1043.feedah_kt.ui.screen.bucket
 
+import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -7,24 +8,26 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.produceState
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.time1043.feedah_kt.data.mock.loadBuckets
-import com.time1043.feedah_kt.types.Bucket
+import com.time1043.feedah_kt.db.repo.BucketRow
+import com.time1043.feedah_kt.db.repo.getBuckets
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectRow
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectOption
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 /** The settings of one bucket. The picker switches the study bucket — the
- * one the home screen studies and the decks open on. The per-bucket
- * specifics (rename, clear progress, …) come with the db and stack here as
- * further rows. */
+ * one the home screen studies and the decks open on — and its options are the
+ * seeded buckets in the database, the same list the bucket tab shows. The
+ * per-bucket specifics (rename, clear progress, …) stack here as further
+ * rows. */
 @Composable
 fun BucketSettingsScreen(
     name: String?,
@@ -34,8 +37,15 @@ fun BucketSettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
-    val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {
-        value = withContext(Dispatchers.IO) { loadBuckets(appContext) }
+    var buckets by remember { mutableStateOf<List<BucketRow>>(emptyList()) }
+
+    // Reloads on every focus: the options follow the database.
+    LaunchedEffect(Unit) {
+        try {
+            buckets = getBuckets(appContext)
+        } catch (error: Exception) {
+            Log.e(TAG, "load failed", error)
+        }
     }
 
     Column(modifier = modifier) {
@@ -43,7 +53,7 @@ fun BucketSettingsScreen(
 
         if (name != null) {
             Text(
-                text = "$name · per-bucket specifics land with the database",
+                text = name,
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier
@@ -56,7 +66,7 @@ fun BucketSettingsScreen(
             SelectRow(
                 label = "Study bucket",
                 value = activeBucket,
-                options = (buckets ?: emptyList()).map { bucket ->
+                options = buckets.map { bucket ->
                     SelectOption(value = bucket.name, label = bucket.name)
                 },
                 onValueChange = onActiveBucketChange,
@@ -64,3 +74,5 @@ fun BucketSettingsScreen(
         }
     }
 }
+
+private const val TAG = "bucket settings"

@@ -9,8 +9,7 @@ private val json = Json
 /** One row of the bucket tab: the card's name plus its word count. */
 data class BucketRow(val name: String, val wordCount: Int)
 
-/** Every seeded bucket, ordered by id. The reference's readout (round,
- * pointer, flags) joins in once the probe lives here too. */
+/** Every seeded bucket, ordered by name. */
 suspend fun getBuckets(context: Context): List<BucketRow> {
     val db = getDb(context)
     return db.bucketWordDao().getBuckets().map { bucket ->
