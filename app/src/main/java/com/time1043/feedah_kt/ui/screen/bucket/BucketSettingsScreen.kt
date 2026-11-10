@@ -23,14 +23,14 @@ import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectRow
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectOption
 
-/** The settings of one bucket. The picker switches the study bucket — the
- * one the home screen studies and the decks open on — and its options are the
- * seeded buckets in the database, the same list the bucket tab shows. The
- * per-bucket specifics (rename, clear progress, …) stack here as further
- * rows. */
+/**
+ * The bucket settings — for the list as a whole, not for one bucket: there is
+ * no bucket in the route, and the picker switches the study bucket (the one
+ * the home screen studies and the decks open on). Its options are the seeded
+ * buckets in the database, the same list the bucket tab shows.
+ */
 @Composable
 fun BucketSettingsScreen(
-    name: String?,
     activeBucket: String,
     onActiveBucketChange: (String) -> Unit,
     onBack: () -> Unit,
@@ -50,17 +50,6 @@ fun BucketSettingsScreen(
 
     Column(modifier = modifier) {
         ListHeader(title = "Bucket settings", onBack = onBack)
-
-        if (name != null) {
-            Text(
-                text = name,
-                fontSize = 13.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
-            )
-        }
 
         Box(Modifier.padding(horizontal = 16.dp)) {
             SelectRow(

@@ -121,7 +121,7 @@ fun NavGraphBuilder.bucketScreen(navController: NavController) {
         BucketScreen(
             onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
             onOpenRounds = { name -> navController.navigate(RoundsRoute(name)) },
-            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute()) },
+            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
         )
     }
 }
@@ -280,10 +280,8 @@ fun NavGraphBuilder.bucketSettingsScreen(
     activeBucket: String,
     onActiveBucketChange: (String) -> Unit,
 ) {
-    composable<BucketSettingsRoute> { entry ->
-        val route = entry.toRoute<BucketSettingsRoute>()
+    composable<BucketSettingsRoute> {
         BucketSettingsScreen(
-            name = route.name,
             activeBucket = activeBucket,
             onActiveBucketChange = onActiveBucketChange,
             onBack = navController::goBack,
