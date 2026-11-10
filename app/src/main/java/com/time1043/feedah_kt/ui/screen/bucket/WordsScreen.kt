@@ -81,6 +81,8 @@ fun WordsScreen(
     // bucket from an existing-but-empty one.
     var bucketExists by remember { mutableStateOf(false) }
     var words by remember { mutableStateOf<List<RoundWordRow>>(emptyList()) }
+    // The probe's round: the title names it and the flags below are its own.
+    var round by remember { mutableStateOf(1) }
     // The eye follows the stored setting once it has hydrated — a mount-time
     // seed would capture the factory value on a cold-start deep link — and a
     // tap overrides it for this visit only (null = no override yet). It
@@ -100,6 +102,7 @@ fun WordsScreen(
             val progress = getProgress(appContext, name)
             val (exists, rows) = getWordsWithRoundFlag(appContext, name, progress.round)
             bucketExists = exists
+            round = progress.round
             words = rows
         } catch (error: Exception) {
             Log.e(TAG, "load failed", error)
@@ -123,7 +126,7 @@ fun WordsScreen(
 
     Column(modifier = modifier) {
         ListHeader(
-            title = if (bucketExists) name else null,
+            title = if (bucketExists) "$name R$round" else null,
             onBack = onBack,
             right = {
                 val interaction = remember { MutableInteractionSource() }
