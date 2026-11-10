@@ -24,7 +24,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -43,15 +42,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.data.mock.loadBuckets
-import com.time1043.feedah_kt.types.Bucket
-import com.time1043.feedah_kt.types.Word
+import com.time1043.feedah_kt.db.WordRow
+import com.time1043.feedah_kt.db.getWordsByBucket
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.components.ProgressBar
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 private const val ROW_HEIGHT = 52
 
@@ -59,7 +55,7 @@ private const val ROW_HEIGHT = 52
  * behind the eye toggle. The eye is per-visit — it starts from the global
  * word-meanings setting on every entry and never writes back to it. Tapping
  * a row opens the word in the browse deck, by its card number. Pure lookup
- * — nothing is recorded. */
+ * — nothing is recorded. The rows load from the database. */
 @Composable
 fun WordsScreen(
     name: String,
@@ -69,13 +65,11 @@ fun WordsScreen(
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
-    val buckets by produceState<List<Bucket>?>(initialValue = null, key1 = appContext) {
-        value = withContext(Dispatchers.IO) { loadBuckets(appContext) }
-    }
-    // Honest guard: an unknown name is not found (no silent first-bucket
-    // fallback).
-    val bucket = buckets?.find { candidate -> candidate.name == name }
-    val words = bucket?.words ?: emptyList()
+    // The database is the honesty guard: an unknown bucket id has no rows
+    // (no silent first-bucket fallback) — the load distinguishes a missing
+    // bucket from an existing-but-empty one.
+    var bucketExists by remember { mutableStateOf(false) }
+    var words by remember { mutableStateOf<List<WordRow>>(emptyList()) }
     // The eye follows the stored setting once it has hydrated — a mount-time
     // seed would capture the factory value on a cold-start deep link — and a
     // tap overrides it for this visit only (null = no override yet). It
@@ -87,6 +81,12 @@ fun WordsScreen(
     val listState = rememberLazyListState()
     var index by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
+    // Loads on every focus: the rows follow the database.
+    LaunchedEffect(name) {
+        val (exists, rows) = getWordsByBucket(appContext, name)
+        bucketExists = exists
+        words = rows
+    }
     // The source samples the offset at scroll end; the flow mirrors the top
     // visible row as it settles — the same value at rest. Keyed on words:
     // the first composition races the async load, and the collector must
@@ -105,7 +105,7 @@ fun WordsScreen(
 
     Column(modifier = modifier) {
         ListHeader(
-            title = bucket?.name,
+            title = if (bucketExists) name else null,
             onBack = onBack,
             right = {
                 val interaction = remember { MutableInteractionSource() }
@@ -137,9 +137,9 @@ fun WordsScreen(
         )
 
         when {
-            // Still loading the mock buckets: keep the frame empty.
-            buckets == null -> Unit
-            bucket == null -> Box(
+            // The database is the honesty guard: an unknown bucket renders
+            // the not-found page, not a blank frame.
+            !bucketExists -> Box(
                 Modifier.fillMaxSize(),
                 contentAlignment = Alignment.Center,
             ) {
@@ -166,7 +166,7 @@ fun WordsScreen(
                 }
                 LazyColumn(state = listState, modifier = Modifier.fillMaxSize()) {
                     items(words, key = { it.position }) { word ->
-                        WordRow(
+                        WordListRow(
                             word = word,
                             showMeaning = showMeaning,
                             onClick = { guardOpenWord { onOpenWord(word.position) } },
@@ -181,8 +181,8 @@ fun WordsScreen(
 /** One list row: the card number, the word, and the meaning column behind
  * the eye toggle. */
 @Composable
-private fun WordRow(
-    word: Word,
+private fun WordListRow(
+    word: WordRow,
     showMeaning: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
