@@ -41,6 +41,10 @@ suspend fun <T> withTransaction(fn: suspend () -> T): T {
 /** Opens the raw handle, wraps it in Room and applies the PRAGMAs. The
  * singleton state lives here so withTransaction can always find it. */
 fun openDb(context: Context): FeedahDb {
+    // Change listeners let drizzle's useLiveQuery subscribe to writes; they
+    // must be enabled at open time, retrofitting means reopening the file.
+    // Room's InvalidationTracker fills that role on its own — every read is
+    // tracked from the first open, so there is nothing to switch on here.
     val db = buildDb(context)
     // First access performs the open: migrations, Room's integrity check,
     // onCreate/onUpgrade. It throws on a file it cannot own.
