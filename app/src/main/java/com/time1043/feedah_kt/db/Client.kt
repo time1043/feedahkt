@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.db
 
 import android.content.Context
+import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
@@ -8,13 +9,22 @@ import androidx.room.withTransaction
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.time1043.feedah_kt.db.schema.BucketEntity
 import com.time1043.feedah_kt.db.schema.BucketWordDao
+import com.time1043.feedah_kt.db.schema.BucketProgressEntity
+import com.time1043.feedah_kt.db.schema.StudyRoundDao
 import com.time1043.feedah_kt.db.schema.WordEntity
 
 const val DB_NAME = "feedah.db"
 
-@Database(entities = [BucketEntity::class, WordEntity::class], version = 1, exportSchema = true)
+@Database(
+    entities = [BucketEntity::class, WordEntity::class, BucketProgressEntity::class],
+    version = 2,
+    exportSchema = true,
+    autoMigrations = [AutoMigration(from = 1, to = 2)],
+)
 abstract class FeedahDb : RoomDatabase() {
     abstract fun bucketWordDao(): BucketWordDao
+
+    abstract fun studyRoundDao(): StudyRoundDao
 }
 
 private fun buildDb(context: Context): FeedahDb =

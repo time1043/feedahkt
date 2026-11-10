@@ -3,8 +3,9 @@ package com.time1043.feedah_kt.logic
 import com.time1043.feedah_kt.types.DeckWord
 
 /**
- * The study probe. The db keeps a row of this shape once drizzle lands;
- * until then it lives in memory and a session always restarts at round 1.
+ * The study probe: mirrored by the bucket_progress row, which is where the
+ * round and the pointer survive the app being killed. `pointer` is the card
+ * index (0-based) the walk is parked on.
  */
 data class Progress(val round: Int, val pointer: Int, val roundStartedAt: Long)
 
@@ -206,6 +207,17 @@ fun studyReducer(session: StudySession, action: StudyAction): StudySession {
 fun frontierOf(session: StudySession): Int {
     val ready = session as? StudySession.Ready ?: return 0
     return minOf(ready.progress.pointer, ready.words.size)
+}
+
+/**
+ * The stored probe clamped into the bucket's actual word list: a re-seed can
+ * shrink the list under a stored pointer, and an over-long pointer would
+ * read as a already-finished round. A probe inside the list is returned
+ * untouched.
+ */
+fun clampProgress(progress: Progress, wordCount: Int): Progress {
+    val last = (wordCount - 1).coerceAtLeast(0)
+    return if (progress.pointer <= last) progress else progress.copy(pointer = last)
 }
 
 /** End-page copy facts: how many cards were answered and how many right. */
