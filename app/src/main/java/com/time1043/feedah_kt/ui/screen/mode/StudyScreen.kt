@@ -25,7 +25,6 @@ import com.time1043.feedah_kt.logic.countsOf
 import com.time1043.feedah_kt.logic.frontierOf
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.data.settings.DeckChrome
-import com.time1043.feedah_kt.types.toWord
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import com.time1043.feedah_kt.ui.components.DeckEndAction
