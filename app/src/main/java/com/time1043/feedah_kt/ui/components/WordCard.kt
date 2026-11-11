@@ -94,14 +94,17 @@ private fun BookmarkButton(
             } else {
                 MaterialTheme.colorScheme.onSurfaceVariant
             },
+            // The padding wraps the icon (the source's Pressable p-2 around a
+            // 30px glyph), not the other way round: size-first would inset
+            // the glyph itself and draw it at 14dp.
             modifier = Modifier
-                .size(30.dp)
                 .clickable(
                     role = Role.Button,
                     onClickLabel = if (flagged) "Unflag word" else "Flag word",
                     onClick = onToggleFlag,
                 )
-                .padding(8.dp), // p-2
+                .padding(8.dp) // p-2
+                .size(30.dp),
         )
     }
 }
