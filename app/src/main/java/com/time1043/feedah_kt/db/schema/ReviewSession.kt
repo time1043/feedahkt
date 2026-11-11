@@ -95,6 +95,10 @@ interface ReviewSessionDao {
     @Query("SELECT * FROM review_session WHERE id = :id LIMIT 1")
     suspend fun getSessionById(id: Long): ReviewSessionEntity?
 
+    /** Raw table read for tests (the source's spec asserts via db.select()). */
+    @Query("SELECT * FROM review_session")
+    suspend fun getAll(): List<ReviewSessionEntity>
+
     /** The resume watermark moves only forward — a SQL MAX. */
     @Query(
         "UPDATE review_session SET last_position = MAX(last_position, :position), " +
