@@ -64,7 +64,7 @@ fun FeedahNavHost(
         modifier = modifier
     ) {
         // tab
-        homeScreen(navController)
+        homeScreen(navController, activeBucket)
         bucketScreen(navController)
         statsScreen(navController)
         settingsScreen(
@@ -97,7 +97,10 @@ fun FeedahNavHost(
             navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
             activeBucket,
         )
-        reviewScreen()
+        reviewScreen(
+            navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
+            activeBucket,
+        )
         searchScreen(navController)
         // bucket
         wordsScreen(navController, wordsMeaning)
@@ -106,9 +109,10 @@ fun FeedahNavHost(
     }
 }
 
-fun NavGraphBuilder.homeScreen(navController: NavController) {
+fun NavGraphBuilder.homeScreen(navController: NavController, activeBucket: String) {
     composable<Home> {
         HomeScreen(
+            activeBucket = activeBucket,
             onOpenSearch = { navController.navigate(SearchRoute()) },
             onOpenStudy = { navController.navigate(StudyRoute()) },
             onOpenReview = { navController.navigate(ReviewRoute()) },
@@ -233,8 +237,32 @@ fun NavGraphBuilder.browseScreen(
     }
 }
 
-fun NavGraphBuilder.reviewScreen() {
-    composable<ReviewRoute> { ReviewScreen() }
+fun NavGraphBuilder.reviewScreen(
+    navController: NavController,
+    tts: FeedahTts,
+    speechRate: Float,
+    settingsReady: Boolean,
+    autoSpeak: Boolean,
+    tapToReveal: Boolean,
+    chrome: DeckChrome,
+    activeBucket: String,
+) {
+    composable<ReviewRoute> { entry ->
+        val route = entry.toRoute<ReviewRoute>()
+        ReviewScreen(
+            tts = tts,
+            speechRate = speechRate,
+            settingsReady = settingsReady,
+            autoSpeak = autoSpeak,
+            tapToReveal = tapToReveal,
+            chrome = chrome,
+            bucketParam = route.bucket,
+            roundParam = route.round,
+            activeBucket = activeBucket,
+            onBack = navController::goBack,
+            onSearch = { navController.navigate(SearchRoute()) },
+        )
+    }
 }
 
 fun NavGraphBuilder.searchScreen(navController: NavController) {
@@ -270,6 +298,9 @@ fun NavGraphBuilder.roundsScreen(navController: NavController, activeBucket: Str
         RoundsScreen(
             name = route.name,
             activeBucket = activeBucket,
+            onOpenReview = { round ->
+                navController.navigate(ReviewRoute(bucket = route.name, round = round))
+            },
             onBack = navController::goBack,
         )
     }

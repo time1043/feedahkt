@@ -137,6 +137,11 @@ data class RoundRow(
      * list — what the timeline paints. The table itself keeps word positions,
      * so the translation happens here. */
     val flags: List<Int>,
+    /** How many real walk-throughs the round's flag list has had. */
+    val reviewTimes: Int,
+    /** An open draft exists — re-entering the review would resume it,
+     * uncounted. */
+    val hasDraft: Boolean,
     /** 0 when unrecorded — a round that has not been entered yet. */
     val startedAt: Long,
     /** The finishing stamp; null while the round is still in progress. */
@@ -160,7 +165,13 @@ suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolea
     val probe = getProgress(context, bucketName)
     val records = db.studyRoundDao().getRecordSpans(bucketName)
     val flagRows = db.studyRoundDao().getFlags(bucketName)
+    val reviewCounts = db.reviewSessionDao().countReviews(bucketName)
+    val draftRounds = db.reviewSessionDao().getDraftRounds(bucketName)
     val spanOf = records.associateBy { it.round }
+    // The highest counted number, not a count: the number is the walk's
+    // identity, and the max survives even if rows were ever pruned.
+    val reviewsOf = reviewCounts.associate { it.round to (it.maxNumber ?: 0) }
+    val draftsOf = draftRounds.toSet()
     // The table stores word positions; the timeline speaks in ordinals (the
     // deck's card order). A flag whose word no longer exists is skipped
     // rather than painted into a neighbour's column.
@@ -185,6 +196,8 @@ suspend fun getRoundsByBucket(context: Context, bucketName: String): Pair<Boolea
             // reached all.
             swept = if (done) wordCount else sweptOf(probe, wordCount),
             flags = flagsOf[round] ?: emptyList(),
+            reviewTimes = reviewsOf[round] ?: 0,
+            hasDraft = round in draftsOf,
             startedAt = span?.startedAt ?: if (done) 0 else probe.roundStartedAt,
             endedAt = span?.endedAt,
         )
@@ -235,6 +248,18 @@ suspend fun setRoundFlag(
     }
     db.studyRoundDao().deleteFlag(bucketName, round, position)
 }
+
+/** How many flag rows one round carries — the home review entry's count and
+ * the empty check behind it. */
+suspend fun countRoundFlags(context: Context, bucketName: String, round: Int): Int =
+    getDb(context).studyRoundDao().countRoundFlags(bucketName, round)
+
+/**
+ * The round's feed is complete once its round_record row exists — the same
+ * row that carries the round's span doubles as the completion flag.
+ */
+suspend fun isRoundComplete(context: Context, bucketName: String, round: Int): Boolean =
+    getDb(context).studyRoundDao().findRecord(bucketName, round) != null
 
 /** The bucket's words with their flag state IN one round — the deck's words
  * for study and browse. The join is a left one: the flag row's absence is the

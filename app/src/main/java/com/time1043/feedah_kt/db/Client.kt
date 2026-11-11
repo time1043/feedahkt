@@ -12,6 +12,8 @@ import com.time1043.feedah_kt.db.schema.BucketWordDao
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
 import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
+import com.time1043.feedah_kt.db.schema.ReviewSessionDao
+import com.time1043.feedah_kt.db.schema.ReviewSessionEntity
 import com.time1043.feedah_kt.db.schema.StudyRoundDao
 import com.time1043.feedah_kt.db.schema.WordEntity
 
@@ -24,19 +26,23 @@ const val DB_NAME = "feedah.db"
         BucketProgressEntity::class,
         RoundRecordEntity::class,
         RoundFlagEntity::class,
+        ReviewSessionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5),
     ],
 )
 abstract class FeedahDb : RoomDatabase() {
     abstract fun bucketWordDao(): BucketWordDao
 
     abstract fun studyRoundDao(): StudyRoundDao
+
+    abstract fun reviewSessionDao(): ReviewSessionDao
 }
 
 private fun buildDb(context: Context): FeedahDb =
@@ -49,14 +55,26 @@ private fun buildDb(context: Context): FeedahDb =
 private var rawDb: SupportSQLiteDatabase? = null
 private var currentDb: FeedahDb? = null
 
+/** Test seam: the instrumentation swaps the singleton for an in-memory
+ * database (the counterpart of the source's jest.mock of the db modules).
+ * Only the test process ever sees it. */
+internal fun setDbForTests(db: FeedahDb) {
+    instance = db
+    currentDb = db
+    rawDb = db.openHelper.writableDatabase
+}
+
 /** The raw handle behind Room; used by the dev studio bridge. */
 fun getRawDb(): SupportSQLiteDatabase? = rawDb
 
 /**
  * Runs suspend Room statements inside one transaction. Room's own
  * withTransaction handles suspend callbacks natively, so this is a thin
- * wrapper over the opened singleton (the raw-handle umbrella of the
- * drizzle stage has no counterpart to work around).
+ * wrapper over the opened singleton — and the umbrella is EXCLUSIVE by
+ * construction: Room pins the transaction to a dedicated connection and
+ * serializes the block, so overlapping writes can never start a nested
+ * transaction on top of our work (the hazard the source fixed by moving
+ * to withExclusiveTransactionAsync).
  */
 suspend fun <T> withTransaction(fn: suspend () -> T): T {
     val db = currentDb ?: throw IllegalStateException("database not opened")

@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.ui.screen.bucket
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,13 +48,14 @@ import com.time1043.feedah_kt.ui.components.RoundBar
  * first — its state, its red/green/gray sweep, and for a finished round when
  * it ran and how long it took.
  *
- * A round is not tappable yet: the review of its flag list is the drill mode,
- * which lands on its own.
+ * Tapping a round opens its flag list as a review walk — the marks that
+ * round left are exactly what the review screen queues up.
  */
 @Composable
 fun RoundsScreen(
     name: String,
     activeBucket: String,
+    onOpenReview: (Int) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -94,7 +96,11 @@ fun RoundsScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp), // gap-6
             ) {
                 rows?.forEach { row ->
-                    RoundItem(row = row, studying = name == activeBucket)
+                    RoundItem(
+                        row = row,
+                        studying = name == activeBucket,
+                        onOpenReview = { onOpenReview(row.round) },
+                    )
                 }
             }
         }
@@ -102,7 +108,7 @@ fun RoundsScreen(
 }
 
 @Composable
-private fun RoundItem(row: RoundRow, studying: Boolean) {
+private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit) {
     val dark = isSystemInDarkTheme()
     val timeLine = timeLineOf(row)
     val statuses = roundStatuses(row.wordCount, RoundSweep(row.swept, row.flags))
@@ -138,7 +144,8 @@ private fun RoundItem(row: RoundRow, studying: Boolean) {
         ) {
             // The legend counts the same statuses the bar paints: a flagged
             // card is red and no longer green, so the two never double-count
-            // it.
+            // it. The review count rides along: the round's walks so far, or
+            // the open draft that re-entering would resume.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp), // gap-4
@@ -147,10 +154,26 @@ private fun RoundItem(row: RoundRow, studying: Boolean) {
                     color = if (dark) ROUND_COLORS.dark.green else ROUND_COLORS.light.green,
                     value = "$green / ${row.wordCount}",
                 )
-                CountDot(
-                    color = if (dark) ROUND_COLORS.dark.red else ROUND_COLORS.light.red,
-                    value = "$red",
-                )
+                Box(Modifier.clickable(onClick = onOpenReview)) {
+                    CountDot(
+                        color = if (dark) ROUND_COLORS.dark.red else ROUND_COLORS.light.red,
+                        value = "$red",
+                    )
+                }
+                if (row.reviewTimes > 0) {
+                    Text(
+                        text = "time ${row.reviewTimes}",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary, // text-blue-500
+                    )
+                } else if (row.hasDraft) {
+                    Text(
+                        text = "time 1 · uncounted",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
             }
             timeLine?.let {
                 Text(
