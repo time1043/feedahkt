@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.ui.screen.bucket
 
 import android.util.Log
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -47,13 +48,14 @@ import com.time1043.feedah_kt.ui.components.RoundBar
  * first — its state, its red/green/gray sweep, and for a finished round when
  * it ran and how long it took.
  *
- * A round is not tappable yet: the review of its flag list is the drill mode,
- * which lands on its own.
+ * Tapping a round opens its flag list as a review walk — the marks that
+ * round left are exactly what the review screen queues up.
  */
 @Composable
 fun RoundsScreen(
     name: String,
     activeBucket: String,
+    onOpenReview: (Int) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -94,7 +96,11 @@ fun RoundsScreen(
                 verticalArrangement = Arrangement.spacedBy(24.dp), // gap-6
             ) {
                 rows?.forEach { row ->
-                    RoundItem(row = row, studying = name == activeBucket)
+                    RoundItem(
+                        row = row,
+                        studying = name == activeBucket,
+                        onOpenReview = { onOpenReview(row.round) },
+                    )
                 }
             }
         }
@@ -102,7 +108,7 @@ fun RoundsScreen(
 }
 
 @Composable
-private fun RoundItem(row: RoundRow, studying: Boolean) {
+private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit) {
     val dark = isSystemInDarkTheme()
     val timeLine = timeLineOf(row)
     val statuses = roundStatuses(row.wordCount, RoundSweep(row.swept, row.flags))
@@ -147,10 +153,12 @@ private fun RoundItem(row: RoundRow, studying: Boolean) {
                     color = if (dark) ROUND_COLORS.dark.green else ROUND_COLORS.light.green,
                     value = "$green / ${row.wordCount}",
                 )
-                CountDot(
-                    color = if (dark) ROUND_COLORS.dark.red else ROUND_COLORS.light.red,
-                    value = "$red",
-                )
+                Box(Modifier.clickable(onClick = onOpenReview)) {
+                    CountDot(
+                        color = if (dark) ROUND_COLORS.dark.red else ROUND_COLORS.light.red,
+                        value = "$red",
+                    )
+                }
             }
             timeLine?.let {
                 Text(

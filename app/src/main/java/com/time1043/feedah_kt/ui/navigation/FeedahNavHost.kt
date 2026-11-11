@@ -297,6 +297,9 @@ fun NavGraphBuilder.roundsScreen(navController: NavController, activeBucket: Str
         RoundsScreen(
             name = route.name,
             activeBucket = activeBucket,
+            onOpenReview = { round ->
+                navController.navigate(ReviewRoute(bucket = route.name, round = round))
+            },
             onBack = navController::goBack,
         )
     }
