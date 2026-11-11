@@ -102,4 +102,24 @@ interface ReviewSessionDao {
 
     @Query("DELETE FROM review_session WHERE id = :id")
     suspend fun deleteById(id: Long)
+
+    /** The highest counted review number per round — the round list's review
+     * count. The MAX is the number, not a count: the number is the walk's
+     * identity, and it survives even if rows were ever pruned. */
+    @Query(
+        "SELECT round, MAX(number) AS maxNumber FROM review_session " +
+            "WHERE bucket_name = :bucketName AND counted = 1 GROUP BY round",
+    )
+    suspend fun countReviews(bucketName: String): List<ReviewCount>
+
+    /** The rounds with an open draft — re-entering the review would resume
+     * it, uncounted. */
+    @Query(
+        "SELECT DISTINCT round FROM review_session WHERE bucket_name = :bucketName " +
+            "AND counted = 0 AND finished_at IS NULL",
+    )
+    suspend fun getDraftRounds(bucketName: String): List<Int>
 }
+
+/** One round's counted-review high-water mark. */
+data class ReviewCount(val round: Int, val maxNumber: Int?)

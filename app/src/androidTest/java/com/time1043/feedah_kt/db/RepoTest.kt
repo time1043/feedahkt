@@ -114,6 +114,12 @@ class RepoTest {
         assertNotNull(second)
         assertEquals(first.id, second!!.id)
         assertEquals(p1, second.lastPosition)
+
+        // The round list reads the draft, not a count.
+        val (_, draftRows) = getRoundsByBucket(context, bucket)
+        val draftRow = draftRows.first { it.round == 1 }
+        assertEquals(0, draftRow.reviewTimes)
+        assertTrue(draftRow.hasDraft)
     }
 
     @Test
@@ -147,6 +153,12 @@ class RepoTest {
         assertEquals(2, again.number)
         assertEquals(0, again.lastPosition)
         assertEquals(2, countedReviewCount(context, bucket, 1))
+
+        // The round list counts the real walk-throughs, no draft pending.
+        val (_, rows) = getRoundsByBucket(context, bucket)
+        val round1 = rows.first { it.round == 1 }
+        assertEquals(2, round1.reviewTimes)
+        assertTrue(!round1.hasDraft)
     }
 
     @Test

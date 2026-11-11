@@ -144,7 +144,8 @@ private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit
         ) {
             // The legend counts the same statuses the bar paints: a flagged
             // card is red and no longer green, so the two never double-count
-            // it.
+            // it. The review count rides along: the round's walks so far, or
+            // the open draft that re-entering would resume.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp), // gap-4
@@ -157,6 +158,20 @@ private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit
                     CountDot(
                         color = if (dark) ROUND_COLORS.dark.red else ROUND_COLORS.light.red,
                         value = "$red",
+                    )
+                }
+                if (row.reviewTimes > 0) {
+                    Text(
+                        text = "time ${row.reviewTimes}",
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.primary, // text-blue-500
+                    )
+                } else if (row.hasDraft) {
+                    Text(
+                        text = "time 1 · uncounted",
+                        fontSize = 13.sp,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }
