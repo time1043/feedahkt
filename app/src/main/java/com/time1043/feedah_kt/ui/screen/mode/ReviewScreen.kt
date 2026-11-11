@@ -14,6 +14,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,17 +27,21 @@ import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.data.settings.DeckChrome
 import com.time1043.feedah_kt.db.repo.getProgress
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
+import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.DeckWord
 import com.time1043.feedah_kt.ui.components.DeckEndAction
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import com.time1043.feedah_kt.ui.components.WordDeckEnd
+import kotlinx.coroutines.launch
 
 /**
  * The review screen: one round's flag list, walked card by card — the marks
  * a study round left, revisited on purpose. The round list opens a pinned
- * round; the home entry reviews the active bucket's live one.
+ * round; the home entry reviews the active bucket's live one. The session
+ * flip and the round_flag row say the same thing, like the study deck's
+ * bookmark does.
  */
 @Composable
 fun ReviewScreen(
@@ -54,6 +59,7 @@ fun ReviewScreen(
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
+    val scope = rememberCoroutineScope()
     // The bucket the opener came from (the round list passes it); no param
     // means the home screen's default bucket.
     val bucketName = bucketParam?.takeIf { it.isNotEmpty() } ?: activeBucket
@@ -106,6 +112,14 @@ fun ReviewScreen(
     val toggleFlag: (DeckWord) -> Unit = { word ->
         queue = queue?.map { entry ->
             if (entry.position == word.position) entry.copy(flagged = !entry.flagged) else entry
+        }
+        // The queue and its round resolve in the same load, so the deck only
+        // renders with both at hand.
+        val currentRound = round
+        if (currentRound != null) {
+            scope.launch {
+                setRoundFlag(appContext, bucketName, currentRound, word.position, !word.flagged)
+            }
         }
     }
 
