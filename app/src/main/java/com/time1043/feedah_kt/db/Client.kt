@@ -55,8 +55,11 @@ fun getRawDb(): SupportSQLiteDatabase? = rawDb
 /**
  * Runs suspend Room statements inside one transaction. Room's own
  * withTransaction handles suspend callbacks natively, so this is a thin
- * wrapper over the opened singleton (the raw-handle umbrella of the
- * drizzle stage has no counterpart to work around).
+ * wrapper over the opened singleton — and the umbrella is EXCLUSIVE by
+ * construction: Room pins the transaction to a dedicated connection and
+ * serializes the block, so overlapping writes can never start a nested
+ * transaction on top of our work (the hazard the source fixed by moving
+ * to withExclusiveTransactionAsync).
  */
 suspend fun <T> withTransaction(fn: suspend () -> T): T {
     val db = currentDb ?: throw IllegalStateException("database not opened")
