@@ -1,12 +1,15 @@
 package com.time1043.feedah_kt.ui.screen.mode
 
 import android.util.Log
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -18,6 +21,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -34,6 +38,7 @@ import com.time1043.feedah_kt.ui.components.DeckEndAction
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import com.time1043.feedah_kt.ui.components.WordDeckEnd
+import com.time1043.feedah_kt.ui.components.rememberWordDeckHandle
 import kotlinx.coroutines.launch
 
 /**
@@ -73,6 +78,11 @@ fun ReviewScreen(
     var queue by remember { mutableStateOf<List<DeckWord>?>(null) }
     var round by remember { mutableStateOf<Int?>(null) }
     var seen by remember { mutableIntStateOf(1) }
+    val deckHandle = rememberWordDeckHandle()
+    // Free-swiping state entered by scrubbing; exited by Resume reviewing.
+    // The frontier is the farthest card index reached in the current walk.
+    var frontier by remember { mutableIntStateOf(0) }
+    var browsing by remember { mutableStateOf(false) }
 
     // Reloads on every entry into composition (the source's focus effect).
     LaunchedEffect(bucketName, roundParam) {
@@ -84,6 +94,9 @@ fun ReviewScreen(
             val (_, words) = getWordsWithRoundFlag(appContext, bucketName, resolved)
             queue = words.filter { it.flagged }.map { it.toDeckWord() }
             round = resolved
+            seen = 1
+            frontier = 0
+            browsing = false
         } catch (error: Exception) {
             Log.e(TAG, "load failed", error)
         }
@@ -123,6 +136,11 @@ fun ReviewScreen(
         }
     }
 
+    val resumeReviewing: () -> Unit = {
+        browsing = false
+        deckHandle.scrollTo(frontier)
+    }
+
     Column(modifier = modifier) {
         if (chrome.showHeader) {
             ScreenHeader(
@@ -132,6 +150,7 @@ fun ReviewScreen(
             )
         }
         WordDeck(
+            handle = deckHandle,
             words = currentQueue,
             initialIndex = 0,
             progressBar = chrome.showProgressBar,
@@ -140,6 +159,16 @@ fun ReviewScreen(
             onSpeak = { word -> tts.speakWord(word.word, speechRate) },
             onToggleFlag = toggleFlag,
             onIndexChange = { index -> seen = index + 1 },
+            // Advances the frontier on forward swipes unless browsing.
+            onSettle = { index ->
+                if (!browsing && index > frontier) {
+                    frontier = index
+                }
+            },
+            // Scrubbing enters browse mode: the pill floats over the cards —
+            // not the header, which settings can hide — and is the way back
+            // to the walk's frontier.
+            onScrub = { browsing = true },
             // The footer switch gates both ends of the bottom line: the round
             // on the left and the page counter on the right.
             hudLeft = if (chrome.showHudPage) {
@@ -164,6 +193,26 @@ fun ReviewScreen(
             } else {
                 null
             },
+            banner = if (browsing) {
+                {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary, // bg-blue-500
+                    ) {
+                        Text(
+                            text = "Resume reviewing",
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier
+                                .clickable(role = Role.Button, onClick = resumeReviewing)
+                                .padding(horizontal = 16.dp, vertical = 6.dp), // px-4 py-1.5
+                        )
+                    }
+                }
+            } else {
+                null
+            },
             end = WordDeckEnd(
                 render = {
                     Column(
@@ -182,6 +231,9 @@ fun ReviewScreen(
                         )
                     }
                 },
+                // Reaching the end while browsing snaps back to the last word
+                // instead of closing the review walk.
+                onReached = { !browsing },
                 action = DeckEndAction.Close,
             ),
         )
