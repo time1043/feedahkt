@@ -149,6 +149,10 @@ interface StudyRoundDao {
     @Query("SELECT round, position FROM round_flag WHERE bucket_name = :bucketName")
     suspend fun getFlags(bucketName: String): List<FlagRef>
 
+    /** How many flag rows one round carries. */
+    @Query("SELECT COUNT(*) FROM round_flag WHERE bucket_name = :bucketName AND round = :round")
+    suspend fun countRoundFlags(bucketName: String, round: Int): Int
+
     @Query(
         "SELECT position FROM round_flag WHERE bucket_name = :bucketName AND round = :round",
     )

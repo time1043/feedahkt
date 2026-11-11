@@ -64,7 +64,7 @@ fun FeedahNavHost(
         modifier = modifier
     ) {
         // tab
-        homeScreen(navController)
+        homeScreen(navController, activeBucket)
         bucketScreen(navController)
         statsScreen(navController)
         settingsScreen(
@@ -109,9 +109,10 @@ fun FeedahNavHost(
     }
 }
 
-fun NavGraphBuilder.homeScreen(navController: NavController) {
+fun NavGraphBuilder.homeScreen(navController: NavController, activeBucket: String) {
     composable<Home> {
         HomeScreen(
+            activeBucket = activeBucket,
             onOpenSearch = { navController.navigate(SearchRoute()) },
             onOpenStudy = { navController.navigate(StudyRoute()) },
             onOpenReview = { navController.navigate(ReviewRoute()) },
