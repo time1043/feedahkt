@@ -97,7 +97,10 @@ fun FeedahNavHost(
             navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
             activeBucket,
         )
-        reviewScreen()
+        reviewScreen(
+            navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
+            activeBucket,
+        )
         searchScreen(navController)
         // bucket
         wordsScreen(navController, wordsMeaning)
@@ -233,8 +236,32 @@ fun NavGraphBuilder.browseScreen(
     }
 }
 
-fun NavGraphBuilder.reviewScreen() {
-    composable<ReviewRoute> { ReviewScreen() }
+fun NavGraphBuilder.reviewScreen(
+    navController: NavController,
+    tts: FeedahTts,
+    speechRate: Float,
+    settingsReady: Boolean,
+    autoSpeak: Boolean,
+    tapToReveal: Boolean,
+    chrome: DeckChrome,
+    activeBucket: String,
+) {
+    composable<ReviewRoute> { entry ->
+        val route = entry.toRoute<ReviewRoute>()
+        ReviewScreen(
+            tts = tts,
+            speechRate = speechRate,
+            settingsReady = settingsReady,
+            autoSpeak = autoSpeak,
+            tapToReveal = tapToReveal,
+            chrome = chrome,
+            bucketParam = route.bucket,
+            roundParam = route.round,
+            activeBucket = activeBucket,
+            onBack = navController::goBack,
+            onSearch = { navController.navigate(SearchRoute()) },
+        )
+    }
 }
 
 fun NavGraphBuilder.searchScreen(navController: NavController) {
