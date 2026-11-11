@@ -83,11 +83,13 @@ interface ReviewSessionDao {
     )
     suspend fun deleteOpenDrafts(bucketName: String, round: Int)
 
+    /** The highest counted review number of one round — the numbered insert
+     * and the HUD's draft label read by it. */
     @Query(
-        "SELECT COUNT(*) FROM review_session WHERE bucket_name = :bucketName " +
+        "SELECT MAX(number) FROM review_session WHERE bucket_name = :bucketName " +
             "AND round = :round AND counted = 1",
     )
-    suspend fun countCounted(bucketName: String, round: Int): Int
+    suspend fun maxCountedNumber(bucketName: String, round: Int): Int?
 
     @Insert
     suspend fun insertSession(session: ReviewSessionEntity): Long

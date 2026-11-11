@@ -77,12 +77,15 @@ suspend fun openReviewSession(
     return withTransaction {
         if (roundDone) {
             dao.deleteDrafts(bucketName, round)
-            val countedCount = dao.countCounted(bucketName, round)
+            // The number is the highest existing one plus one — the same rule
+            // the round list reads by (max(number)), so the HUD and the list
+            // can never drift apart even if rows were ever pruned.
+            val countedMax = dao.maxCountedNumber(bucketName, round)
             val entity = ReviewSessionEntity(
                 bucketName = bucketName,
                 round = round,
                 counted = true,
-                number = countedCount + 1,
+                number = (countedMax ?: 0) + 1,
                 queue = json.encodeToString(queue),
                 lastPosition = 0,
                 startedAt = now,
@@ -133,7 +136,8 @@ suspend fun finishReview(context: Context, sessionId: Long) {
     dao.deleteById(sessionId)
 }
 
-/** How many real walk-throughs the round's flag list has had — the draft
- * HUD's "time n+1" counts from here. */
+/** The round's highest real walk-through number — a draft displays n + 1.
+ * The max, not a count: the same rule the round list and the numbered insert
+ * read by, so the three can never drift apart. */
 suspend fun countedReviewCount(context: Context, bucketName: String, round: Int): Int =
-    getDb(context).reviewSessionDao().countCounted(bucketName, round)
+    getDb(context).reviewSessionDao().maxCountedNumber(bucketName, round) ?: 0
