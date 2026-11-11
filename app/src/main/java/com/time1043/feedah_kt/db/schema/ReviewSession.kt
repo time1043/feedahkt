@@ -76,6 +76,13 @@ interface ReviewSessionDao {
     )
     suspend fun deleteFinishedDrafts(bucketName: String, round: Int)
 
+    /** The open drafts (never counted, never finished) of one round. */
+    @Query(
+        "DELETE FROM review_session WHERE bucket_name = :bucketName AND round = :round " +
+            "AND counted = 0 AND finished_at IS NULL",
+    )
+    suspend fun deleteOpenDrafts(bucketName: String, round: Int)
+
     @Query(
         "SELECT COUNT(*) FROM review_session WHERE bucket_name = :bucketName " +
             "AND round = :round AND counted = 1",

@@ -38,7 +38,7 @@ private fun ReviewSessionEntity.toRow(): ReviewSessionRow = ReviewSessionRow(
 
 /**
  * The review walk's core decision procedure, run on every entry:
- *  - no flags in the round → null (no session);
+ *  - no flags in the round → null (no session for that);
  *  - an open counted session always resumes, an open draft resumes only
  *    while the feed is still unfinished (its queue snapshot predates
  *    completion);
@@ -57,7 +57,17 @@ suspend fun openReviewSession(
     val dao = db.reviewSessionDao()
     // The round's flag positions ascending — the frozen queue.
     val queue = db.studyRoundDao().getFlagPositions(bucketName, round)
-    if (queue.isEmpty()) return null
+    if (queue.isEmpty()) {
+        // The round holds no flags now — but a walk opened while they existed
+        // may still sit open. A draft can never become a real review against
+        // an empty list, so it clears (leaving no trace, like any finished
+        // draft). An open counted session is left alone on purpose — its
+        // walk happened: this return never hands it to the screen, so it
+        // stays open and resumable (flags reappearing continue it), and the
+        // round list keeps counting it through max(number).
+        dao.deleteOpenDrafts(bucketName, round)
+        return null
+    }
 
     val open = dao.getOpenSession(bucketName, round)
     val roundDone = isRoundComplete(context, bucketName, round)
