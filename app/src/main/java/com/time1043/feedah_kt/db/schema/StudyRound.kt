@@ -118,6 +118,13 @@ interface StudyRoundDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertRecord(record: RoundRecordEntity)
 
+    /** The existence probe behind isRoundComplete: the span row doubles as
+     * the completion flag. */
+    @Query(
+        "SELECT round FROM round_record WHERE bucket_name = :bucketName AND round = :round LIMIT 1",
+    )
+    suspend fun findRecord(bucketName: String, round: Int): Int?
+
     @Query(
         "SELECT round, started_at AS startedAt, ended_at AS endedAt " +
             "FROM round_record WHERE bucket_name = :bucketName",

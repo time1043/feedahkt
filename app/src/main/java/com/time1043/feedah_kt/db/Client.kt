@@ -12,6 +12,8 @@ import com.time1043.feedah_kt.db.schema.BucketWordDao
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
 import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
+import com.time1043.feedah_kt.db.schema.ReviewSessionDao
+import com.time1043.feedah_kt.db.schema.ReviewSessionEntity
 import com.time1043.feedah_kt.db.schema.StudyRoundDao
 import com.time1043.feedah_kt.db.schema.WordEntity
 
@@ -24,19 +26,23 @@ const val DB_NAME = "feedah.db"
         BucketProgressEntity::class,
         RoundRecordEntity::class,
         RoundFlagEntity::class,
+        ReviewSessionEntity::class,
     ],
-    version = 4,
+    version = 5,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
         AutoMigration(from = 2, to = 3),
         AutoMigration(from = 3, to = 4),
+        AutoMigration(from = 4, to = 5),
     ],
 )
 abstract class FeedahDb : RoomDatabase() {
     abstract fun bucketWordDao(): BucketWordDao
 
     abstract fun studyRoundDao(): StudyRoundDao
+
+    abstract fun reviewSessionDao(): ReviewSessionDao
 }
 
 private fun buildDb(context: Context): FeedahDb =

@@ -241,6 +241,13 @@ suspend fun setRoundFlag(
 suspend fun countRoundFlags(context: Context, bucketName: String, round: Int): Int =
     getDb(context).studyRoundDao().countRoundFlags(bucketName, round)
 
+/**
+ * The round's feed is complete once its round_record row exists — the same
+ * row that carries the round's span doubles as the completion flag.
+ */
+suspend fun isRoundComplete(context: Context, bucketName: String, round: Int): Boolean =
+    getDb(context).studyRoundDao().findRecord(bucketName, round) != null
+
 /** The bucket's words with their flag state IN one round — the deck's words
  * for study and browse. The join is a left one: the flag row's absence is the
  * unflagged state. */
