@@ -45,7 +45,7 @@ private suspend fun openMigrateAndSeed(context: Context): FeedahDb {
 private val mutex = Mutex()
 
 @Volatile
-private var instance: FeedahDb? = null
+internal var instance: FeedahDb? = null
 
 /**
  * Opens the database once; migrations and seeding run on first open. A

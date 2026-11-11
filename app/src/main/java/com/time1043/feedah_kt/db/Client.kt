@@ -55,6 +55,15 @@ private fun buildDb(context: Context): FeedahDb =
 private var rawDb: SupportSQLiteDatabase? = null
 private var currentDb: FeedahDb? = null
 
+/** Test seam: the instrumentation swaps the singleton for an in-memory
+ * database (the counterpart of the source's jest.mock of the db modules).
+ * Only the test process ever sees it. */
+internal fun setDbForTests(db: FeedahDb) {
+    instance = db
+    currentDb = db
+    rawDb = db.openHelper.writableDatabase
+}
+
 /** The raw handle behind Room; used by the dev studio bridge. */
 fun getRawDb(): SupportSQLiteDatabase? = rawDb
 
