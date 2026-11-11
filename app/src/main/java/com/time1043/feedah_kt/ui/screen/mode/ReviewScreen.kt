@@ -44,6 +44,7 @@ import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import com.time1043.feedah_kt.ui.components.WordDeckEnd
 import com.time1043.feedah_kt.ui.components.rememberWordDeckHandle
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
 /** One review walk in flight: the session row it resumes, the snapshot's
@@ -141,6 +142,9 @@ fun ReviewScreen(
                 // again, so the session finishes here instead of lingering
                 // open forever.
                 finishReview(appContext, session.id)
+                // The await re-opens the cancelled window: a refocus that
+                // raced this write must not inherit this walk's empty answer.
+                ensureActive()
                 empty = true
                 return@LaunchedEffect
             }

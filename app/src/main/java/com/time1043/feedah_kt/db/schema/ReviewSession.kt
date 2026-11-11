@@ -76,17 +76,30 @@ interface ReviewSessionDao {
     )
     suspend fun deleteFinishedDrafts(bucketName: String, round: Int)
 
+    /** The open drafts (never counted, never finished) of one round. */
     @Query(
-        "SELECT COUNT(*) FROM review_session WHERE bucket_name = :bucketName " +
+        "DELETE FROM review_session WHERE bucket_name = :bucketName AND round = :round " +
+            "AND counted = 0 AND finished_at IS NULL",
+    )
+    suspend fun deleteOpenDrafts(bucketName: String, round: Int)
+
+    /** The highest counted review number of one round — the numbered insert
+     * and the HUD's draft label read by it. */
+    @Query(
+        "SELECT MAX(number) FROM review_session WHERE bucket_name = :bucketName " +
             "AND round = :round AND counted = 1",
     )
-    suspend fun countCounted(bucketName: String, round: Int): Int
+    suspend fun maxCountedNumber(bucketName: String, round: Int): Int?
 
     @Insert
     suspend fun insertSession(session: ReviewSessionEntity): Long
 
     @Query("SELECT * FROM review_session WHERE id = :id LIMIT 1")
     suspend fun getSessionById(id: Long): ReviewSessionEntity?
+
+    /** Raw table read for tests (the source's spec asserts via db.select()). */
+    @Query("SELECT * FROM review_session")
+    suspend fun getAll(): List<ReviewSessionEntity>
 
     /** The resume watermark moves only forward — a SQL MAX. */
     @Query(

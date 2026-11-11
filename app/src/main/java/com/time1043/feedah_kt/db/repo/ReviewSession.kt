@@ -38,7 +38,7 @@ private fun ReviewSessionEntity.toRow(): ReviewSessionRow = ReviewSessionRow(
 
 /**
  * The review walk's core decision procedure, run on every entry:
- *  - no flags in the round → null (no session);
+ *  - no flags in the round → null (no session for that);
  *  - an open counted session always resumes, an open draft resumes only
  *    while the feed is still unfinished (its queue snapshot predates
  *    completion);
@@ -57,7 +57,17 @@ suspend fun openReviewSession(
     val dao = db.reviewSessionDao()
     // The round's flag positions ascending — the frozen queue.
     val queue = db.studyRoundDao().getFlagPositions(bucketName, round)
-    if (queue.isEmpty()) return null
+    if (queue.isEmpty()) {
+        // The round holds no flags now — but a walk opened while they existed
+        // may still sit open. A draft can never become a real review against
+        // an empty list, so it clears (leaving no trace, like any finished
+        // draft). An open counted session is left alone on purpose — its
+        // walk happened: this return never hands it to the screen, so it
+        // stays open and resumable (flags reappearing continue it), and the
+        // round list keeps counting it through max(number).
+        dao.deleteOpenDrafts(bucketName, round)
+        return null
+    }
 
     val open = dao.getOpenSession(bucketName, round)
     val roundDone = isRoundComplete(context, bucketName, round)
@@ -67,12 +77,15 @@ suspend fun openReviewSession(
     return withTransaction {
         if (roundDone) {
             dao.deleteDrafts(bucketName, round)
-            val countedCount = dao.countCounted(bucketName, round)
+            // The number is the highest existing one plus one — the same rule
+            // the round list reads by (max(number)), so the HUD and the list
+            // can never drift apart even if rows were ever pruned.
+            val countedMax = dao.maxCountedNumber(bucketName, round)
             val entity = ReviewSessionEntity(
                 bucketName = bucketName,
                 round = round,
                 counted = true,
-                number = countedCount + 1,
+                number = (countedMax ?: 0) + 1,
                 queue = json.encodeToString(queue),
                 lastPosition = 0,
                 startedAt = now,
@@ -123,7 +136,8 @@ suspend fun finishReview(context: Context, sessionId: Long) {
     dao.deleteById(sessionId)
 }
 
-/** How many real walk-throughs the round's flag list has had — the draft
- * HUD's "time n+1" counts from here. */
+/** The round's highest real walk-through number — a draft displays n + 1.
+ * The max, not a count: the same rule the round list and the numbered insert
+ * read by, so the three can never drift apart. */
 suspend fun countedReviewCount(context: Context, bucketName: String, round: Int): Int =
-    getDb(context).reviewSessionDao().countCounted(bucketName, round)
+    getDb(context).reviewSessionDao().maxCountedNumber(bucketName, round) ?: 0

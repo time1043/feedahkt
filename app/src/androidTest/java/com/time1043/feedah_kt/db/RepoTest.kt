@@ -195,4 +195,86 @@ class RepoTest {
         assertNotNull(reread)
         assertEquals(p2, reread!!.lastPosition)
     }
+
+    @Test
+    fun flagEditsNeverRewriteAnInFlightWalk() = runBlocking {
+        val (p1, p2, p3) = wordPositions().let { Triple(it[0], it[1], it[2]) }
+        setRoundFlag(context, bucket, 1, p1, true)
+        setRoundFlag(context, bucket, 1, p2, true)
+        val session = openReviewSession(context, bucket, 1)
+        assertNotNull(session)
+
+        // Marks added and cleared after the open leave the snapshot alone.
+        setRoundFlag(context, bucket, 1, p3, true)
+        setRoundFlag(context, bucket, 1, p1, false)
+
+        val reread = openReviewSession(context, bucket, 1)
+        assertNotNull(reread)
+        assertEquals(session!!.id, reread!!.id)
+        assertEquals(listOf(p1, p2), reread.queue)
+    }
+
+    @Test
+    fun aRoundKeepsAtMostOneOpenDraft() = runBlocking {
+        val p1 = wordPositions()[0]
+        setRoundFlag(context, bucket, 1, p1, true)
+        val first = openReviewSession(context, bucket, 1)
+        assertNotNull(first)
+
+        // The source enforces this with a partial unique index; the port
+        // enforces it with openReviewSession's delete-first transaction —
+        // either way, a re-open resumes the SAME row instead of stacking a
+        // second draft.
+        val second = openReviewSession(context, bucket, 1)
+        assertNotNull(second)
+        assertEquals(first!!.id, second!!.id)
+        assertEquals(1, getDb(context).reviewSessionDao().getAll().size)
+    }
+
+    @Test
+    fun aRoundWhoseFlagsAllClearedDeletesItsOpenDraft() = runBlocking {
+        val p1 = wordPositions()[0]
+        setRoundFlag(context, bucket, 1, p1, true)
+        openReviewSession(context, bucket, 1)
+        setRoundFlag(context, bucket, 1, p1, false)
+
+        assertNull(openReviewSession(context, bucket, 1))
+        assertEquals(0, getDb(context).reviewSessionDao().getAll().size)
+    }
+
+    @Test
+    fun aCountedSessionResumesInPlaceWhileItsWalkIsUnfinished() = runBlocking {
+        val p1 = wordPositions()[0]
+        setRoundFlag(context, bucket, 1, p1, true)
+        finishFeedRound()
+
+        val first = openReviewSession(context, bucket, 1)
+        assertNotNull(first)
+        assertTrue(first!!.counted)
+        assertEquals(1, first.number)
+        settleReview(context, first.id, p1)
+
+        val second = openReviewSession(context, bucket, 1)
+        assertNotNull(second)
+        assertEquals(first.id, second!!.id)
+        assertEquals(p1, second.lastPosition)
+    }
+
+    @Test
+    fun finishingAnArchivedSessionChangesNothing() = runBlocking {
+        val p1 = wordPositions()[0]
+        setRoundFlag(context, bucket, 1, p1, true)
+        finishFeedRound()
+        val session = openReviewSession(context, bucket, 1)
+        assertNotNull(session)
+        finishReview(context, session!!.id)
+
+        val archived = getDb(context).reviewSessionDao().getSessionById(session.id)
+        assertNotNull(archived)
+        assertNotNull(archived!!.finishedAt)
+        finishReview(context, session.id)
+        val reread = getDb(context).reviewSessionDao().getSessionById(session.id)
+        assertNotNull(reread)
+        assertEquals(archived.finishedAt, reread!!.finishedAt)
+    }
 }

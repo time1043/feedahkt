@@ -28,6 +28,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -154,7 +157,18 @@ private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit
                     color = if (dark) ROUND_COLORS.dark.green else ROUND_COLORS.light.green,
                     value = "$green / ${row.wordCount}",
                 )
-                Box(Modifier.clickable(onClick = onOpenReview)) {
+                Box(
+                    Modifier
+                        .clickable(
+                            role = Role.Button,
+                            enabled = red > 0,
+                            onClickLabel = "Review flagged words",
+                            onClick = onOpenReview,
+                        )
+                        .semantics {
+                            contentDescription = "Review round ${row.round} · $red flagged"
+                        },
+                ) {
                     CountDot(
                         color = if (dark) ROUND_COLORS.dark.red else ROUND_COLORS.light.red,
                         value = "$red",
@@ -162,17 +176,22 @@ private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit
                 }
                 if (row.reviewTimes > 0) {
                     Text(
-                        text = "time ${row.reviewTimes}",
+                        text = "T${row.reviewTimes}",
                         fontSize = 13.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = MaterialTheme.colorScheme.primary, // text-blue-500
                     )
-                } else if (row.hasDraft) {
-                    Text(
-                        text = "time 1 · uncounted",
-                        fontSize = 13.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
+                } else {
+                    // A done round's draft is doomed (抹零 on re-entry): it
+                    // counts as nothing rather than promising a walk that
+                    // will not happen.
+                    if (!row.done && row.hasDraft) {
+                        Text(
+                            text = "T${row.reviewTimes + 1} · uncounted",
+                            fontSize = 13.sp,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                 }
             }
             timeLine?.let {
