@@ -38,13 +38,10 @@ class MainActivity : ComponentActivity() {
             val scope = rememberCoroutineScope()
             val appContext = applicationContext
 
-            // A failed init must not brick the session as a blank screen: the
-            // error state renders a retry button, and getDb() clears its
-            // singleton on failure so a retry genuinely runs the whole
-            // open-migrate-seed again.
-            val initDb: () -> Unit = {
-                dbReady = false
-                dbError = false
+            // Both outcomes land in the coroutine's callbacks — nothing sets
+            // state synchronously in the effect body, which would only buy an
+            // extra render on mount.
+            val openDb: () -> Unit = {
                 scope.launch {
                     runCatching { getDb(appContext) }
                         .onSuccess { dbReady = true }
@@ -54,7 +51,16 @@ class MainActivity : ComponentActivity() {
                         }
                 }
             }
-            LaunchedEffect(Unit) { initDb() }
+            LaunchedEffect(Unit) { openDb() }
+
+            /** The retry button is the only path that resets the flags:
+             * clearing them here (an event handler) keeps the effect free of
+             * a synchronous setState. */
+            val retry: () -> Unit = {
+                dbReady = false
+                dbError = false
+                openDb()
+            }
 
             if (!dbReady) {
                 if (!dbError) {
@@ -72,7 +78,7 @@ class MainActivity : ComponentActivity() {
                         textAlign = TextAlign.Center,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clickable(role = Role.Button, onClick = initDb),
+                            .clickable(role = Role.Button, onClick = retry),
                     )
                 }
                 return@setContent

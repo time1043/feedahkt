@@ -2,9 +2,6 @@ package com.time1043.feedah_kt.db.repo
 
 import android.content.Context
 import com.time1043.feedah_kt.db.getDb
-import kotlinx.serialization.json.Json
-
-private val json = Json
 
 /** One row of the bucket tab: the card's name plus its word count. */
 data class BucketRow(val name: String, val wordCount: Int)
@@ -14,36 +11,5 @@ suspend fun getBuckets(context: Context): List<BucketRow> {
     val db = getDb(context)
     return db.bucketWordDao().getBuckets().map { bucket ->
         BucketRow(name = bucket.name, wordCount = bucket.wordCount)
-    }
-}
-
-/** One row of the word list: the db columns, with the forms JSON parsed. */
-data class WordRow(
-    val position: Int,
-    val word: String,
-    val ipa: String,
-    val meaning: String,
-    val forms: List<String>,
-)
-
-/**
- * The bucket's existence plus its words, ordered by position. The tuple
- * separates a missing bucket from an existing-but-empty one — the caller's
- * not-found state must not lie about which one happened.
- */
-suspend fun getWordsByBucket(context: Context, bucketName: String): Pair<Boolean, List<WordRow>> {
-    val db = getDb(context)
-    val dao = db.bucketWordDao()
-    val exists = dao.findNameById(bucketName)
-    if (exists == null) return false to emptyList()
-    val rows = dao.getWordsByBucket(bucketName)
-    return true to rows.map { row ->
-        WordRow(
-            position = row.position,
-            word = row.word,
-            ipa = row.ipa,
-            meaning = row.meaning,
-            forms = json.decodeFromString(row.forms),
-        )
     }
 }
