@@ -202,9 +202,11 @@ class StudySessionControllerTest {
         // The reducer entered the next round...
         assertEquals(2, controller.ready().progress.round)
         // ...and the db round advanced too, with the carried-word reload
-        // running prepare again for the fresh list.
-        awaitDb { getProgress(context, bucket).round == 2 }
-        assertTrue(prepared >= 2)
+        // running prepare again for the fresh list. Wait on prepare itself:
+        // the reload follows the advance transaction in the same write
+        // coroutine, so the round-2 read alone can outrun it.
+        awaitDb { prepared >= 2 && getProgress(context, bucket).round == 2 }
+        assertEquals(2, getProgress(context, bucket).round)
     }
 
     private fun newController(writeScope: CoroutineScope): StudySessionController {
