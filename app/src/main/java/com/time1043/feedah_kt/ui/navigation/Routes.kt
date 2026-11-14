@@ -25,13 +25,16 @@ data class StudyRoute(val drill: String? = null, val bucket: String? = null) : R
 @Serializable
 data class BrowseRoute(val position: Int, val bucket: String? = null, val round: Int? = null) : Route
 
-/** /mode/review?drill&bucket&round&day — drill overrides the saved drill setting; day is accepted but unused, like the source. */
+/** /mode/review?drill&bucket&round&day&flagDay — drill overrides the saved
+ * drill setting; day walks what was studied on that date, flagDay what was
+ * flagged on it (both opened from the statistics tab). */
 @Serializable
 data class ReviewRoute(
     val drill: String? = null,
     val bucket: String? = null,
     val round: Int? = null,
     val day: String? = null,
+    val flagDay: String? = null,
 ) : Route
 
 /** /mode/search?buckets&round — buckets overrides the configured search scope. */

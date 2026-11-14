@@ -275,6 +275,8 @@ fun NavGraphBuilder.reviewScreen(
             chrome = chrome,
             bucketParam = route.bucket,
             roundParam = route.round,
+            dayParam = route.day,
+            flagDayParam = route.flagDay,
             activeBucket = activeBucket,
             onBack = navController::goBack,
             onSearch = { navController.navigate(SearchRoute()) },

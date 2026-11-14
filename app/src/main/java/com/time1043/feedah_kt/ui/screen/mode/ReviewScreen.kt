@@ -29,14 +29,18 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.data.settings.DeckChrome
+import com.time1043.feedah_kt.db.repo.DayWord
 import com.time1043.feedah_kt.db.repo.ReviewSessionRow
 import com.time1043.feedah_kt.db.repo.countedReviewCount
 import com.time1043.feedah_kt.db.repo.finishReview
 import com.time1043.feedah_kt.db.repo.getProgress
+import com.time1043.feedah_kt.db.repo.getWordsCompletedOn
+import com.time1043.feedah_kt.db.repo.getWordsFlaggedOn
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
 import com.time1043.feedah_kt.db.repo.openReviewSession
 import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleReview
+import com.time1043.feedah_kt.logic.formatDayLabel
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.DeckWord
 import com.time1043.feedah_kt.ui.components.DeckEndAction
@@ -47,10 +51,10 @@ import com.time1043.feedah_kt.ui.components.rememberWordDeckHandle
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
-/** One review walk in flight: the session row it resumes, the snapshot's
+/** One round's review in flight: the session row it resumes, the snapshot's
  * positions joined onto the live words, and where the HUD's time label
  * counts from. */
-private data class Walk(
+private data class RoundWalk(
     val session: ReviewSessionRow,
     val queue: List<DeckWord>,
     val round: Int,
@@ -58,21 +62,44 @@ private data class Walk(
     val startIndex: Int,
 )
 
+private enum class DateWalkKind { Day, FlagDay }
+
+/** A date walk in flight: the day replay or the flag replay. One entry per
+ * (bucket, round, position) — a word walked in two rounds appears twice,
+ * deliberately without dedup; the entries carry their bucket and round
+ * because a date walk spans buckets (positions collide). */
+private data class DateWalk(
+    val kind: DateWalkKind,
+    val day: String,
+    val queue: List<DayWord>,
+)
+
+private sealed interface Walk {
+    data class Round(val state: RoundWalk) : Walk
+    data class Date(val state: DateWalk) : Walk
+}
+
 /**
- * The review screen: one round's flag list, walked card by card — the marks
- * a study round left, revisited on purpose. The round list opens a pinned
- * round; the home entry reviews the active bucket's live one.
+ * The review screen: a flag list or a date, walked card by card.
  *
- * The session under the walk: while the round's feed is unfinished the
- * review is a draft (resumable, HUD reads time n+1 · uncounted); once the
- * feed completes, the next entry discards the draft and opens the real
- * `time {n}` from the current flag list. Reaching the end archives a counted
- * session; a finished draft leaves no trace.
+ * Three walks share one deck:
+ *  - the round walk — one round's flag list, opened by the round list or
+ *    the home entry. The session under it: while the round's feed is
+ *    unfinished the review is a draft (resumable, HUD reads time n+1 ·
+ *    uncounted); once the feed completes, the next entry discards the draft
+ *    and opens the real `time {n}` from the current flag list. Reaching the
+ *    end archives a counted session; a finished draft leaves no trace.
+ *  - the day replay and the flag replay — opened from the statistics tab;
+ *    they carry no session and record nothing but their flag toggles.
+ *
+ * Every walk also owns a browsing layer: scrubbing away floats the Resume
+ * reviewing pill, and a browse-mode landing records nothing — the watermark
+ * (round walks) and the frontier stay where the walk actually was.
  *
  * The screen keeps two concerns apart on purpose: the walk owns the queue
  * and the cursor (and stays answer-free), while the card and the answer
- * policy are the drill layer's — when the drill registry lands, its card
- * plugs into this deck without reshaping the walk.
+ * policy are the drill layer's — the drill's cards plug into this deck
+ * without reshaping the walks.
  */
 @Composable
 fun ReviewScreen(
@@ -84,6 +111,8 @@ fun ReviewScreen(
     chrome: DeckChrome,
     bucketParam: String?,
     roundParam: Int?,
+    dayParam: String?,
+    flagDayParam: String?,
     activeBucket: String,
     onBack: () -> Unit,
     onSearch: () -> Unit,
@@ -100,7 +129,7 @@ fun ReviewScreen(
     val canSpeak = settingsReady && autoSpeak
 
     // null = the walk has not loaded yet; `empty` is a real answer (no flags
-    // in this round) and shows the empty state instead.
+    // in this round, nothing on that day) and shows the empty state instead.
     var walk by remember { mutableStateOf<Walk?>(null) }
     var empty by remember { mutableStateOf(false) }
     var seen by remember { mutableIntStateOf(1) }
@@ -117,8 +146,38 @@ fun ReviewScreen(
     // re-entry resumes the open session at its watermark, and flags made (or
     // cleared) in browse or study while this screen sat under another one
     // must show on return.
-    LaunchedEffect(bucketName, roundParam) {
+    LaunchedEffect(bucketName, roundParam, dayParam, flagDayParam) {
+        walk = null
+        empty = false
+        seen = 1
+        frontier = 0
+        browsing = false
         try {
+            // Date walks replay a date across buckets and rounds: the day
+            // param walks what was studied, the flag-day param what was
+            // flagged.
+            val flagDay = flagDayParam?.takeIf { it.isNotEmpty() }
+            val studyDay = dayParam?.takeIf { it.isNotEmpty() }
+            if (flagDay != null || studyDay != null) {
+                val queue = if (flagDay != null) {
+                    getWordsFlaggedOn(appContext, flagDay)
+                } else {
+                    getWordsCompletedOn(appContext, studyDay!!)
+                }
+                if (queue.isEmpty()) {
+                    empty = true
+                    return@LaunchedEffect
+                }
+                walk = Walk.Date(
+                    DateWalk(
+                        kind = if (flagDay != null) DateWalkKind.FlagDay else DateWalkKind.Day,
+                        day = flagDay ?: studyDay!!,
+                        queue = queue,
+                    ),
+                )
+                return@LaunchedEffect
+            }
+
             // A pinned round arrives as a param; the home entry walks the
             // bucket's live round.
             val resolved = roundParam?.takeIf { it > 0 }
@@ -165,7 +224,7 @@ fun ReviewScreen(
             seen = start + 1
             frontier = start
             browsing = false
-            walk = Walk(session, queue, resolved, countedCount, start)
+            walk = Walk.Round(RoundWalk(session, queue, resolved, countedCount, start))
         } catch (error: Exception) {
             Log.e(TAG, "load failed", error)
         }
@@ -178,7 +237,11 @@ fun ReviewScreen(
             ScreenHeader(title = "Review", onBack = onBack, onSearch = onSearch)
             Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                 Text(
-                    text = "Nothing flagged yet",
+                    text = when {
+                        !flagDayParam.isNullOrEmpty() -> "Nothing flagged on this day"
+                        !dayParam.isNullOrEmpty() -> "Nothing studied on this day"
+                        else -> "Nothing flagged yet"
+                    },
                     fontSize = 17.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -195,28 +258,50 @@ fun ReviewScreen(
 
     /** The bookmark is the walk's undo: a word that sticks gets its flag
      * cleared right here. The queue keeps the word in the walk — the list
-     * was frozen when the session opened, and unflagging must not reshuffle
+     * was frozen when the walk opened, and unflagging must not reshuffle
      * the cards under the reader's thumb. The session flip and the
-     * round_flag row say the same thing, like the study deck's bookmark
-     * does. */
+     * round_flag row say the same thing; date walks write the entry's own
+     * bucket and round (they span buckets, where positions collide). */
     val toggleFlag: (DeckWord) -> Unit = { word ->
-        walk = currentWalk.let { current ->
-            current.copy(
-                queue = current.queue.map { entry ->
-                    if (entry.position == word.position) {
-                        entry.copy(flagged = !entry.flagged)
-                    } else {
-                        entry
-                    }
-                },
+        walk = when (currentWalk) {
+            is Walk.Round -> currentWalk.copy(
+                state = currentWalk.state.copy(
+                    queue = currentWalk.state.queue.map { entry ->
+                        if (entry.position == word.position) {
+                            entry.copy(flagged = !entry.flagged)
+                        } else {
+                            entry
+                        }
+                    },
+                ),
             )
+            is Walk.Date -> currentWalk.copy(
+                state = currentWalk.state.copy(
+                    queue = currentWalk.state.queue.map { entry ->
+                        if (entry.word.position == word.position) {
+                            entry.copy(word = entry.word.copy(flagged = !entry.word.flagged))
+                        } else {
+                            entry
+                        }
+                    },
+                ),
+            )
+        }
+        val target = when (currentWalk) {
+            is Walk.Round -> TargetBucket(bucketName, currentWalk.state.session.round)
+            is Walk.Date -> {
+                val entry = currentWalk.state.queue.firstOrNull {
+                    it.word.position == word.position
+                }
+                TargetBucket(entry?.bucketName ?: bucketName, entry?.round ?: 0)
+            }
         }
         scope.launch {
             runCatching {
                 setRoundFlag(
                     context = appContext,
-                    bucketName = bucketName,
-                    round = currentWalk.round,
+                    bucketName = target.bucketName,
+                    round = target.round,
                     position = word.position,
                     flagged = !word.flagged,
                 )
@@ -229,18 +314,43 @@ fun ReviewScreen(
         deckHandle.scrollTo(frontier)
     }
 
-    val session = currentWalk.session
-    val queue = currentWalk.queue
-    val timeLabel = if (session.counted) {
-        "T${session.number}"
-    } else {
-        "T${currentWalk.countedCount + 1} · uncounted"
+    val queue: List<DeckWord> = when (currentWalk) {
+        is Walk.Round -> currentWalk.state.queue
+        is Walk.Date -> currentWalk.state.queue.map { it.word }
+    }
+    val timeLabel: String? = when (currentWalk) {
+        is Walk.Round -> if (currentWalk.state.session.counted) {
+            "T${currentWalk.state.session.number}"
+        } else {
+            "T${currentWalk.state.countedCount + 1} · uncounted"
+        }
+        is Walk.Date -> null
+    }
+    val resetKey: String = when (currentWalk) {
+        is Walk.Round -> "round:${currentWalk.state.session.id}"
+        is Walk.Date -> "${currentWalk.state.kind}:${currentWalk.state.day}"
+    }
+    val initialIndex: Int = when (currentWalk) {
+        is Walk.Round -> currentWalk.state.startIndex
+        is Walk.Date -> 0
+    }
+
+    // The date walk's title follows the card on screen: crossing from one
+    // round's words into the next advances the stamped round with it.
+    val title = when (currentWalk) {
+        is Walk.Round -> "Review $bucketName R${currentWalk.state.round}"
+        is Walk.Date -> {
+            val titleRound = currentWalk.state.queue
+                .getOrNull(minOf(seen, currentWalk.state.queue.size) - 1)?.round ?: 1
+            val flags = if (currentWalk.state.kind == DateWalkKind.FlagDay) " flags" else ""
+            "Review ${formatDayLabel(currentWalk.state.day)}$flags · R$titleRound"
+        }
     }
 
     Column(modifier = modifier) {
         if (chrome.showHeader) {
             ScreenHeader(
-                title = if (chrome.showTitle) "Review $bucketName" else null,
+                title = if (chrome.showTitle) title else null,
                 onBack = onBack,
                 onSearch = onSearch,
             )
@@ -248,24 +358,30 @@ fun ReviewScreen(
         WordDeck(
             handle = deckHandle,
             words = queue,
-            initialIndex = currentWalk.startIndex,
+            resetKey = resetKey,
+            initialIndex = initialIndex,
             progressBar = chrome.showProgressBar,
             tapToReveal = tapToReveal,
             canSpeak = canSpeak,
             onSpeak = { word -> tts.speakWord(word.word, speechRate) },
             onToggleFlag = toggleFlag,
             onIndexChange = { index -> seen = index + 1 },
-            // Advances the resume watermark on forward settles unless
-            // browsing: a walk left half-way picks up at the first card it
-            // has not passed.
+            // Every settled landing advances the resume watermark on forward
+            // settles unless browsing — a round walk left half-way picks up
+            // at the first card it has not passed. Date walks carry no
+            // session and record nothing; the frontier moves for every walk
+            // kind.
             onSettle = { word, index ->
                 if (!browsing && index > frontier) {
                     frontier = index
-                    scope.launch {
-                        runCatching { settleReview(appContext, session.id, word.position) }
-                            .onFailure { error ->
+                    if (currentWalk is Walk.Round) {
+                        scope.launch {
+                            runCatching {
+                                settleReview(appContext, currentWalk.state.session.id, word.position)
+                            }.onFailure { error ->
                                 Log.e(TAG, "watermark write failed", error)
                             }
+                        }
                     }
                 }
             },
@@ -295,10 +411,10 @@ fun ReviewScreen(
             },
             // The footer switch gates the bottom line: the session's time
             // label on the left, the pagination ordinal on the right.
-            hudLeft = if (chrome.showHudPage) {
+            hudLeft = if (chrome.showHudPage && timeLabel != null) {
                 {
                     Text(
-                        text = "R${currentWalk.round} $timeLabel",
+                        text = timeLabel,
                         style = TextStyle(fontSize = 13.sp),
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -322,9 +438,14 @@ fun ReviewScreen(
                     Column(
                         Modifier
                             .fillMaxSize()
-                            .padding(horizontal = 32.dp), // px-8
+                            .padding(horizontal = 32.dp) // px-8
+                            // gap-2 items-center justify-center
+                            ,
                         horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(
+                            8.dp,
+                            Alignment.CenterVertically,
+                        ),
                     ) {
                         Text(
                             text = "Review complete",
@@ -333,26 +454,30 @@ fun ReviewScreen(
                             textAlign = TextAlign.Center,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
-                        Text(
-                            text = timeLabel,
-                            fontSize = 17.sp,
-                            textAlign = TextAlign.Center,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
+                        timeLabel?.let { label ->
+                            Text(
+                                text = label,
+                                fontSize = 17.sp,
+                                textAlign = TextAlign.Center,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
                     }
                 },
                 // The end card archives the session: a counted walk keeps its
                 // finish time, a draft deletes itself (unfinished-feed
-                // reviews leave no trace). Reaching the end while browsing
-                // snaps back to the last word instead of closing the review
-                // walk.
+                // reviews leave no trace). Date walks have no session to
+                // close. Reaching the end while browsing snaps back to the
+                // last word instead of closing the review walk.
                 onReached = {
                     if (browsing) {
                         false
                     } else {
-                        scope.launch {
-                            runCatching { finishReview(appContext, session.id) }
-                                .onFailure { error -> Log.e(TAG, "finish write failed", error) }
+                        if (currentWalk is Walk.Round) {
+                            scope.launch {
+                                runCatching { finishReview(appContext, currentWalk.state.session.id) }
+                                    .onFailure { error -> Log.e(TAG, "finish write failed", error) }
+                            }
                         }
                         true
                     }
@@ -363,5 +488,9 @@ fun ReviewScreen(
         )
     }
 }
+
+/** The bucket + round a flag write lands in — the walk kind decides whose
+ * they are. */
+private data class TargetBucket(val bucketName: String, val round: Int)
 
 private const val TAG = "review"
