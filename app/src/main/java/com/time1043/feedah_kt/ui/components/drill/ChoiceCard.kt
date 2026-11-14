@@ -8,6 +8,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -156,15 +157,26 @@ fun ChoiceCard(
                                 .padding(horizontal = 12.dp, vertical = 20.dp), // px-3 py-5
                             contentAlignment = Alignment.CenterStart,
                         ) {
-                            Text(
-                                text = option.meaning,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = fontWeight,
-                                ),
-                                color = textColor,
-                                modifier = Modifier.fillMaxWidth(), // text-left
-                            )
+                            Row {
+                                Text(
+                                    text = option.meaning,
+                                    style = TextStyle(
+                                        fontSize = 14.sp,
+                                        fontWeight = fontWeight,
+                                    ),
+                                    color = textColor,
+                                )
+                                if (locked) {
+                                    // The reveal names every option: picking
+                                    // "乐观的" teaches more when the card also
+                                    // says it was "optimist".
+                                    Text(
+                                        text = "  ·  ${option.word}",
+                                        style = TextStyle(fontSize = 14.sp),
+                                        color = OPTION_MUTED_TEXT.pick(dark), // text-gray-400/500
+                                    )
+                                }
+                            }
                         }
                     }
                 }

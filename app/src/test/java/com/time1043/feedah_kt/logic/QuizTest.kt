@@ -98,8 +98,10 @@ class QuizTest {
         assertEquals(1, options.count { it.isCorrect })
         assertEquals(4, options.map { it.meaning }.toSet().size)
         assertEquals("adj. 乐观的", options.find { it.isCorrect }?.meaning)
-        // Every option keeps its key: the reveal names what each meaning
+        // Every option carries its word: the reveal names what each meaning
         // belonged to.
+        assertEquals(4, options.map { it.word }.toSet().size)
+        assertEquals("optimistic", options.find { it.isCorrect }?.word)
         assertEquals("adj. 积极的", options.find { it.key == "d0" }?.meaning)
     }
 }

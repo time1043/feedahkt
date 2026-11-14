@@ -5,10 +5,12 @@ import com.time1043.feedah_kt.types.Word
 import java.text.Normalizer
 
 /** One multiple-choice option: the answer or one of its distractors, in
- * display order. */
+ * display order. Each entry carries its word: the reveal names what every
+ * option actually was, so the confusable pairs teach themselves. */
 data class QuizOption(
     val key: String,
     val meaning: String,
+    val word: String,
     val isCorrect: Boolean,
 )
 
@@ -65,16 +67,28 @@ fun pickDistractors(
     return picked
 }
 
-/** The answer plus its distractors, shuffled into display order. */
+/** The answer plus its distractors, shuffled into display order. Each entry
+ * carries its word: the reveal names what every option actually was, so the
+ * confusable pairs teach themselves. */
 fun buildOptions(
     correct: Word,
     distractors: List<Distractor>,
     rand: () -> Double = Math::random,
 ): List<QuizOption> = shuffle(
     listOf(
-        QuizOption(key = "correct", meaning = correct.meaning, isCorrect = true),
+        QuizOption(
+            key = "correct",
+            meaning = correct.meaning,
+            word = correct.word,
+            isCorrect = true,
+        ),
     ) + distractors.mapIndexed { index, distractor ->
-        QuizOption(key = "d$index", meaning = distractor.meaning, isCorrect = false)
+        QuizOption(
+            key = "d$index",
+            meaning = distractor.meaning,
+            word = distractor.word,
+            isCorrect = false,
+        )
     },
     rand,
 )
