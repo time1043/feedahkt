@@ -96,7 +96,7 @@ fun StudyScreen(
             tapToReveal = tapToReveal,
             canSpeak = canSpeak,
             onSpeak = { word -> tts.speakWord(word.word, speechRate) },
-            onSettle = controller::settle,
+            onSettle = { _, index -> controller.settle(index) },
             // Scrubbing opens browse mode: the pill floats over the cards —
             // not the header, which the settings can hide — and is the way
             // back to the probe.
