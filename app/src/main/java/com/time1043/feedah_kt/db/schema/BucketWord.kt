@@ -41,6 +41,9 @@ data class WordEntity(
     /** JSON-encoded string[] in the raw stage; a proper json column when
      * the drill stage brings typed columns. */
     @ColumnInfo(name = "forms", defaultValue = "[]") val forms: String,
+    /** JSON-encoded Distractor[]: the curated confusables the quiz drill
+     * prefers, topped up from the bucket pool at prepare time. */
+    @ColumnInfo(name = "distractors", defaultValue = "[]") val distractors: String,
 )
 
 /** The bucket-word tables' read/write surface — where drizzle's query
@@ -64,6 +67,16 @@ interface BucketWordDao {
     @Query("SELECT * FROM bucket WHERE name = :name LIMIT 1")
     suspend fun getSeedState(name: String): BucketEntity?
 
+    /** One joined row: the bucket plus its probe (null round/pointer when
+     * the bucket was never studied) — the launcher surfaces' readout. */
+    @Query(
+        "SELECT bucket.name AS name, bucket.word_count AS wordCount, " +
+            "bucket_progress.round AS round, bucket_progress.pointer AS pointer " +
+            "FROM bucket LEFT JOIN bucket_progress " +
+            "ON bucket_progress.bucket_name = bucket.name ORDER BY bucket.name",
+    )
+    suspend fun getBucketCardRows(): List<BucketCardData>
+
     /** The list length for the round timeline's denominator (the existence
      * check and the count in one read). */
     @Query("SELECT word_count FROM bucket WHERE name = :bucketName LIMIT 1")
@@ -78,3 +91,12 @@ interface BucketWordDao {
     @Insert
     suspend fun insertWords(words: List<WordEntity>)
 }
+
+/** One joined row of the bucket tab's launcher readout (see
+ * [BucketWordDao.getBucketCardRows]). */
+data class BucketCardData(
+    val name: String,
+    val wordCount: Int,
+    val round: Int?,
+    val pointer: Int?,
+)

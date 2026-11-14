@@ -6,6 +6,7 @@ import com.time1043.feedah_kt.db.withTransaction
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
 import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
+import com.time1043.feedah_kt.types.Distractor
 import kotlinx.serialization.json.Json
 
 private val json = Json
@@ -218,6 +219,8 @@ data class RoundWordRow(
     val ipa: String,
     val meaning: String,
     val forms: List<String>,
+    /** The curated confusables; an empty array when the seed carries none. */
+    val distractors: List<Distractor>,
     val flagged: Boolean,
 )
 
@@ -280,6 +283,7 @@ suspend fun getWordsWithRoundFlag(
             ipa = row.ipa,
             meaning = row.meaning,
             forms = json.decodeFromString(row.forms),
+            distractors = json.decodeFromString(row.distractors),
             flagged = row.flagPosition != null,
         )
     }

@@ -172,7 +172,7 @@ internal fun RoundWordRow.toDeckWord(): DeckWord = DeckWord(
     ipa = ipa,
     meaning = meaning,
     forms = forms,
-    distractors = emptyList(),
+    distractors = distractors,
     flagged = flagged,
 )
 

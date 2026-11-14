@@ -3,6 +3,7 @@ package com.time1043.feedah_kt.db
 import android.content.Context
 import com.time1043.feedah_kt.db.schema.BucketEntity
 import com.time1043.feedah_kt.db.schema.WordEntity
+import com.time1043.feedah_kt.types.Distractor
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
@@ -22,6 +23,7 @@ private data class SeedWord(
     val ipa: String,
     val meaning: String,
     val forms: List<String>,
+    val distractors: List<Distractor> = emptyList(),
 )
 
 /** A seed file: the bundled bucket JSON, narrowed to name + words. */
@@ -93,6 +95,7 @@ suspend fun seedBuckets(context: Context, db: FeedahDb): Unit =
                             ipa = w.ipa,
                             meaning = w.meaning,
                             forms = json.encodeToString(w.forms),
+                            distractors = json.encodeToString(w.distractors),
                         )
                     },
                 )
