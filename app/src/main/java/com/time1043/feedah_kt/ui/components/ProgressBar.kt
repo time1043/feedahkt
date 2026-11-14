@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.requiredSizeIn
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -133,18 +133,23 @@ fun ProgressBar(
                         .offset {
                             IntOffset((fraction * trackWidth).roundToInt() - 12.dp.roundToPx(), 0)
                         }
-                        // requiredSize: the thumb is a real 24dp circle that
-                        // overflows the 4dp track (the source's absolute
-                        // -top-2.5 h-6 in an overflow-visible track) — a plain
-                        // size would be squashed to the track's height.
-                        .requiredSize(24.dp) // h-6 min-w-6
-                        .background(MaterialTheme.colorScheme.primary, CircleShape),
+                        // The thumb is a real 24dp floor that overflows the
+                        // 4dp track (the source's absolute -top-2.5 h-6 in an
+                        // overflow-visible track) — a plain size would be
+                        // squashed to the track's height. min-w-6 h-6 with
+                        // px-1.5: the pill GROWS past its 24dp floor to fit
+                        // the label — a fixed 24dp circle wrapped "148" into
+                        // two clipped lines.
+                        .requiredSizeIn(minWidth = 24.dp, minHeight = 24.dp) // h-6 min-w-6
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .padding(horizontal = 6.dp), // px-1.5
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
                         text = labelFor?.invoke(grabbing) ?: "${grabbing + 1}",
                         style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Bold),
                         color = MaterialTheme.colorScheme.onPrimary,
+                        maxLines = 1,
                     )
                 }
             }
