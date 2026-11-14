@@ -19,9 +19,13 @@ import com.time1043.feedah_kt.logic.AnswerState
 import com.time1043.feedah_kt.logic.StudySession
 import com.time1043.feedah_kt.types.DeckWord
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.withTimeout
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -78,6 +82,21 @@ class StudySessionControllerTest {
 
     private fun StudySessionController.wordAt(ordinal: Int): DeckWord = ready().words[ordinal]
 
+    /**
+     * The fire-and-forget writes resume on Room's own executors, outside the
+     * test scheduler — advanceUntilIdle does not wait for them (the source's
+     * flushWrites await). Wait for the db to show the expected effect, on
+     * real time: the polling must not ride the test scheduler's virtual
+     * clock or Room's callbacks never land inside it.
+     */
+    private suspend fun awaitDb(timeoutMs: Long = 5000, condition: suspend () -> Boolean) {
+        withContext(Dispatchers.Default.limitedParallelism(1)) {
+            withTimeout(timeoutMs) {
+                while (!condition()) delay(10)
+            }
+        }
+    }
+
     @Test
     fun loadsWordsProgressAndRunsPrepareOncePerLoad() = runTest {
         val controller = newController(backgroundScope)
@@ -102,8 +121,10 @@ class StudySessionControllerTest {
         assertTrue(session.words.find { it.position == target.position }!!.flagged)
         // The mark is in the database, not only on screen: the reload must
         // find it.
-        val dbWords = getWordsWithRoundFlag(context, bucket, session.progress.round).second
-        assertTrue(dbWords.find { it.position == target.position }!!.flagged)
+        awaitDb {
+            getWordsWithRoundFlag(context, bucket, session.progress.round)
+                .second.find { it.position == target.position }!!.flagged
+        }
     }
 
     @Test
@@ -125,10 +146,8 @@ class StudySessionControllerTest {
         controller.load()
         controller.answer(controller.wordAt(1), correct = false) // unlock the gate
         controller.settle(1)
-        advanceUntilIdle()
-
         assertEquals(1, controller.ready().progress.pointer)
-        assertEquals(1, getProgress(context, bucket).pointer)
+        awaitDb { getProgress(context, bucket).pointer == 1 }
     }
 
     @Test
@@ -179,13 +198,12 @@ class StudySessionControllerTest {
         }
         // Landing on the end page (deck settle → onReached → reachEnd).
         assertTrue(controller.reachEnd())
-        advanceUntilIdle()
 
         // The reducer entered the next round...
         assertEquals(2, controller.ready().progress.round)
-        // ...and the db round advanced too.
-        assertEquals(2, getProgress(context, bucket).round)
-        // prepare ran again for the carried word list.
+        // ...and the db round advanced too, with the carried-word reload
+        // running prepare again for the fresh list.
+        awaitDb { getProgress(context, bucket).round == 2 }
         assertTrue(prepared >= 2)
     }
 
