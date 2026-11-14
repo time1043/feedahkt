@@ -42,10 +42,11 @@ class StudySessionController internal constructor(
     private val bucketName: String,
     private val drill: Drill,
     private val appContext: Context,
+    /** The fire-and-forget writes' scope — they outlive the screen's
+     * composition, like the source's floating promises; nothing cancels
+     * them mid-flight. Tests inject their own to flush deterministically. */
+    private val writeScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
-    // The fire-and-forget writes outlive the screen's composition, like the
-    // source's floating promises; nothing cancels them mid-flight.
-    private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     var session: StudySession by mutableStateOf(LOADING_SESSION)
         private set

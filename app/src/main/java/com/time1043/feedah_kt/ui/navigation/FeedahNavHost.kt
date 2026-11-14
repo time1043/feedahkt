@@ -122,6 +122,7 @@ fun NavGraphBuilder.homeScreen(
     composable<Home> {
         HomeScreen(
             activeBucket = activeBucket,
+            studyDrill = studyDrill,
             onOpenSearch = { navController.navigate(SearchRoute()) },
             onOpenStudy = { navController.navigate(StudyRoute(drill = studyDrill)) },
             onOpenReview = { navController.navigate(ReviewRoute()) },

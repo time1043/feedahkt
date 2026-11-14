@@ -59,6 +59,8 @@ class FeedahNavHostTest {
                 onHudPageChange = {},
                 onWordsMeaningChange = {},
                 onActiveBucketChange = {},
+                studyDrill = "swipe",
+                onStudyDrillChange = {},
             )
         }
     }
