@@ -143,7 +143,8 @@ fun NavGraphBuilder.bucketScreen(navController: NavController) {
 fun NavGraphBuilder.statsScreen(navController: NavController) {
     composable<Stats> {
         StatisticsScreen(
-            onOpenDayReview = { navController.navigate(ReviewRoute()) },
+            onOpenDayReview = { day -> navController.navigate(ReviewRoute(day = day)) },
+            onOpenFlagDayReview = { day -> navController.navigate(ReviewRoute(flagDay = day)) },
         )
     }
 }
