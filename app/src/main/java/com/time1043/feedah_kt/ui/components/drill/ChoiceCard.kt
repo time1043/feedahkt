@@ -8,7 +8,6 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -21,8 +20,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.logic.AnswerState
@@ -98,7 +100,12 @@ fun ChoiceCard(
                     .fillMaxWidth()
                     .weight(1f)
                     .padding(horizontal = 32.dp) // px-8
-                    .padding(bottom = 40.dp), // pb-10
+                    // pb-10 in the source; the bottom edge here must ALSO
+                    // clear the bookmark's glyph (it tops out 70dp above the
+                    // card's bottom edge) and this device's viewport runs
+                    // shorter than the source's reference — 72dp centers the
+                    // four options ~10dp above the glyph.
+                    .padding(bottom = 72.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center, // justify-center
             ) {
@@ -157,26 +164,29 @@ fun ChoiceCard(
                                 .padding(horizontal = 12.dp, vertical = 20.dp), // px-3 py-5
                             contentAlignment = Alignment.CenterStart,
                         ) {
-                            Row {
-                                Text(
-                                    text = option.meaning,
-                                    style = TextStyle(
-                                        fontSize = 14.sp,
-                                        fontWeight = fontWeight,
-                                    ),
-                                    color = textColor,
-                                )
-                                if (locked) {
-                                    // The reveal names every option: picking
-                                    // "乐观的" teaches more when the card also
-                                    // says it was "optimist".
-                                    Text(
-                                        text = "  ·  ${option.word}",
-                                        style = TextStyle(fontSize = 14.sp),
-                                        color = OPTION_MUTED_TEXT.pick(dark), // text-gray-400/500
-                                    )
-                                }
-                            }
+                            // The meaning and its reveal share one text so a
+                            // long meaning wraps into the suffix (the
+                            // source's nested Text).
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(
+                                        style = SpanStyle(
+                                            color = textColor,
+                                            fontWeight = fontWeight,
+                                        ),
+                                    ) { append(option.meaning) }
+                                    if (locked) {
+                                        // The reveal names every option:
+                                        // picking "乐观的" teaches more when
+                                        // the card also says it was
+                                        // "optimist".
+                                        withStyle(
+                                            style = SpanStyle(color = OPTION_MUTED_TEXT.pick(dark)),
+                                        ) { append("  ·  ${option.word}") }
+                                    }
+                                },
+                                style = TextStyle(fontSize = 14.sp),
+                            )
                         }
                     }
                 }

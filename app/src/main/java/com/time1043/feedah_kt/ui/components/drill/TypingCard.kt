@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -166,6 +167,7 @@ fun TypingCard(
                     Box(
                         Modifier
                             .padding(top = 12.dp) // mt-3
+                            .widthIn(max = 320.dp) // max-w-[320px]
                             .background(OPTION_WRONG_BG.pick(dark), RoundedCornerShape(50))
                             .border(
                                 BorderStroke(1.dp, OPTION_WRONG_BORDER.pick(dark)),
@@ -200,7 +202,10 @@ fun TypingCard(
                 Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(horizontal = 32.dp), // px-8
+                    .padding(horizontal = 32.dp) // px-8
+                    // The revealed forms keep the bookmark's glyph band
+                    // clear (it tops out 70dp above the card's bottom edge).
+                    .padding(bottom = 56.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {

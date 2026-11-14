@@ -98,7 +98,11 @@ fun WordCard(
                     .weight(1f)
                     .testTag("wordcard.formsHalf")
                     .clickable(interactionSource = interaction, indication = null, onClick = toggle)
-                    .padding(horizontal = 32.dp), // px-8
+                    .padding(horizontal = 32.dp) // px-8
+                    // The forms keep the bookmark's glyph band clear (it
+                    // tops out 70dp above the card's bottom edge); the
+                    // source's taller viewport left room for free.
+                    .padding(bottom = 56.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.Center,
             ) {
