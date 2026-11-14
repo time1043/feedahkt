@@ -101,7 +101,9 @@ class RepoTest {
     @Test
     fun snapshotsTheEndOfDayPositionOnSettleAndOnCompletion() = runBlocking {
         val wordCount = getWordsWithRoundFlag(context, bucket, 1).second.size
-        settleCard(context, bucket, 2)
+        // The ordinal is 1-based: settling the card at index 1 (the second
+        // card) freezes global position 2.
+        settleCard(context, bucket, 1)
         val pointers = listDailyPointers(context)
         assertEquals(1, pointers.size)
         val snapshot = pointers[0]
@@ -121,7 +123,7 @@ class RepoTest {
         settleCard(context, bucket, 1)
         val pointers = listDailyPointers(context)
         assertEquals(1, pointers.size)
-        assertEquals(3, pointers[0].globalPosition)
+        assertEquals(4, pointers[0].globalPosition)
     }
 
     @Test

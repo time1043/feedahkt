@@ -68,8 +68,9 @@ suspend fun settleCard(context: Context, bucketName: String, pointer: Int) {
 private suspend fun wordCountOf(db: FeedahDb, bucketName: String): Int =
     db.bucketWordDao().getWordCount(bucketName) ?: 0
 
-/** The end-of-day global position snapshot, encoded the same way the day
- * replay decodes it: (round - 1) * wordCount + pointer. */
+/** The end-of-day global position snapshot: (round - 1) * wordCount plus the
+ * 1-based ordinal of the card (pointer + 1) — the same number the day replay
+ * decodes back into (round, card) with, for arbitrary word positions. */
 private suspend fun snapshotDailyPointer(
     db: FeedahDb,
     bucketName: String,
@@ -77,7 +78,7 @@ private suspend fun snapshotDailyPointer(
     pointer: Int,
 ) {
     val wordCount = wordCountOf(db, bucketName)
-    upsertDailyPointer(db, todayLocalDate(), bucketName, (round - 1) * wordCount + pointer)
+    upsertDailyPointer(db, todayLocalDate(), bucketName, (round - 1) * wordCount + pointer + 1)
 }
 
 /**
