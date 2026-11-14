@@ -104,6 +104,8 @@ fun ReviewScreen(
     var walk by remember { mutableStateOf<Walk?>(null) }
     var empty by remember { mutableStateOf(false) }
     var seen by remember { mutableIntStateOf(1) }
+    // Review decks count toward the daily "studying" metric too.
+    rememberStudyUsage()
 
     val deckHandle = rememberWordDeckHandle()
     // Free-swiping state entered by scrubbing; exited by Resume reviewing.
