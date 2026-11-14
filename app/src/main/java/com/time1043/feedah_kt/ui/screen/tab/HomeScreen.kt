@@ -26,6 +26,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -167,6 +169,10 @@ fun HomeScreen(
                         Modifier
                             .fillMaxWidth()
                             .alpha(if (reviewEnabled) 1f else 0.4f) // disabled:opacity-40
+                            .semantics {
+                                contentDescription =
+                                    "Review ${active?.flagCount ?: 0} flagged words"
+                            }
                             .border(
                                 width = 2.dp, // border-2
                                 color = MaterialTheme.colorScheme.primary, // border-blue-500

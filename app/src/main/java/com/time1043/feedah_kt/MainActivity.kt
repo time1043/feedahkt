@@ -23,12 +23,29 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import com.time1043.feedah_kt.db.DB_NAME
+import com.time1043.feedah_kt.db.UsageMeter
 import com.time1043.feedah_kt.db.getRawDb
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.ui.FeedahApp
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+    override fun onStart() {
+        super.onStart()
+        // App time accrues only while the activity is foregrounded — the
+        // backgrounded span pauses, and the next flush lands it in neither
+        // day. A deck screen on the stack resumes its study clock too.
+        UsageMeter.startAppUsage(applicationContext)
+        if (UsageMeter.studyFocused) UsageMeter.startStudyUsage()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        UsageMeter.pauseAppUsage()
+        UsageMeter.pauseStudyUsage()
+        UsageMeter.flushAsync()
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

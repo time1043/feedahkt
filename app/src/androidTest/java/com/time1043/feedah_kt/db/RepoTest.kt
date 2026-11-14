@@ -4,19 +4,25 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.time1043.feedah_kt.db.getRawDb
 import com.time1043.feedah_kt.db.repo.completeRound
 import com.time1043.feedah_kt.db.repo.countRoundFlags
 import com.time1043.feedah_kt.db.repo.countedReviewCount
 import com.time1043.feedah_kt.db.repo.finishReview
 import com.time1043.feedah_kt.db.repo.getProgress
 import com.time1043.feedah_kt.db.repo.getRoundsByBucket
+import com.time1043.feedah_kt.db.repo.getWordsCompletedOn
+import com.time1043.feedah_kt.db.repo.getWordsFlaggedOn
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
+import com.time1043.feedah_kt.db.repo.listDailyPointers
 import com.time1043.feedah_kt.db.repo.openReviewSession
 import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleCard
 import com.time1043.feedah_kt.db.repo.settleReview
+import com.time1043.feedah_kt.logic.todayLocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -94,6 +100,34 @@ class RepoTest {
         finishFeedRound()
         assertEquals(2, countRoundFlags(context, bucket, 2))
         assertEquals(2, countRoundFlags(context, bucket, 1))
+    }
+
+    @Test
+    fun snapshotsTheEndOfDayPositionOnSettleAndOnCompletion() = runBlocking {
+        val wordCount = getWordsWithRoundFlag(context, bucket, 1).second.size
+        // The ordinal is 1-based: settling the card at index 1 (the second
+        // card) freezes global position 2.
+        settleCard(context, bucket, 1)
+        val pointers = listDailyPointers(context)
+        assertEquals(1, pointers.size)
+        val snapshot = pointers[0]
+        assertEquals(todayLocalDate(), snapshot.day)
+        assertEquals(bucket, snapshot.bucketName)
+        assertEquals(2, snapshot.globalPosition)
+        finishFeedRound()
+        val endOfDay = listDailyPointers(context)[0]
+        // The completion itself is exposure: the end card lands on today's
+        // watermark at the round's end.
+        assertEquals(wordCount, endOfDay.globalPosition)
+    }
+
+    @Test
+    fun keepsOneRowPerBucketMovingForwardOnly() = runBlocking {
+        settleCard(context, bucket, 3)
+        settleCard(context, bucket, 1)
+        val pointers = listDailyPointers(context)
+        assertEquals(1, pointers.size)
+        assertEquals(4, pointers[0].globalPosition)
     }
 
     @Test
@@ -276,5 +310,104 @@ class RepoTest {
         val reread = getDb(context).reviewSessionDao().getSessionById(session.id)
         assertNotNull(reread)
         assertEquals(archived.finishedAt, reread!!.finishedAt)
+    }
+
+    @Test
+    fun aDaySpanningTwoRoundsReplaysEveryRoundWithoutDedup() = runBlocking {
+        val wordCount = getWordsWithRoundFlag(context, bucket, 1).second.size
+        val positions = wordPositions()
+        // Exposure semantics: the first snapshot's gain covers the walk up to
+        // the watermark — settling the second card credits the first card too.
+        settleCard(context, bucket, 1)
+        finishFeedRound()
+        settleCard(context, bucket, 1)
+
+        val entries = getWordsCompletedOn(context, todayLocalDate())
+        // Round 1's whole stretch (the completion pins its end) plus round 2's
+        // gain: the same word may appear once per round it was walked in.
+        assertEquals(wordCount + 2, entries.size)
+        assertEquals(bucket, entries[0].bucketName)
+        assertEquals(1, entries[0].round)
+        assertEquals(positions[0], entries[0].word.position)
+        val lastTwo = entries.takeLast(2)
+        assertEquals(listOf(2, 2), lastTwo.map { it.round })
+        assertEquals(
+            listOf(positions[0], positions[1]),
+            lastTwo.map { it.word.position },
+        )
+    }
+
+    @Test
+    fun showsEachRoundItsOwnFlagState() = runBlocking {
+        val p1 = wordPositions()[0]
+        settleCard(context, bucket, 1)
+        setRoundFlag(context, bucket, 1, p1, true)
+        finishFeedRound()
+        setRoundFlag(context, bucket, 2, p1, false)
+        settleCard(context, bucket, 1)
+
+        val entries = getWordsCompletedOn(context, todayLocalDate())
+        val round1First = entries.find { it.round == 1 && it.word.position == p1 }
+        val round2First = entries.find { it.round == 2 && it.word.position == p1 }
+        // A replay of the day looks the way the day looked.
+        assertTrue(round1First!!.word.flagged)
+        assertFalse(round2First!!.word.flagged)
+    }
+
+    @Test
+    fun replaysTheDayFlagsInFlagOrderOneEntryPerFlag() = runBlocking {
+        val (p1, p2) = wordPositions().let { it[0] to it[1] }
+        setRoundFlag(context, bucket, 1, p1, true)
+        setRoundFlag(context, bucket, 1, p2, true)
+
+        // Same-millisecond stamps would tie: pin the order explicitly.
+        val t = System.currentTimeMillis()
+        getRawDb()?.execSQL(
+            "UPDATE round_flag SET flagged_at = ? WHERE position = ?",
+            arrayOf(t, p1),
+        )
+        getRawDb()?.execSQL(
+            "UPDATE round_flag SET flagged_at = ? WHERE position = ?",
+            arrayOf(t + 1000, p2),
+        )
+
+        val entries = getWordsFlaggedOn(context, todayLocalDate())
+        assertEquals(listOf(p1, p2), entries.map { it.word.position })
+        assertTrue(entries.all { it.word.flagged })
+    }
+
+    @Test
+    fun ignoresFlagsFromOtherDaysAndWordsUnflaggedSince() = runBlocking {
+        val (p1, p2) = wordPositions().let { it[0] to it[1] }
+        setRoundFlag(context, bucket, 1, p1, true)
+        setRoundFlag(context, bucket, 1, p2, true)
+        // p2's mark is cleared: the row's absence leaves nothing to review.
+        setRoundFlag(context, bucket, 1, p2, false)
+
+        val yesterday = System.currentTimeMillis() - 86_400_000
+        getRawDb()?.execSQL(
+            "UPDATE round_flag SET flagged_at = ? WHERE position = ?",
+            arrayOf(yesterday, p1),
+        )
+
+        assertEquals(0, getWordsFlaggedOn(context, todayLocalDate()).size)
+        assertEquals(
+            listOf(p1),
+            getWordsFlaggedOn(context, todayLocalDate(yesterday)).map { it.word.position },
+        )
+    }
+
+    @Test
+    fun groupsFlagsByRoundEvenWhenAnEarlierRoundIsRevisited() = runBlocking {
+        val (p1, p2, p3) = wordPositions().let { Triple(it[0], it[1], it[2]) }
+        finishFeedRound() // no carries: round 2 opens empty
+        // Flag round 2, then revisit round 1: a replay that bounced 1 → 2 → 1
+        // must still walk round 1 in one pass.
+        setRoundFlag(context, bucket, 2, p1, true)
+        setRoundFlag(context, bucket, 1, p2, true)
+        setRoundFlag(context, bucket, 1, p3, true)
+
+        val entries = getWordsFlaggedOn(context, todayLocalDate())
+        assertEquals(listOf(1, 1, 2), entries.map { it.round })
     }
 }

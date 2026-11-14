@@ -1,11 +1,13 @@
 package com.time1043.feedah_kt.db.repo
 
 import android.content.Context
+import com.time1043.feedah_kt.db.FeedahDb
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.db.withTransaction
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
 import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
+import com.time1043.feedah_kt.logic.todayLocalDate
 import com.time1043.feedah_kt.types.Distractor
 import kotlinx.serialization.json.Json
 
@@ -52,12 +54,31 @@ suspend fun settleCard(context: Context, bucketName: String, pointer: Int) {
                     roundStartedAt = System.currentTimeMillis(),
                 ),
             )
+            snapshotDailyPointer(db, bucketName, round = 1, pointer = pointer)
             return@withTransaction
         }
         if (pointer > row.pointer) {
             dao.updatePointer(bucketName, pointer)
+            snapshotDailyPointer(db, bucketName, round = row.round, pointer = pointer)
         }
     }
+}
+
+/** The bucket's word count, read inside the settle/complete transactions. */
+private suspend fun wordCountOf(db: FeedahDb, bucketName: String): Int =
+    db.bucketWordDao().getWordCount(bucketName) ?: 0
+
+/** The end-of-day global position snapshot: (round - 1) * wordCount plus the
+ * 1-based ordinal of the card (pointer + 1) — the same number the day replay
+ * decodes back into (round, card) with, for arbitrary word positions. */
+private suspend fun snapshotDailyPointer(
+    db: FeedahDb,
+    bucketName: String,
+    round: Int,
+    pointer: Int,
+) {
+    val wordCount = wordCountOf(db, bucketName)
+    upsertDailyPointer(db, todayLocalDate(), bucketName, (round - 1) * wordCount + pointer + 1)
 }
 
 /**
@@ -76,6 +97,11 @@ suspend fun completeRound(context: Context, bucketName: String, now: Long) {
         val finishedRound = row?.round ?: 1
         val finishedStart = row?.roundStartedAt ?: 0
         val next = finishedRound + 1
+
+        // The end card completes the round's last word on today's watermark:
+        // the completion itself is exposure (the day replay counts it).
+        val endWordCount = wordCountOf(db, bucketName)
+        upsertDailyPointer(db, todayLocalDate(), bucketName, finishedRound * endWordCount)
 
         // One row per round, first write wins: a duplicate completion must
         // not move the recorded span.

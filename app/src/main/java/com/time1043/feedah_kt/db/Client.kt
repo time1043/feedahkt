@@ -10,6 +10,9 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.time1043.feedah_kt.db.schema.BucketEntity
 import com.time1043.feedah_kt.db.schema.BucketWordDao
 import com.time1043.feedah_kt.db.schema.BucketProgressEntity
+import com.time1043.feedah_kt.db.schema.DailyDao
+import com.time1043.feedah_kt.db.schema.DailyPointerEntity
+import com.time1043.feedah_kt.db.schema.DailyStatEntity
 import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
 import com.time1043.feedah_kt.db.schema.ReviewSessionDao
@@ -27,8 +30,10 @@ const val DB_NAME = "feedah.db"
         RoundRecordEntity::class,
         RoundFlagEntity::class,
         ReviewSessionEntity::class,
+        DailyPointerEntity::class,
+        DailyStatEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
     autoMigrations = [
         AutoMigration(from = 1, to = 2),
@@ -36,6 +41,7 @@ const val DB_NAME = "feedah.db"
         AutoMigration(from = 3, to = 4),
         AutoMigration(from = 4, to = 5),
         AutoMigration(from = 5, to = 6),
+        AutoMigration(from = 6, to = 7),
     ],
 )
 abstract class FeedahDb : RoomDatabase() {
@@ -44,6 +50,8 @@ abstract class FeedahDb : RoomDatabase() {
     abstract fun studyRoundDao(): StudyRoundDao
 
     abstract fun reviewSessionDao(): ReviewSessionDao
+
+    abstract fun dailyDao(): DailyDao
 }
 
 private fun buildDb(context: Context): FeedahDb =

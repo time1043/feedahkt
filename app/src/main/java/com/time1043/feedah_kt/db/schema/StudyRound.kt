@@ -161,6 +161,11 @@ interface StudyRoundDao {
     @Query("SELECT round, position FROM round_flag WHERE bucket_name = :bucketName")
     suspend fun getFlags(bucketName: String): List<FlagRef>
 
+    /** Every flag row, rounds grouped per bucket in flag-time order — the
+     * day flag replay's scan (the table is sparse, so it is cheap). */
+    @Query("SELECT * FROM round_flag ORDER BY bucket_name, round, flagged_at")
+    suspend fun listAllFlags(): List<RoundFlagEntity>
+
     /** How many flag rows every (bucket, round) pair carries — the launcher
      * surfaces' review counts, one grouped read instead of one per bucket. */
     @Query(

@@ -143,7 +143,8 @@ fun NavGraphBuilder.bucketScreen(navController: NavController) {
 fun NavGraphBuilder.statsScreen(navController: NavController) {
     composable<Stats> {
         StatisticsScreen(
-            onOpenDayReview = { navController.navigate(ReviewRoute()) },
+            onOpenDayReview = { day -> navController.navigate(ReviewRoute(day = day)) },
+            onOpenFlagDayReview = { day -> navController.navigate(ReviewRoute(flagDay = day)) },
         )
     }
 }
@@ -275,6 +276,8 @@ fun NavGraphBuilder.reviewScreen(
             chrome = chrome,
             bucketParam = route.bucket,
             roundParam = route.round,
+            dayParam = route.day,
+            flagDayParam = route.flagDay,
             activeBucket = activeBucket,
             onBack = navController::goBack,
             onSearch = { navController.navigate(SearchRoute()) },

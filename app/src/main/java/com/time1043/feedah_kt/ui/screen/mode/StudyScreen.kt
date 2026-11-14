@@ -59,6 +59,8 @@ fun StudyScreen(
 ) {
     val controller = rememberStudySession(bucketName, drill)
     val deckHandle = rememberWordDeckHandle()
+    // Time on the deck accrues to the daily "studying" metric.
+    rememberStudyUsage()
     // The deck decides when to speak (open, settle, replay taps); the screen
     // decides how and whether — the stored rate, once its hydration has
     // settled and auto-speak is on. The drill's speakOnSettle gates the
