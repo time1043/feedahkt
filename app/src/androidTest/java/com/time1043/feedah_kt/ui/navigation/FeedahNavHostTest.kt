@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.ui.navigation
 
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.navigation.compose.ComposeNavigator
@@ -59,6 +60,8 @@ class FeedahNavHostTest {
                 onHudPageChange = {},
                 onWordsMeaningChange = {},
                 onActiveBucketChange = {},
+                studyDrill = "swipe",
+                onStudyDrillChange = {},
             )
         }
     }
@@ -67,8 +70,8 @@ class FeedahNavHostTest {
     fun home_openSearch_navigatesToSearch() {
         // arrange: done in setup — the real graph mounted on a TestNavHostController
 
-        // act: tap the Home entry that opens Search
-        composeRule.onNodeWithText("Open Search").performClick()
+        // act: tap the Home header's search icon
+        composeRule.onNodeWithContentDescription("Search words").performClick()
 
         // assert: the back stack top is SearchRoute with default params
         assertEquals(
@@ -83,7 +86,7 @@ class FeedahNavHostTest {
 
         // act: open search, then open word #1701 (pre-filled input — the
         // mock bucket's first card number)
-        composeRule.onNodeWithText("Open Search").performClick()
+        composeRule.onNodeWithContentDescription("Search words").performClick()
         composeRule.onNodeWithText("Open word #1701").performClick()
 
         // assert: the back stack top is BrowseRoute carrying the position

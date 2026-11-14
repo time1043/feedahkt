@@ -256,17 +256,14 @@ fun ReviewScreen(
             // Advances the resume watermark on forward settles unless
             // browsing: a walk left half-way picks up at the first card it
             // has not passed.
-            onSettle = { index ->
+            onSettle = { word, index ->
                 if (!browsing && index > frontier) {
                     frontier = index
-                    val word = queue.getOrNull(index)
-                    if (word != null) {
-                        scope.launch {
-                            runCatching { settleReview(appContext, session.id, word.position) }
-                                .onFailure { error ->
-                                    Log.e(TAG, "watermark write failed", error)
-                                }
-                        }
+                    scope.launch {
+                        runCatching { settleReview(appContext, session.id, word.position) }
+                            .onFailure { error ->
+                                Log.e(TAG, "watermark write failed", error)
+                            }
                     }
                 }
             },

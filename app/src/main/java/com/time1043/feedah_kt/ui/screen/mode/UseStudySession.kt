@@ -15,6 +15,7 @@ import com.time1043.feedah_kt.db.repo.getProgress
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
 import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleCard
+import com.time1043.feedah_kt.drills.Drill
 import com.time1043.feedah_kt.logic.LOADING_SESSION
 import com.time1043.feedah_kt.logic.Progress
 import com.time1043.feedah_kt.logic.StudyAction
@@ -39,11 +40,13 @@ import kotlinx.coroutines.launch
  */
 class StudySessionController internal constructor(
     private val bucketName: String,
+    private val drill: Drill,
     private val appContext: Context,
+    /** The fire-and-forget writes' scope — they outlive the screen's
+     * composition, like the source's floating promises; nothing cancels
+     * them mid-flight. Tests inject their own to flush deterministically. */
+    private val writeScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.IO),
 ) {
-    // The fire-and-forget writes outlive the screen's composition, like the
-    // source's floating promises; nothing cancels them mid-flight.
-    private val writeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     var session: StudySession by mutableStateOf(LOADING_SESSION)
         private set
@@ -63,12 +66,16 @@ class StudySessionController internal constructor(
             // is inert (reachEnd refuses it) instead of writing a probe row
             // that would violate the foreign key.
             val (_, rows) = getWordsWithRoundFlag(appContext, bucketName, progress.round)
+            val deckWords = rows.map { it.toDeckWord() }
             dispatch(
                 StudyAction.Loaded(
-                    words = rows.map { it.toDeckWord() },
+                    words = deckWords,
                     progress = clampProgress(progress.toProbe(), rows.size),
                 ),
             )
+            // The drill rebuilds its per-card private data (options, …) for
+            // the fresh load; recycled cards must not reshuffle underneath.
+            drill.prepare(deckWords)
         } catch (error: Exception) {
             Log.e(TAG, "session load failed", error)
         }
@@ -93,21 +100,30 @@ class StudySessionController internal constructor(
     fun resume() = dispatch(StudyAction.Resumed)
 
     /**
-     * Records an answer; auto-flags wrong picks when the mode says so. The
-     * policy comes from the drill once the registry lands — until then,
-     * neutral: no auto-flag, no auto-advance. A drill that does turn
-     * autoFlag on must also write the round_flag row, or the mark lives only
-     * on screen.
+     * Records an answer and applies the drill's policy: wrong picks
+     * auto-flag (the round_flag row is part of the policy — a mark that
+     * lives only on screen would be gone on reload), correct ones schedule
+     * the auto-advance the screen executes.
      */
-    fun answer(word: DeckWord, correct: Boolean, picked: String? = null) = dispatch(
-        StudyAction.Answered(
-            position = word.position,
-            correct = correct,
-            picked = picked,
-            autoFlag = false,
-            autoAdvanceDueAt = null,
-        ),
-    )
+    fun answer(word: DeckWord, correct: Boolean, picked: String? = null) {
+        val ready = session as? StudySession.Ready
+        dispatch(
+            StudyAction.Answered(
+                position = word.position,
+                correct = correct,
+                picked = picked,
+                autoFlag = drill.autoFlagOnWrong,
+                autoAdvanceDueAt = drill.autoAdvanceMs?.let { System.currentTimeMillis() + it },
+            ),
+        )
+        if (!correct && drill.autoFlagOnWrong) {
+            val round = ready?.progress?.round ?: 1
+            writeScope.launch {
+                runCatching { setRoundFlag(appContext, bucketName, round, word.position, true) }
+                    .onFailure { error -> Log.e(TAG, "flag write failed", error) }
+            }
+        }
+    }
 
     fun skip(word: DeckWord) = dispatch(StudyAction.Skipped(position = word.position))
 
@@ -142,6 +158,7 @@ class StudySessionController internal constructor(
         val ready = session as? StudySession.Ready ?: return false
         if (ready.words.isEmpty()) return false
         if (ready.browsing || ready.progress.pointer < ready.words.size - 1) return false
+        val nextRound = ready.progress.round + 1
         // Freeze the round's tallies before the reset wipes the answers —
         // the end page shows them for its whole linger.
         val counts = countsOf(ready)
@@ -154,8 +171,19 @@ class StudySessionController internal constructor(
             ),
         )
         writeScope.launch {
-            runCatching { completeRound(appContext, bucketName, now) }
-                .onFailure { error -> Log.e(TAG, "round completion failed", error) }
+            try {
+                // The reload must wait for the advance transaction: it
+                // carries the finished round's flags into the new one
+                // (回显), and the database is the truth about what the
+                // fresh round opens with.
+                completeRound(appContext, bucketName, now)
+                val (_, fresh) = getWordsWithRoundFlag(appContext, bucketName, nextRound)
+                val freshWords = fresh.map { it.toDeckWord() }
+                dispatch(StudyAction.RoundWordsLoaded(words = freshWords))
+                drill.prepare(freshWords)
+            } catch (error: Exception) {
+                Log.e(TAG, "round completion failed", error)
+            }
         }
         return true
     }
@@ -172,7 +200,7 @@ internal fun RoundWordRow.toDeckWord(): DeckWord = DeckWord(
     ipa = ipa,
     meaning = meaning,
     forms = forms,
-    distractors = emptyList(),
+    distractors = distractors,
     flagged = flagged,
 )
 
@@ -186,9 +214,9 @@ private fun com.time1043.feedah_kt.db.repo.ProgressRow.toProbe(): Progress =
  * reloads the bucket from the database — the focus-reload behavior.
  */
 @Composable
-fun rememberStudySession(bucketName: String): StudySessionController {
+fun rememberStudySession(bucketName: String, drill: Drill): StudySessionController {
     val appContext = LocalContext.current.applicationContext
-    val controller = remember(bucketName) { StudySessionController(bucketName, appContext) }
+    val controller = remember(bucketName) { StudySessionController(bucketName, drill, appContext) }
 
     // Reloads on every entry into composition (the source's focus effect):
     // the probe (round/pointer) and the words both follow the database. The

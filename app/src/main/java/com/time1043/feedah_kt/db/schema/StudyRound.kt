@@ -64,6 +64,10 @@ data class RecordSpan(
 /** One flagged word, as the timeline's ordinal translation reads it. */
 data class FlagRef(val round: Int, val position: Int)
 
+/** One (bucket, round) pair's flag-row count (see
+ * [StudyRoundDao.countFlagsByBucketRound]). */
+data class FlagCount(val bucketName: String, val round: Int, val count: Int)
+
 /** A word flagged within one round of one bucket. A flag belongs to its round —
  * completing a round copies its rows onto the next one, so a mark follows you
  * until you clear it there, and clearing it never rewrites the finished
@@ -101,6 +105,7 @@ data class RoundWordData(
     val ipa: String,
     val meaning: String,
     val forms: String,
+    val distractors: String,
     val flagPosition: Int?,
 )
 
@@ -144,7 +149,7 @@ interface StudyRoundDao {
      * the flag row's absence is the unflagged state. */
     @Query(
         "SELECT word.position AS position, word.word AS word, word.ipa AS ipa, " +
-            "word.meaning AS meaning, word.forms AS forms, " +
+            "word.meaning AS meaning, word.forms AS forms, word.distractors AS distractors, " +
             "round_flag.position AS flagPosition " +
             "FROM word LEFT JOIN round_flag " +
             "ON round_flag.bucket_name = word.bucket_name " +
@@ -155,6 +160,14 @@ interface StudyRoundDao {
 
     @Query("SELECT round, position FROM round_flag WHERE bucket_name = :bucketName")
     suspend fun getFlags(bucketName: String): List<FlagRef>
+
+    /** How many flag rows every (bucket, round) pair carries — the launcher
+     * surfaces' review counts, one grouped read instead of one per bucket. */
+    @Query(
+        "SELECT bucket_name AS bucketName, round AS round, COUNT(*) AS count " +
+            "FROM round_flag GROUP BY bucket_name, round",
+    )
+    suspend fun countFlagsByBucketRound(): List<FlagCount>
 
     /** How many flag rows one round carries. */
     @Query("SELECT COUNT(*) FROM round_flag WHERE bucket_name = :bucketName AND round = :round")

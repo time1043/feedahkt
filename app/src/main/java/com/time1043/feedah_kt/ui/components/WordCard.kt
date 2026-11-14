@@ -2,20 +2,13 @@ package com.time1043.feedah_kt.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.text.BasicText
-import androidx.compose.foundation.text.TextAutoSize
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -25,89 +18,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.time1043.feedah_kt.R
-import com.time1043.feedah_kt.logic.meaningLines
-import com.time1043.feedah_kt.ui.theme.FLAG_RED
 import com.time1043.feedah_kt.types.Word
-
-// Word forms render in a fixed 2×6 grid (12 cells); empty cells keep the
-// layout, so the forms block is the same size on every card and never shifts.
-private const val FORMS_GRID_CELLS = 12
-
-/** The meaning, one line per part-of-speech group when it is long. */
-@Composable
-private fun CardMeaning(meaning: String) {
-    if (meaning.isEmpty()) return
-    val lines = meaningLines(meaning)
-    if (lines != null) {
-        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            for (line in lines) {
-                Text(
-                    text = line,
-                    style = TextStyle(fontSize = 20.sp, lineHeight = 28.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                )
-            }
-        }
-    } else {
-        Text(
-            text = meaning,
-            style = TextStyle(fontSize = 20.sp, lineHeight = 28.sp),
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = TextAlign.Center,
-        )
-    }
-}
-
-/** The bookmark, centered on the bottom edge. Only the icon itself toggles:
- * the wrapper passes taps beside it through (the source's box-none) to
- * whatever is underneath the card. */
-@Composable
-private fun BookmarkButton(
-    flagged: Boolean,
-    onToggleFlag: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val dark = isSystemInDarkTheme()
-    Box(
-        modifier
-            .fillMaxWidth()
-            .padding(bottom = 32.dp), // bottom-8
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(
-            painter = painterResource(
-                if (flagged) R.drawable.ic_bookmark else R.drawable.ic_bookmark_outline,
-            ),
-            contentDescription = if (flagged) "Unflag word" else "Flag word",
-            tint = if (flagged) {
-                if (dark) FLAG_RED.dark else FLAG_RED.light
-            } else {
-                MaterialTheme.colorScheme.onSurfaceVariant
-            },
-            // The padding wraps the icon (the source's Pressable p-2 around a
-            // 30px glyph), not the other way round: size-first would inset
-            // the glyph itself and draw it at 14dp.
-            modifier = Modifier
-                .clickable(
-                    role = Role.Button,
-                    onClickLabel = if (flagged) "Unflag word" else "Flag word",
-                    onClick = onToggleFlag,
-                )
-                .padding(8.dp) // p-2
-                .size(30.dp),
-        )
-    }
-}
+import com.time1043.feedah_kt.ui.components.drill.BookmarkButton
+import com.time1043.feedah_kt.ui.components.drill.CardForms
+import com.time1043.feedah_kt.ui.components.drill.CardHeadword
+import com.time1043.feedah_kt.ui.components.drill.CardMeaning
 
 /**
  * The full-screen word card, split into two fixed halves — the project's
@@ -123,6 +39,10 @@ private fun BookmarkButton(
  *
  * With a toggle callback the bookmark rides the card's bottom edge; the deck
  * hides it whenever the screen passes none.
+ *
+ * The card's parts are the drill card kit's ([CardHeadword], [CardMeaning],
+ * [CardForms], [BookmarkButton]): the answer-driven cards (quiz, type) wear
+ * the same skeleton.
  */
 @Composable
 fun WordCard(
@@ -143,121 +63,60 @@ fun WordCard(
 
     Box(modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize()) {
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .clickable(interactionSource = interaction, indication = null, onClick = toggle)
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            Text(
-                text = word.position.toString(),
-                style = TextStyle(fontSize = 28.sp, fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
-            BasicText(
-                text = word.word,
-                style = TextStyle(
-                    fontSize = 48.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                ),
-                maxLines = 1,
-                autoSize = TextAutoSize.StepBased(
-                    minFontSize = 24.sp,
-                    maxFontSize = 48.sp,
-                    stepSize = 1.sp,
-                ),
-                modifier = Modifier
-                    .clickable(
-                        interactionSource = interaction,
-                        indication = null,
-                        onClick = onReplay,
-                    )
-                    .padding(all = 12.dp) // hitSlop 12
-                    .padding(top = 16.dp),
-            )
-            if (word.ipa.isNotEmpty()) {
-                Text(
-                    text = word.ipa,
-                    style = TextStyle(fontSize = 18.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .clickable(
-                            interactionSource = interaction,
-                            indication = null,
-                            onClick = onReplay,
-                        )
-                        .padding(all = 12.dp) // hitSlop 12
-                        .padding(top = 8.dp),
-                )
-            }
-            // Reserved slot: keeps number and word anchored while the meaning
-            // toggles or wraps.
-            Box(
+            Column(
                 Modifier
                     .fillMaxWidth()
-                    .padding(top = 16.dp)
-                    .height(110.dp),
-                contentAlignment = Alignment.TopCenter,
+                    .weight(1f)
+                    .clickable(interactionSource = interaction, indication = null, onClick = toggle)
+                    .padding(horizontal = 32.dp), // px-8
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
             ) {
-                if (shown) {
-                    CardMeaning(meaning = word.meaning)
-                }
-            }
-        }
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .weight(1f)
-                .testTag("wordcard.formsHalf")
-                .clickable(interactionSource = interaction, indication = null, onClick = toggle)
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center,
-        ) {
-            if (shown && word.forms.isNotEmpty()) {
-                Column(
-                    Modifier.fillMaxWidth().padding(bottom = 24.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                CardHeadword(
+                    position = word.position,
+                    text = word.word,
+                    ipa = word.ipa,
+                    onReplay = onReplay,
+                )
+                // Reserved slot: keeps number and word anchored while the
+                // meaning toggles or wraps.
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 16.dp) // mt-4
+                        .height(110.dp), // h-[110px]
+                    contentAlignment = Alignment.TopCenter,
                 ) {
-                    for (row in 0 until FORMS_GRID_CELLS / 2) {
-                        Row(Modifier.fillMaxWidth()) {
-                            for (col in 0 until 2) {
-                                Box(
-                                    Modifier
-                                        .weight(1f)
-                                        .height(28.dp)
-                                        .padding(horizontal = 8.dp),
-                                    contentAlignment = Alignment.CenterStart,
-                                ) {
-                                    val form = word.forms.getOrNull(row * 2 + col)
-                                    if (form != null) {
-                                        Text(
-                                            text = form,
-                                            style = TextStyle(fontSize = 13.sp),
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            maxLines = 1,
-                                            overflow = TextOverflow.Ellipsis,
-                                        )
-                                    }
-                                }
-                            }
-                        }
+                    if (shown) {
+                        CardMeaning(meaning = word.meaning)
                     }
                 }
             }
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .testTag("wordcard.formsHalf")
+                    .clickable(interactionSource = interaction, indication = null, onClick = toggle)
+                    .padding(horizontal = 32.dp) // px-8
+                    // The forms keep the bookmark's glyph band clear (it
+                    // tops out 70dp above the card's bottom edge); the
+                    // source's taller viewport left room for free.
+                    .padding(bottom = 56.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+            ) {
+                if (shown) {
+                    CardForms(forms = word.forms)
+                }
+            }
+        }
+        if (onToggleFlag != null) {
+            BookmarkButton(
+                flagged = flagged,
+                onToggleFlag = onToggleFlag,
+                modifier = Modifier.align(Alignment.BottomCenter),
+            )
         }
     }
-    if (onToggleFlag != null) {
-        BookmarkButton(
-            flagged = flagged,
-            onToggleFlag = onToggleFlag,
-            modifier = Modifier.align(Alignment.BottomCenter),
-        )
-    }
-}
 }
