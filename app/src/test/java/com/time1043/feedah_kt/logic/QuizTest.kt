@@ -78,6 +78,24 @@ class QuizTest {
     }
 
     @Test
+    fun pickDistractorsTakesARandomThreeWhenTheCuratedListOverflows() {
+        val answer = word(1, "optimistic", "adj. 乐观的")
+        val curated = listOf(
+            Distractor(word = "hopeful", meaning = "adj. 乐天的"),
+            Distractor(word = "sanguine", meaning = "adj. 红润的"),
+            Distractor(word = "rosy", meaning = "adj. 美好的"),
+            Distractor(word = "upbeat", meaning = "adj. 欢快的"),
+        )
+        val picked = pickDistractors(answer, curated, emptyList(), 3, makeRand(List(4) { 0.0 }))
+        // Exactly three, every one of them curated, none from the (empty)
+        // pool.
+        assertEquals(3, picked.size)
+        assertTrue(
+            picked.all { p -> curated.any { it.word == p.word && it.meaning == p.meaning } },
+        )
+    }
+
+    @Test
     fun pickDistractorsReturnsFewerThanThreeWhenTheBucketRunsOut() {
         val answer = word(1, "optimistic", "adj. 乐观的")
         val tiny = listOf(answer, word(2, "glum", "adj. 闷闷不乐的"))
