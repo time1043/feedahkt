@@ -6,9 +6,9 @@ import com.time1043.feedah_kt.types.DeckWord
 
 /**
  * The drill id space is open: the built-ins are "swipe" | "quiz" | "type",
- * a plugin may use any string. Ids are persisted — the settings keep the
- * user's choice — so a plugin id must be unique across the registry and
- * stable across releases.
+ * a plugin may use any string. Ids are persisted — the DataStore settings
+ * file ('study-mode' key) keeps the user's choice — so a plugin id must be
+ * unique across the registry and stable across releases.
  */
 typealias DrillId = String
 
