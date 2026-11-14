@@ -11,10 +11,12 @@ import com.time1043.feedah_kt.db.repo.finishReview
 import com.time1043.feedah_kt.db.repo.getProgress
 import com.time1043.feedah_kt.db.repo.getRoundsByBucket
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
+import com.time1043.feedah_kt.db.repo.listDailyPointers
 import com.time1043.feedah_kt.db.repo.openReviewSession
 import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleCard
 import com.time1043.feedah_kt.db.repo.settleReview
+import com.time1043.feedah_kt.logic.todayLocalDate
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -94,6 +96,32 @@ class RepoTest {
         finishFeedRound()
         assertEquals(2, countRoundFlags(context, bucket, 2))
         assertEquals(2, countRoundFlags(context, bucket, 1))
+    }
+
+    @Test
+    fun snapshotsTheEndOfDayPositionOnSettleAndOnCompletion() = runBlocking {
+        val wordCount = getWordsWithRoundFlag(context, bucket, 1).second.size
+        settleCard(context, bucket, 2)
+        val pointers = listDailyPointers(context)
+        assertEquals(1, pointers.size)
+        val snapshot = pointers[0]
+        assertEquals(todayLocalDate(), snapshot.day)
+        assertEquals(bucket, snapshot.bucketName)
+        assertEquals(2, snapshot.globalPosition)
+        finishFeedRound()
+        val endOfDay = listDailyPointers(context)[0]
+        // The completion itself is exposure: the end card lands on today's
+        // watermark at the round's end.
+        assertEquals(wordCount, endOfDay.globalPosition)
+    }
+
+    @Test
+    fun keepsOneRowPerBucketMovingForwardOnly() = runBlocking {
+        settleCard(context, bucket, 3)
+        settleCard(context, bucket, 1)
+        val pointers = listDailyPointers(context)
+        assertEquals(1, pointers.size)
+        assertEquals(3, pointers[0].globalPosition)
     }
 
     @Test
