@@ -1,5 +1,9 @@
 package com.time1043.feedah_kt.ui.navigation
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation.NavController
@@ -71,6 +75,7 @@ fun FeedahNavHost(
         bucketScreen(navController)
         statsScreen(navController)
         settingsScreen(
+            navController = navController,
             tts = tts,
             theme = theme,
             onThemeSelect = onThemeSelect,
@@ -120,36 +125,46 @@ fun NavGraphBuilder.homeScreen(
     studyDrill: String,
 ) {
     composable<Home> {
-        HomeScreen(
-            activeBucket = activeBucket,
-            studyDrill = studyDrill,
-            onOpenSearch = { navController.navigate(SearchRoute()) },
-            onOpenStudy = { navController.navigate(StudyRoute(drill = studyDrill)) },
-            onOpenReview = { navController.navigate(ReviewRoute()) },
-        )
+        TabScaffold(navController) { padding ->
+            HomeScreen(
+                activeBucket = activeBucket,
+                studyDrill = studyDrill,
+                onOpenSearch = { navController.navigate(SearchRoute()) },
+                onOpenStudy = { navController.navigate(StudyRoute(drill = studyDrill)) },
+                onOpenReview = { navController.navigate(ReviewRoute()) },
+                modifier = Modifier.padding(padding),
+            )
+        }
     }
 }
 
 fun NavGraphBuilder.bucketScreen(navController: NavController) {
     composable<Bucket> {
-        BucketScreen(
-            onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
-            onOpenRounds = { name -> navController.navigate(RoundsRoute(name)) },
-            onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
-        )
+        TabScaffold(navController) { padding ->
+            BucketScreen(
+                onOpenBucket = { name -> navController.navigate(WordsRoute(name)) },
+                onOpenRounds = { name -> navController.navigate(RoundsRoute(name)) },
+                onOpenBucketSettings = { navController.navigate(BucketSettingsRoute) },
+                modifier = Modifier.padding(padding),
+            )
+        }
     }
 }
 
 fun NavGraphBuilder.statsScreen(navController: NavController) {
     composable<Stats> {
-        StatisticsScreen(
-            onOpenDayReview = { day -> navController.navigate(ReviewRoute(day = day)) },
-            onOpenFlagDayReview = { day -> navController.navigate(ReviewRoute(flagDay = day)) },
-        )
+        TabScaffold(navController) { padding ->
+            StatisticsScreen(
+                onOpenDayReview = { day -> navController.navigate(ReviewRoute(day = day)) },
+                onOpenFlagDayReview = { day -> navController.navigate(ReviewRoute(flagDay = day)) },
+                modifier = Modifier.padding(padding),
+            )
+        }
     }
 }
 
 fun NavGraphBuilder.settingsScreen(
+    navController: NavController,
     tts: FeedahTts,
     theme: String,
     onThemeSelect: (String) -> Unit,
@@ -171,27 +186,30 @@ fun NavGraphBuilder.settingsScreen(
     onWordsMeaningChange: (Boolean) -> Unit,
 ) {
     composable<Settings> {
-        SettingsScreen(
-            tts = tts,
-            theme = theme,
-            onThemeSelect = onThemeSelect,
-            speechRate = speechRate,
-            onSpeechRateSelect = onSpeechRateSelect,
-            autoSpeak = autoSpeak,
-            onAutoSpeakChange = onAutoSpeakChange,
-            tapToReveal = tapToReveal,
-            onTapToRevealChange = onTapToRevealChange,
-            deckHeader = deckHeader,
-            onDeckHeaderChange = onDeckHeaderChange,
-            deckTitle = deckTitle,
-            onDeckTitleChange = onDeckTitleChange,
-            deckProgressBar = deckProgressBar,
-            onDeckProgressBarChange = onDeckProgressBarChange,
-            hudPage = hudPage,
-            onHudPageChange = onHudPageChange,
-            wordsMeaning = wordsMeaning,
-            onWordsMeaningChange = onWordsMeaningChange,
-        )
+        TabScaffold(navController) { padding ->
+            SettingsScreen(
+                tts = tts,
+                theme = theme,
+                onThemeSelect = onThemeSelect,
+                speechRate = speechRate,
+                onSpeechRateSelect = onSpeechRateSelect,
+                autoSpeak = autoSpeak,
+                onAutoSpeakChange = onAutoSpeakChange,
+                tapToReveal = tapToReveal,
+                onTapToRevealChange = onTapToRevealChange,
+                deckHeader = deckHeader,
+                onDeckHeaderChange = onDeckHeaderChange,
+                deckTitle = deckTitle,
+                onDeckTitleChange = onDeckTitleChange,
+                deckProgressBar = deckProgressBar,
+                onDeckProgressBarChange = onDeckProgressBarChange,
+                hudPage = hudPage,
+                onHudPageChange = onHudPageChange,
+                wordsMeaning = wordsMeaning,
+                onWordsMeaningChange = onWordsMeaningChange,
+                modifier = Modifier.padding(padding),
+            )
+        }
     }
 }
 
@@ -210,20 +228,24 @@ fun NavGraphBuilder.studyScreen(
         // The opener picks the drill (the home screen's saved default);
         // an unknown id falls back to swipe, which records nothing.
         val drill = DrillRegistry.getDrill(route.drill ?: "")
-        StudyScreen(
-            drill = drill,
-            tts = tts,
-            speechRate = speechRate,
-            settingsReady = settingsReady,
-            autoSpeak = autoSpeak,
-            tapToReveal = tapToReveal,
-            chrome = chrome,
-            // The opener can pin a bucket (the bucket tab launches any of
-            // them); otherwise the active one.
-            bucketName = route.bucket ?: activeBucket,
-            onBack = navController::goBack,
-            onSearch = { navController.navigate(SearchRoute()) },
-        )
+        // The full-screen routes keep the system-bars padding the outer
+        // scaffold used to provide (the tabs' own scaffold covers theirs).
+        Box(Modifier.fillMaxSize().systemBarsPadding()) {
+            StudyScreen(
+                drill = drill,
+                tts = tts,
+                speechRate = speechRate,
+                settingsReady = settingsReady,
+                autoSpeak = autoSpeak,
+                tapToReveal = tapToReveal,
+                chrome = chrome,
+                // The opener can pin a bucket (the bucket tab launches any of
+                // them); otherwise the active one.
+                bucketName = route.bucket ?: activeBucket,
+                onBack = navController::goBack,
+                onSearch = { navController.navigate(SearchRoute()) },
+            )
+        }
     }
 }
 
@@ -239,19 +261,21 @@ fun NavGraphBuilder.browseScreen(
 ) {
     composable<BrowseRoute> { entry ->
         val route = entry.toRoute<BrowseRoute>()
-        BrowseScreen(
-            position = route.position,
-            bucketParam = route.bucket,
-            activeBucket = activeBucket,
-            tts = tts,
-            speechRate = speechRate,
-            settingsReady = settingsReady,
-            autoSpeak = autoSpeak,
-            tapToReveal = tapToReveal,
-            chrome = chrome,
-            onBack = navController::goBack,
-            onSearch = { navController.navigate(SearchRoute()) },
-        )
+        Box(Modifier.fillMaxSize().systemBarsPadding()) {
+            BrowseScreen(
+                position = route.position,
+                bucketParam = route.bucket,
+                activeBucket = activeBucket,
+                tts = tts,
+                speechRate = speechRate,
+                settingsReady = settingsReady,
+                autoSpeak = autoSpeak,
+                tapToReveal = tapToReveal,
+                chrome = chrome,
+                onBack = navController::goBack,
+                onSearch = { navController.navigate(SearchRoute()) },
+            )
+        }
     }
 }
 
@@ -267,62 +291,70 @@ fun NavGraphBuilder.reviewScreen(
 ) {
     composable<ReviewRoute> { entry ->
         val route = entry.toRoute<ReviewRoute>()
-        ReviewScreen(
-            tts = tts,
-            speechRate = speechRate,
-            settingsReady = settingsReady,
-            autoSpeak = autoSpeak,
-            tapToReveal = tapToReveal,
-            chrome = chrome,
-            bucketParam = route.bucket,
-            roundParam = route.round,
-            dayParam = route.day,
-            flagDayParam = route.flagDay,
-            activeBucket = activeBucket,
-            onBack = navController::goBack,
-            onSearch = { navController.navigate(SearchRoute()) },
-        )
+        Box(Modifier.fillMaxSize().systemBarsPadding()) {
+            ReviewScreen(
+                tts = tts,
+                speechRate = speechRate,
+                settingsReady = settingsReady,
+                autoSpeak = autoSpeak,
+                tapToReveal = tapToReveal,
+                chrome = chrome,
+                bucketParam = route.bucket,
+                roundParam = route.round,
+                dayParam = route.day,
+                flagDayParam = route.flagDay,
+                activeBucket = activeBucket,
+                onBack = navController::goBack,
+                onSearch = { navController.navigate(SearchRoute()) },
+            )
+        }
     }
 }
 
 fun NavGraphBuilder.searchScreen(navController: NavController) {
     composable<SearchRoute> {
-        SearchScreen(
-            onEvent = { event ->
-                when (event) {
-                    is SearchEvent.OpenWord ->
-                        navController.navigate(BrowseRoute(position = event.position))
-                }
-            },
-        )
+        Box(Modifier.fillMaxSize().systemBarsPadding()) {
+            SearchScreen(
+                onEvent = { event ->
+                    when (event) {
+                        is SearchEvent.OpenWord ->
+                            navController.navigate(BrowseRoute(position = event.position))
+                    }
+                },
+            )
+        }
     }
 }
 
 fun NavGraphBuilder.wordsScreen(navController: NavController, wordsMeaning: Boolean) {
     composable<WordsRoute> { entry ->
         val route = entry.toRoute<WordsRoute>()
-        WordsScreen(
-            name = route.name,
-            wordsMeaning = wordsMeaning,
-            onOpenWord = { position ->
-                navController.navigate(BrowseRoute(position = position, bucket = route.name))
-            },
-            onBack = navController::goBack,
-        )
+        Box(Modifier.fillMaxSize().systemBarsPadding()) {
+            WordsScreen(
+                name = route.name,
+                wordsMeaning = wordsMeaning,
+                onOpenWord = { position ->
+                    navController.navigate(BrowseRoute(position = position, bucket = route.name))
+                },
+                onBack = navController::goBack,
+            )
+        }
     }
 }
 
 fun NavGraphBuilder.roundsScreen(navController: NavController, activeBucket: String) {
     composable<RoundsRoute> { entry ->
         val route = entry.toRoute<RoundsRoute>()
-        RoundsScreen(
-            name = route.name,
-            activeBucket = activeBucket,
-            onOpenReview = { round ->
-                navController.navigate(ReviewRoute(bucket = route.name, round = round))
-            },
-            onBack = navController::goBack,
-        )
+        Box(Modifier.fillMaxSize().systemBarsPadding()) {
+            RoundsScreen(
+                name = route.name,
+                activeBucket = activeBucket,
+                onOpenReview = { round ->
+                    navController.navigate(ReviewRoute(bucket = route.name, round = round))
+                },
+                onBack = navController::goBack,
+            )
+        }
     }
 }
 
@@ -334,12 +366,14 @@ fun NavGraphBuilder.bucketSettingsScreen(
     onStudyDrillChange: (String) -> Unit,
 ) {
     composable<BucketSettingsRoute> {
-        BucketSettingsScreen(
-            activeBucket = activeBucket,
-            onActiveBucketChange = onActiveBucketChange,
-            studyDrill = studyDrill,
-            onStudyDrillChange = onStudyDrillChange,
-            onBack = navController::goBack,
-        )
+        Box(Modifier.fillMaxSize().systemBarsPadding()) {
+            BucketSettingsScreen(
+                activeBucket = activeBucket,
+                onActiveBucketChange = onActiveBucketChange,
+                studyDrill = studyDrill,
+                onStudyDrillChange = onStudyDrillChange,
+                onBack = navController::goBack,
+            )
+        }
     }
 }
