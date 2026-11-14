@@ -94,6 +94,10 @@ sealed interface StudyAction {
         val correct: Int,
     ) : StudyAction
 
+    /** The post-advance reload: the fresh round's words with the flags the
+     * finished round handed down (回显). The database is the truth. */
+    data class RoundWordsLoaded(val words: List<DeckWord>) : StudyAction
+
     data object AutoAdvanceDone : StudyAction
 }
 
@@ -199,6 +203,12 @@ fun studyReducer(session: StudySession, action: StudyAction): StudySession {
             // makes when it completes the round — and the user clears them
             // there.
         )
+
+        is StudyAction.RoundWordsLoaded ->
+            // The fresh list carries the marks the finished round handed
+            // down; whatever the local copy believed, the database just
+            // decided.
+            ready.copy(words = action.words)
 
         is StudyAction.AutoAdvanceDone -> ready.copy(pendingAutoAdvance = null)
 

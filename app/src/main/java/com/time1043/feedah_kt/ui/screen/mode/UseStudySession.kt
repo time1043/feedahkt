@@ -99,21 +99,30 @@ class StudySessionController internal constructor(
     fun resume() = dispatch(StudyAction.Resumed)
 
     /**
-     * Records an answer; auto-flags wrong picks when the mode says so. The
-     * policy comes from the drill once the registry lands — until then,
-     * neutral: no auto-flag, no auto-advance. A drill that does turn
-     * autoFlag on must also write the round_flag row, or the mark lives only
-     * on screen.
+     * Records an answer and applies the drill's policy: wrong picks
+     * auto-flag (the round_flag row is part of the policy — a mark that
+     * lives only on screen would be gone on reload), correct ones schedule
+     * the auto-advance the screen executes.
      */
-    fun answer(word: DeckWord, correct: Boolean, picked: String? = null) = dispatch(
-        StudyAction.Answered(
-            position = word.position,
-            correct = correct,
-            picked = picked,
-            autoFlag = false,
-            autoAdvanceDueAt = null,
-        ),
-    )
+    fun answer(word: DeckWord, correct: Boolean, picked: String? = null) {
+        val ready = session as? StudySession.Ready
+        dispatch(
+            StudyAction.Answered(
+                position = word.position,
+                correct = correct,
+                picked = picked,
+                autoFlag = drill.autoFlagOnWrong,
+                autoAdvanceDueAt = drill.autoAdvanceMs?.let { System.currentTimeMillis() + it },
+            ),
+        )
+        if (!correct && drill.autoFlagOnWrong) {
+            val round = ready?.progress?.round ?: 1
+            writeScope.launch {
+                runCatching { setRoundFlag(appContext, bucketName, round, word.position, true) }
+                    .onFailure { error -> Log.e(TAG, "flag write failed", error) }
+            }
+        }
+    }
 
     fun skip(word: DeckWord) = dispatch(StudyAction.Skipped(position = word.position))
 
@@ -148,6 +157,7 @@ class StudySessionController internal constructor(
         val ready = session as? StudySession.Ready ?: return false
         if (ready.words.isEmpty()) return false
         if (ready.browsing || ready.progress.pointer < ready.words.size - 1) return false
+        val nextRound = ready.progress.round + 1
         // Freeze the round's tallies before the reset wipes the answers —
         // the end page shows them for its whole linger.
         val counts = countsOf(ready)
@@ -160,8 +170,19 @@ class StudySessionController internal constructor(
             ),
         )
         writeScope.launch {
-            runCatching { completeRound(appContext, bucketName, now) }
-                .onFailure { error -> Log.e(TAG, "round completion failed", error) }
+            try {
+                // The reload must wait for the advance transaction: it
+                // carries the finished round's flags into the new one
+                // (回显), and the database is the truth about what the
+                // fresh round opens with.
+                completeRound(appContext, bucketName, now)
+                val (_, fresh) = getWordsWithRoundFlag(appContext, bucketName, nextRound)
+                val freshWords = fresh.map { it.toDeckWord() }
+                dispatch(StudyAction.RoundWordsLoaded(words = freshWords))
+                drill.prepare(freshWords)
+            } catch (error: Exception) {
+                Log.e(TAG, "round completion failed", error)
+            }
         }
         return true
     }
