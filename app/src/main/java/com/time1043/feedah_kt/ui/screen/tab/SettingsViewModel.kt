@@ -96,6 +96,12 @@ class SettingsViewModel(
         }
     }
 
+    fun updateStudyDrill(studyDrill: String) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveStudyDrill(studyDrill)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

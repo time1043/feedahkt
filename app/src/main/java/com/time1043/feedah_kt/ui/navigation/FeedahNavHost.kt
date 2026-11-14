@@ -21,6 +21,7 @@ import com.time1043.feedah_kt.ui.screen.tab.StatisticsScreen
 import com.time1043.feedah_kt.ui.screen.mode.StudyScreen
 import com.time1043.feedah_kt.ui.screen.bucket.WordsScreen
 import com.time1043.feedah_kt.data.settings.DeckChrome
+import com.time1043.feedah_kt.drills.DrillRegistry
 import com.time1043.feedah_kt.platform.FeedahTts
 
 /**
@@ -44,6 +45,7 @@ fun FeedahNavHost(
     chrome: DeckChrome,
     wordsMeaning: Boolean,
     activeBucket: String,
+    studyDrill: String,
     theme: String,
     onThemeSelect: (String) -> Unit,
     onSpeechRateSelect: (Float) -> Unit,
@@ -55,6 +57,7 @@ fun FeedahNavHost(
     onHudPageChange: (Boolean) -> Unit,
     onWordsMeaningChange: (Boolean) -> Unit,
     onActiveBucketChange: (String) -> Unit,
+    onStudyDrillChange: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -64,7 +67,7 @@ fun FeedahNavHost(
         modifier = modifier
     ) {
         // tab
-        homeScreen(navController, activeBucket)
+        homeScreen(navController, activeBucket, studyDrill)
         bucketScreen(navController)
         statsScreen(navController)
         settingsScreen(
@@ -105,16 +108,22 @@ fun FeedahNavHost(
         // bucket
         wordsScreen(navController, wordsMeaning)
         roundsScreen(navController, activeBucket)
-        bucketSettingsScreen(navController, activeBucket, onActiveBucketChange)
+        bucketSettingsScreen(
+            navController, activeBucket, onActiveBucketChange, studyDrill, onStudyDrillChange,
+        )
     }
 }
 
-fun NavGraphBuilder.homeScreen(navController: NavController, activeBucket: String) {
+fun NavGraphBuilder.homeScreen(
+    navController: NavController,
+    activeBucket: String,
+    studyDrill: String,
+) {
     composable<Home> {
         HomeScreen(
             activeBucket = activeBucket,
             onOpenSearch = { navController.navigate(SearchRoute()) },
-            onOpenStudy = { navController.navigate(StudyRoute()) },
+            onOpenStudy = { navController.navigate(StudyRoute(drill = studyDrill)) },
             onOpenReview = { navController.navigate(ReviewRoute()) },
         )
     }
@@ -194,15 +203,22 @@ fun NavGraphBuilder.studyScreen(
     chrome: DeckChrome,
     activeBucket: String,
 ) {
-    composable<StudyRoute> {
+    composable<StudyRoute> { entry ->
+        val route = entry.toRoute<StudyRoute>()
+        // The opener picks the drill (the home screen's saved default);
+        // an unknown id falls back to swipe, which records nothing.
+        val drill = DrillRegistry.getDrill(route.drill ?: "")
         StudyScreen(
+            drill = drill,
             tts = tts,
             speechRate = speechRate,
             settingsReady = settingsReady,
             autoSpeak = autoSpeak,
             tapToReveal = tapToReveal,
             chrome = chrome,
-            bucketName = activeBucket,
+            // The opener can pin a bucket (the bucket tab launches any of
+            // them); otherwise the active one.
+            bucketName = route.bucket ?: activeBucket,
             onBack = navController::goBack,
             onSearch = { navController.navigate(SearchRoute()) },
         )
@@ -310,11 +326,15 @@ fun NavGraphBuilder.bucketSettingsScreen(
     navController: NavController,
     activeBucket: String,
     onActiveBucketChange: (String) -> Unit,
+    studyDrill: String,
+    onStudyDrillChange: (String) -> Unit,
 ) {
     composable<BucketSettingsRoute> {
         BucketSettingsScreen(
             activeBucket = activeBucket,
             onActiveBucketChange = onActiveBucketChange,
+            studyDrill = studyDrill,
+            onStudyDrillChange = onStudyDrillChange,
             onBack = navController::goBack,
         )
     }

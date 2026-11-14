@@ -40,6 +40,9 @@ data class Settings(
     val wordsMeaning: Boolean = false,
     /** The bucket the home screen studies and the decks open on. */
     val activeBucket: String = "2050",
+    /** Which drill the home screen's Study entry opens (a drill id). The id
+     * is persisted, so a drill must keep its id stable across releases. */
+    val studyDrill: String = "swipe",
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -55,6 +58,7 @@ internal val DECK_PROGRESS_BAR_KEY = booleanPreferencesKey("deck-progress-bar")
 internal val HUD_PAGE_KEY = booleanPreferencesKey("hud-page")
 internal val WORDS_MEANING_KEY = booleanPreferencesKey("words-meaning")
 internal val ACTIVE_BUCKET_KEY = stringPreferencesKey("active-bucket")
+internal val STUDY_DRILL_KEY = stringPreferencesKey("study-mode")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
@@ -67,6 +71,7 @@ internal fun Preferences.toSettings(): Settings = Settings(
     hudPage = this[HUD_PAGE_KEY] ?: Settings().hudPage,
     wordsMeaning = this[WORDS_MEANING_KEY] ?: Settings().wordsMeaning,
     activeBucket = this[ACTIVE_BUCKET_KEY] ?: Settings().activeBucket,
+    studyDrill = this[STUDY_DRILL_KEY] ?: Settings().studyDrill,
 )
 
 /**
@@ -129,5 +134,9 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveActiveBucket(activeBucket: String) {
         dataStore.edit { it[ACTIVE_BUCKET_KEY] = activeBucket }
+    }
+
+    suspend fun saveStudyDrill(studyDrill: String) {
+        dataStore.edit { it[STUDY_DRILL_KEY] = studyDrill }
     }
 }

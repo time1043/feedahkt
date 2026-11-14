@@ -98,6 +98,7 @@ fun FeedahApp() {
                 chrome = deckChrome,
                 wordsMeaning = settings.wordsMeaning,
                 activeBucket = settings.activeBucket,
+                studyDrill = settings.studyDrill,
                 theme = settings.theme,
                 onThemeSelect = settingsViewModel::updateTheme,
                 onSpeechRateSelect = settingsViewModel::updateSpeechRate,
@@ -109,6 +110,7 @@ fun FeedahApp() {
                 onHudPageChange = settingsViewModel::updateHudPage,
                 onWordsMeaningChange = settingsViewModel::updateWordsMeaning,
                 onActiveBucketChange = settingsViewModel::updateActiveBucket,
+                onStudyDrillChange = settingsViewModel::updateStudyDrill,
                 modifier = Modifier
                     .fillMaxSize()
                     .padding(padding),

@@ -15,6 +15,7 @@ import com.time1043.feedah_kt.db.repo.getProgress
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
 import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleCard
+import com.time1043.feedah_kt.drills.Drill
 import com.time1043.feedah_kt.logic.LOADING_SESSION
 import com.time1043.feedah_kt.logic.Progress
 import com.time1043.feedah_kt.logic.StudyAction
@@ -39,6 +40,7 @@ import kotlinx.coroutines.launch
  */
 class StudySessionController internal constructor(
     private val bucketName: String,
+    private val drill: Drill,
     private val appContext: Context,
 ) {
     // The fire-and-forget writes outlive the screen's composition, like the
@@ -63,12 +65,16 @@ class StudySessionController internal constructor(
             // is inert (reachEnd refuses it) instead of writing a probe row
             // that would violate the foreign key.
             val (_, rows) = getWordsWithRoundFlag(appContext, bucketName, progress.round)
+            val deckWords = rows.map { it.toDeckWord() }
             dispatch(
                 StudyAction.Loaded(
-                    words = rows.map { it.toDeckWord() },
+                    words = deckWords,
                     progress = clampProgress(progress.toProbe(), rows.size),
                 ),
             )
+            // The drill rebuilds its per-card private data (options, …) for
+            // the fresh load; recycled cards must not reshuffle underneath.
+            drill.prepare(deckWords)
         } catch (error: Exception) {
             Log.e(TAG, "session load failed", error)
         }
@@ -186,9 +192,9 @@ private fun com.time1043.feedah_kt.db.repo.ProgressRow.toProbe(): Progress =
  * reloads the bucket from the database — the focus-reload behavior.
  */
 @Composable
-fun rememberStudySession(bucketName: String): StudySessionController {
+fun rememberStudySession(bucketName: String, drill: Drill): StudySessionController {
     val appContext = LocalContext.current.applicationContext
-    val controller = remember(bucketName) { StudySessionController(bucketName, appContext) }
+    val controller = remember(bucketName) { StudySessionController(bucketName, drill, appContext) }
 
     // Reloads on every entry into composition (the source's focus effect):
     // the probe (round/pointer) and the words both follow the database. The
