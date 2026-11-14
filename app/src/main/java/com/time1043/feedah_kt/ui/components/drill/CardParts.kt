@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.ui.components.drill
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -39,6 +41,13 @@ private const val FORMS_GRID_CELLS = 12
  * src/components/drill/card-parts.tsx) — extracted from the swipe card so
  * the answer-driven cards wear the exact same layout skeleton.
  */
+
+/** The card parts' taps are ripple-free: the source's Pressables carry no
+ * android_ripple, and the pre-refactor swipe card already silenced the
+ * default Material indication. */
+@Composable
+private fun rememberNoIndication(): MutableInteractionSource =
+    remember { MutableInteractionSource() }
 
 /** Position number, the big tappable word (replays pronunciation) and ipa.
  * Omit [text] to render the position alone (typing hides the word until it
@@ -73,6 +82,8 @@ fun CardHeadword(
                 ),
                 modifier = Modifier
                     .clickable(
+                        interactionSource = rememberNoIndication(),
+                        indication = null,
                         role = Role.Button,
                         onClickLabel = "Replay pronunciation",
                         onClick = onReplay,
@@ -89,6 +100,8 @@ fun CardHeadword(
                     textAlign = TextAlign.Center,
                     modifier = Modifier
                         .clickable(
+                            interactionSource = rememberNoIndication(),
+                            indication = null,
                             role = Role.Button,
                             onClickLabel = "Replay pronunciation",
                             onClick = onReplay,
@@ -198,6 +211,8 @@ fun BookmarkButton(
             // the glyph itself and draw it at 14dp.
             modifier = Modifier
                 .clickable(
+                    interactionSource = rememberNoIndication(),
+                    indication = null,
                     role = Role.Button,
                     onClickLabel = if (flagged) "Unflag word" else "Flag word",
                     onClick = onToggleFlag,

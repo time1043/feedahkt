@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -52,6 +53,9 @@ fun HomeScreen(
 ) {
     val appContext = LocalContext.current.applicationContext
     var cards by remember { mutableStateOf<List<BucketCard>>(emptyList()) }
+    // The launcher's taps are ripple-free (the source's Pressables carry
+    // no android_ripple).
+    val interaction = remember { MutableInteractionSource() }
 
     // Reloads on every focus: studying, reviewing or flagging in a deck
     // moves the numbers this dashboard reads.
@@ -142,7 +146,12 @@ fun HomeScreen(
                                 MaterialTheme.colorScheme.primary, // bg-blue-500
                                 RoundedCornerShape(8.dp), // rounded-lg
                             )
-                            .clickable(role = Role.Button, onClick = onOpenStudy)
+                            .clickable(
+                                interactionSource = interaction,
+                                indication = null,
+                                role = Role.Button,
+                                onClick = onOpenStudy,
+                            )
                             .padding(16.dp), // p-4
                         contentAlignment = Alignment.Center,
                     ) {
@@ -163,7 +172,13 @@ fun HomeScreen(
                                 color = MaterialTheme.colorScheme.primary, // border-blue-500
                                 shape = RoundedCornerShape(8.dp), // rounded-lg
                             )
-                            .clickable(enabled = reviewEnabled, role = Role.Button, onClick = onOpenReview)
+                            .clickable(
+                                interactionSource = interaction,
+                                indication = null,
+                                enabled = reviewEnabled,
+                                role = Role.Button,
+                                onClick = onOpenReview,
+                            )
                             .padding(12.dp), // p-3
                         contentAlignment = Alignment.Center,
                     ) {

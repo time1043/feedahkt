@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.SolidColor
@@ -143,6 +145,7 @@ fun TypingCard(
                         // Pre-reveal the word is the answer, so it can't
                         // carry the replay tap — the ipa line does: tap to
                         // hear the dictation cue again.
+                        val interaction = remember { MutableInteractionSource() }
                         Text(
                             text = word.ipa,
                             style = TextStyle(fontSize = 18.sp),
@@ -150,6 +153,8 @@ fun TypingCard(
                             textAlign = TextAlign.Center,
                             modifier = Modifier
                                 .clickable(
+                                    interactionSource = interaction,
+                                    indication = null,
                                     role = Role.Button,
                                     onClickLabel = "Replay dictation",
                                     onClick = onReplay,

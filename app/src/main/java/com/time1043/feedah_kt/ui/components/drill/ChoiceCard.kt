@@ -4,6 +4,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -110,6 +112,9 @@ fun ChoiceCard(
                 verticalArrangement = Arrangement.Center, // justify-center
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) { // gap-2
+                    // The options' taps are ripple-free (the source's
+                    // Pressable carries no android_ripple).
+                    val interaction = remember { MutableInteractionSource() }
                     for (option in options) {
                         val isPicked = picked == option.key
                         val state = when {
@@ -157,6 +162,8 @@ fun ChoiceCard(
                                     RoundedCornerShape(12.dp),
                                 )
                                 .clickable(
+                                    interactionSource = interaction,
+                                    indication = null,
                                     role = Role.Button,
                                     enabled = !locked,
                                     onClick = { onAnswer(option.isCorrect, option.key) },
