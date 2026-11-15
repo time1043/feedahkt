@@ -18,7 +18,6 @@ import com.time1043.feedah_kt.ui.screen.bucket.BucketSettingsScreen
 import com.time1043.feedah_kt.ui.screen.tab.HomeScreen
 import com.time1043.feedah_kt.ui.screen.mode.ReviewScreen
 import com.time1043.feedah_kt.ui.screen.bucket.RoundsScreen
-import com.time1043.feedah_kt.ui.screen.mode.SearchEvent
 import com.time1043.feedah_kt.ui.screen.mode.SearchScreen
 import com.time1043.feedah_kt.ui.screen.tab.SettingsScreen
 import com.time1043.feedah_kt.ui.screen.tab.StatisticsScreen
@@ -62,6 +61,10 @@ fun FeedahNavHost(
     onWordsMeaningChange: (Boolean) -> Unit,
     onActiveBucketChange: (String) -> Unit,
     onStudyDrillChange: (String) -> Unit,
+    searchScope: List<String>,
+    onSearchScopeChange: (List<String>) -> Unit,
+    searchLocal: Boolean,
+    onSearchLocalChange: (Boolean) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // NavHost(navController, navGraph)
@@ -95,6 +98,8 @@ fun FeedahNavHost(
             onHudPageChange = onHudPageChange,
             wordsMeaning = wordsMeaning,
             onWordsMeaningChange = onWordsMeaningChange,
+            searchLocal = searchLocal,
+            onSearchLocalChange = onSearchLocalChange,
         )
         // mode
         studyScreen(
@@ -109,12 +114,13 @@ fun FeedahNavHost(
             navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
             activeBucket,
         )
-        searchScreen(navController)
+        searchScreen(navController, searchLocal, searchScope)
         // bucket
         wordsScreen(navController, wordsMeaning)
         roundsScreen(navController, activeBucket)
         bucketSettingsScreen(
             navController, activeBucket, onActiveBucketChange, studyDrill, onStudyDrillChange,
+            searchScope, onSearchScopeChange,
         )
     }
 }
@@ -184,6 +190,8 @@ fun NavGraphBuilder.settingsScreen(
     onHudPageChange: (Boolean) -> Unit,
     wordsMeaning: Boolean,
     onWordsMeaningChange: (Boolean) -> Unit,
+    searchLocal: Boolean,
+    onSearchLocalChange: (Boolean) -> Unit,
 ) {
     composable<Settings> {
         TabScaffold(navController) { padding ->
@@ -207,6 +215,8 @@ fun NavGraphBuilder.settingsScreen(
                 onHudPageChange = onHudPageChange,
                 wordsMeaning = wordsMeaning,
                 onWordsMeaningChange = onWordsMeaningChange,
+                searchLocal = searchLocal,
+                onSearchLocalChange = onSearchLocalChange,
                 modifier = Modifier.padding(padding),
             )
         }
@@ -311,15 +321,21 @@ fun NavGraphBuilder.reviewScreen(
     }
 }
 
-fun NavGraphBuilder.searchScreen(navController: NavController) {
-    composable<SearchRoute> {
+fun NavGraphBuilder.searchScreen(
+    navController: NavController,
+    searchLocal: Boolean,
+    searchScope: List<String>,
+) {
+    composable<SearchRoute> { entry ->
+        val route = entry.toRoute<SearchRoute>()
         Box(Modifier.fillMaxSize().systemBarsPadding()) {
             SearchScreen(
-                onEvent = { event ->
-                    when (event) {
-                        is SearchEvent.OpenWord ->
-                            navController.navigate(BrowseRoute(position = event.position))
-                    }
+                bucketParam = route.bucket,
+                searchLocal = searchLocal,
+                configuredScope = searchScope,
+                onBack = navController::goBack,
+                onOpenWord = { position, bucketName ->
+                    navController.navigate(BrowseRoute(position = position, bucket = bucketName))
                 },
             )
         }
@@ -364,6 +380,8 @@ fun NavGraphBuilder.bucketSettingsScreen(
     onActiveBucketChange: (String) -> Unit,
     studyDrill: String,
     onStudyDrillChange: (String) -> Unit,
+    searchScope: List<String>,
+    onSearchScopeChange: (List<String>) -> Unit,
 ) {
     composable<BucketSettingsRoute> {
         Box(Modifier.fillMaxSize().systemBarsPadding()) {
@@ -372,6 +390,8 @@ fun NavGraphBuilder.bucketSettingsScreen(
                 onActiveBucketChange = onActiveBucketChange,
                 studyDrill = studyDrill,
                 onStudyDrillChange = onStudyDrillChange,
+                searchScope = searchScope,
+                onSearchScopeChange = onSearchScopeChange,
                 onBack = navController::goBack,
             )
         }

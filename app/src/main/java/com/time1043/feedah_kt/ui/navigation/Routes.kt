@@ -37,9 +37,10 @@ data class ReviewRoute(
     val flagDay: String? = null,
 ) : Route
 
-/** /mode/search?buckets&round — buckets overrides the configured search scope. */
+/** /mode/search?bucket — the pinned bucket overrides the configured search
+ * scope; absent, the scope (or every bucket) is searched. */
 @Serializable
-data class SearchRoute(val buckets: List<String>? = null, val round: Int? = null) : Route
+data class SearchRoute(val bucket: String? = null) : Route
 
 /** /bucket/words/[name] — the per-bucket word list. */
 @Serializable

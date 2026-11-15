@@ -49,6 +49,8 @@ fun BucketSettingsScreen(
     onActiveBucketChange: (String) -> Unit,
     studyDrill: String,
     onStudyDrillChange: (String) -> Unit,
+    searchScope: List<String>,
+    onSearchScopeChange: (List<String>) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -109,6 +111,78 @@ fun BucketSettingsScreen(
                 }
             }
         }
+
+        // Global search scope: which buckets the unpinned search spans. The
+        // chips toggle one bucket each; an empty scope means every bucket.
+        Column(Modifier.padding(horizontal = 16.dp).padding(top = 32.dp)) { // px-4 pt-8
+            Text(
+                text = "Global search scope",
+                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = if (searchScope.isEmpty()) "Searching every bucket" else "Tapped buckets are searched",
+                style = TextStyle(fontSize = 13.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp), // mt-1
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp), // mt-3
+                horizontalArrangement = Arrangement.spacedBy(8.dp), // gap-2
+            ) {
+                for (bucket in buckets) {
+                    ScopeChip(
+                        label = bucket.name,
+                        active = searchScope.contains(bucket.name),
+                        onClick = {
+                            onSearchScopeChange(
+                                if (searchScope.contains(bucket.name)) {
+                                    searchScope.filter { it != bucket.name }
+                                } else {
+                                    searchScope + bucket.name
+                                },
+                            )
+                        },
+                        modifier = Modifier.weight(1f), // flex-1
+                    )
+                }
+            }
+        }
+    }
+}
+
+/** One bucket chip of the global search scope row — the drill chip's
+ * sibling, sharing its active treatment. */
+@Composable
+private fun ScopeChip(
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val dark = isSystemInDarkTheme()
+    val accent = MaterialTheme.colorScheme.primary // blue-500
+    val activeBackground = accent.copy(alpha = if (dark) 0.20f else 0.08f)
+    val border = if (active) {
+        BorderStroke(1.dp, accent)
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) // border-gray-300/700
+    }
+    Box(
+        modifier
+            .border(border, RoundedCornerShape(8.dp)) // rounded-lg
+            .background(activeBackground.takeIf { active } ?: Color.Transparent)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 10.dp), // p-2.5
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+            color = if (active) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

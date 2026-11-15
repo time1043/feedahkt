@@ -45,6 +45,8 @@ class SettingsScreenTest {
                 onHudPageChange = {},
                 wordsMeaning = false,
                 onWordsMeaningChange = {},
+                searchLocal = true,
+                onSearchLocalChange = {},
                 tts = FeedahTts(ApplicationProvider.getApplicationContext()),
             )
         }

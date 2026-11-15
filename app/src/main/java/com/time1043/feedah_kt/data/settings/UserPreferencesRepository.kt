@@ -11,6 +11,8 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import java.io.IOException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 
@@ -43,6 +45,11 @@ data class Settings(
     /** Which drill the home screen's Study entry opens (a drill id). The id
      * is persisted, so a drill must keep its id stable across releases. */
     val studyDrill: String = "swipe",
+    /** Global search scope: the bucket names to search when no bucket is
+     * pinned. An empty list means every bucket. */
+    val searchScope: List<String> = emptyList(),
+    /** Whether opening search from inside a bucket scopes it to that bucket. */
+    val searchLocal: Boolean = true,
 )
 
 internal val Context.settingsDataStore: DataStore<Preferences>
@@ -59,6 +66,8 @@ internal val HUD_PAGE_KEY = booleanPreferencesKey("hud-page")
 internal val WORDS_MEANING_KEY = booleanPreferencesKey("words-meaning")
 internal val ACTIVE_BUCKET_KEY = stringPreferencesKey("active-bucket")
 internal val STUDY_DRILL_KEY = stringPreferencesKey("study-mode")
+internal val SEARCH_SCOPE_KEY = stringPreferencesKey("search-scope")
+internal val SEARCH_LOCAL_KEY = booleanPreferencesKey("search-local")
 
 internal fun Preferences.toSettings(): Settings = Settings(
     theme = this[THEME_KEY] ?: Settings().theme,
@@ -72,6 +81,10 @@ internal fun Preferences.toSettings(): Settings = Settings(
     wordsMeaning = this[WORDS_MEANING_KEY] ?: Settings().wordsMeaning,
     activeBucket = this[ACTIVE_BUCKET_KEY] ?: Settings().activeBucket,
     studyDrill = this[STUDY_DRILL_KEY] ?: Settings().studyDrill,
+    searchScope = this[SEARCH_SCOPE_KEY]?.let { raw ->
+        runCatching { Json.decodeFromString<List<String>>(raw) }.getOrNull()
+    } ?: Settings().searchScope,
+    searchLocal = this[SEARCH_LOCAL_KEY] ?: Settings().searchLocal,
 )
 
 /**
@@ -138,5 +151,13 @@ class UserPreferencesRepository(private val dataStore: DataStore<Preferences>) {
 
     suspend fun saveStudyDrill(studyDrill: String) {
         dataStore.edit { it[STUDY_DRILL_KEY] = studyDrill }
+    }
+
+    suspend fun saveSearchScope(searchScope: List<String>) {
+        dataStore.edit { it[SEARCH_SCOPE_KEY] = Json.encodeToString(searchScope) }
+    }
+
+    suspend fun saveSearchLocal(searchLocal: Boolean) {
+        dataStore.edit { it[SEARCH_LOCAL_KEY] = searchLocal }
     }
 }

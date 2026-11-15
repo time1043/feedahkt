@@ -102,6 +102,18 @@ class SettingsViewModel(
         }
     }
 
+    fun updateSearchScope(searchScope: List<String>) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveSearchScope(searchScope)
+        }
+    }
+
+    fun updateSearchLocal(searchLocal: Boolean) {
+        viewModelScope.launch {
+            userPreferencesRepository.saveSearchLocal(searchLocal)
+        }
+    }
+
     companion object {
         /** No-DI construction: pulls the application context from CreationExtras. */
         val Factory: ViewModelProvider.Factory = viewModelFactory {

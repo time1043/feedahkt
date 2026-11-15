@@ -32,6 +32,8 @@ fun SettingsScreen(
     onHudPageChange: (Boolean) -> Unit,
     wordsMeaning: Boolean,
     onWordsMeaningChange: (Boolean) -> Unit,
+    searchLocal: Boolean,
+    onSearchLocalChange: (Boolean) -> Unit,
     tts: FeedahTts,
     modifier: Modifier = Modifier,
 ) {
@@ -64,6 +66,11 @@ fun SettingsScreen(
                 label = "Word list meanings",
                 value = wordsMeaning,
                 onValueChange = onWordsMeaningChange,
+            )
+            SwitchRow(
+                label = "Search stays in the opened bucket",
+                value = searchLocal,
+                onValueChange = onSearchLocalChange,
             )
         }
 

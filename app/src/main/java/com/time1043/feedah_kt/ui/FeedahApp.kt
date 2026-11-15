@@ -79,6 +79,10 @@ fun FeedahApp() {
                 onWordsMeaningChange = settingsViewModel::updateWordsMeaning,
                 onActiveBucketChange = settingsViewModel::updateActiveBucket,
                 onStudyDrillChange = settingsViewModel::updateStudyDrill,
+                searchScope = settings.searchScope,
+                onSearchScopeChange = settingsViewModel::updateSearchScope,
+                searchLocal = settings.searchLocal,
+                onSearchLocalChange = settingsViewModel::updateSearchLocal,
                 modifier = Modifier
                     .fillMaxSize(),
             )
