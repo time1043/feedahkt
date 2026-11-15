@@ -3,8 +3,12 @@ package com.time1043.feedah_kt.ui.theme
 import androidx.compose.ui.graphics.Color
 
 /** The leaf's lime as a Compose color, for roles that want the fill as a
- * color value (the theme's primary). */
+ * color value (the theme's primary). Also the caret color inside the fields
+ * that wear the ring. */
 val Lime = Color(0xFFC5F36A)
+
+/** The lime as a raw hex constant, matching the source's LIME in lib/color. */
+const val LIME = 0xFFC5F36A
 val Black = Color(0xFF000000)
 val White = Color(0xFFFFFFFF)
 val Gray100 = Color(0xFFF3F4F6)
@@ -20,6 +24,9 @@ val Olive = Color(0xFF55741E)
 data class FlagRed(val light: Color, val dark: Color)
 
 val FLAG_RED = FlagRed(light = Color(0xFFE5484D), dark = Color(0xFFF0666B))
+
+/** Picks the theme's half of the pair. */
+fun FlagRed.pick(darkTheme: Boolean): Color = if (darkTheme) dark else light
 
 /** The accent for text and icons sitting on the page background: the lime on
  * dark, the deepened olive on light, where the lime would wash out. Matches
