@@ -16,7 +16,11 @@ data class Word(
     val distractors: List<Distractor> = emptyList(),
 )
 
-/** A word as the deck consumes it: the static entry plus live flag state. */
+/** A word as the deck consumes it: the static entry plus live flag state.
+ * Date-walk screens enrich their entries with the bucket and round they
+ * were walked in — a word walked in two rounds appears twice, and the
+ * flag write must land in the tapped copy's own round. Single-bucket
+ * decks omit both. */
 data class DeckWord(
     val position: Int,
     val word: String,
@@ -25,6 +29,8 @@ data class DeckWord(
     val forms: List<String> = emptyList(),
     val distractors: List<Distractor> = emptyList(),
     val flagged: Boolean = false,
+    val bucketName: String? = null,
+    val round: Int? = null,
 )
 
 fun Word.withFlag(flagged: Boolean): DeckWord = DeckWord(position, word, ipa, meaning, forms, distractors, flagged)

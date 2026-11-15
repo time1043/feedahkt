@@ -105,7 +105,11 @@ suspend fun getWordsCompletedOn(context: Context, day: String): List<DayWord> {
             val found = entry.words[position] ?: continue
             out.add(
                 DayWord(
-                    word = found.copy(flagged = flagged.contains("$round:$position")),
+                    // The bucket and round ride on the deck word: the flag
+                    // write must land in the tapped copy's own round.
+                    word = found
+                        .copy(flagged = flagged.contains("$round:$position"))
+                        .copy(bucketName = range.bucketName, round = round),
                     bucketName = range.bucketName,
                     round = round,
                 ),
@@ -139,7 +143,12 @@ suspend fun getWordsFlaggedOn(context: Context, day: String): List<DayWord> {
         val entry = bucketEntry(context, flag.bucketName, buckets)
         val found = entry.words[flag.position] ?: continue
         out.add(
-            DayWord(word = found.copy(flagged = true), bucketName = flag.bucketName, round = flag.round),
+            DayWord(
+                word = found.copy(flagged = true)
+                    .copy(bucketName = flag.bucketName, round = flag.round),
+                bucketName = flag.bucketName,
+                round = flag.round,
+            ),
         )
     }
     return out

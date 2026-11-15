@@ -218,7 +218,9 @@ fun ReviewScreen(
             }
             // Resume at the first snapshot word the walk has not passed yet;
             // the hud opens on that card, not one frame behind the deck's
-            // first mirror.
+            // first mirror. The frontier opens there too — the deck fires no
+            // settle for its programmatic opening jump, so a scrub before
+            // the first swipe must resume to the watermark, not to card 0.
             val start = queue.indexOfFirst { it.position >= session.lastPosition }
                 .let { if (it < 0) 0 else it }
             seen = start + 1
@@ -260,8 +262,13 @@ fun ReviewScreen(
      * cleared right here. The queue keeps the word in the walk — the list
      * was frozen when the walk opened, and unflagging must not reshuffle
      * the cards under the reader's thumb. The session flip and the
-     * round_flag row say the same thing; date walks write the entry's own
-     * bucket and round (they span buckets, where positions collide). */
+     * round_flag row say the same thing. The match is exact per walk kind:
+     * the round walk matches on position alone (positions are unique within
+     * one bucket's deck), while the date walk matches on bucket + round +
+     * position — positions collide across buckets and rounds, and flagging
+     * one copy of a word must not flip the other copies the same day
+     * replays. Date walks write the entry's own bucket and round (the
+     * tapped deck word carries them). */
     val toggleFlag: (DeckWord) -> Unit = { word ->
         walk = when (currentWalk) {
             is Walk.Round -> currentWalk.copy(
@@ -278,7 +285,10 @@ fun ReviewScreen(
             is Walk.Date -> currentWalk.copy(
                 state = currentWalk.state.copy(
                     queue = currentWalk.state.queue.map { entry ->
-                        if (entry.word.position == word.position) {
+                        val match = entry.word.position == word.position &&
+                            entry.word.bucketName == word.bucketName &&
+                            entry.word.round == word.round
+                        if (match) {
                             entry.copy(word = entry.word.copy(flagged = !entry.word.flagged))
                         } else {
                             entry
@@ -289,12 +299,10 @@ fun ReviewScreen(
         }
         val target = when (currentWalk) {
             is Walk.Round -> TargetBucket(bucketName, currentWalk.state.session.round)
-            is Walk.Date -> {
-                val entry = currentWalk.state.queue.firstOrNull {
-                    it.word.position == word.position
-                }
-                TargetBucket(entry?.bucketName ?: bucketName, entry?.round ?: 0)
-            }
+            is Walk.Date -> TargetBucket(
+                word.bucketName ?: bucketName,
+                word.round ?: 0,
+            )
         }
         scope.launch {
             runCatching {
