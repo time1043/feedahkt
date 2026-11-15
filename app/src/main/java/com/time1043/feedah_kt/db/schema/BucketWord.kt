@@ -8,7 +8,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Insert
+import androidx.room.RawQuery
 import androidx.room.Upsert
+import androidx.sqlite.db.SupportSQLiteQuery
 
 @Entity(tableName = "bucket")
 data class BucketEntity(
@@ -59,6 +61,11 @@ interface BucketWordDao {
 
     @Query("SELECT * FROM word WHERE bucket_name = :bucketId ORDER BY position")
     suspend fun getWordsByBucket(bucketId: String): List<WordEntity>
+
+    /** The search's query is built at runtime — the wildcard count shapes
+     * the WHERE clause (the source's sql.join of alternatives). */
+    @RawQuery(observedEntities = [WordEntity::class])
+    suspend fun searchRaw(query: SupportSQLiteQuery): List<WordEntity>
 
     /** The words' positions in deck order — the timeline's ordinal map. */
     @Query("SELECT position FROM word WHERE bucket_name = :bucketName ORDER BY position")
