@@ -121,8 +121,7 @@ fun FeedahNavHost(
         wordsScreen(navController, wordsMeaning)
         roundsScreen(navController, activeBucket)
         bucketSettingsScreen(
-            navController, activeBucket, onActiveBucketChange, studyDrill, onStudyDrillChange,
-            searchScope, onSearchScopeChange,
+            navController, activeBucket, onActiveBucketChange, searchScope, onSearchScopeChange,
         )
     }
 }
@@ -392,8 +391,6 @@ fun NavGraphBuilder.bucketSettingsScreen(
     navController: NavController,
     activeBucket: String,
     onActiveBucketChange: (String) -> Unit,
-    studyDrill: String,
-    onStudyDrillChange: (String) -> Unit,
     searchScope: List<String>,
     onSearchScopeChange: (List<String>) -> Unit,
 ) {
@@ -402,8 +399,6 @@ fun NavGraphBuilder.bucketSettingsScreen(
             BucketSettingsScreen(
                 activeBucket = activeBucket,
                 onActiveBucketChange = onActiveBucketChange,
-                studyDrill = studyDrill,
-                onStudyDrillChange = onStudyDrillChange,
                 searchScope = searchScope,
                 onSearchScopeChange = onSearchScopeChange,
                 onBack = navController::goBack,

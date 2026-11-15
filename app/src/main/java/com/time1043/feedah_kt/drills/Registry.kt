@@ -27,7 +27,7 @@ object DrillRegistry {
         drills += drill
     }
 
-    /** Every registered drill, in manifest order — the settings chips' order. */
+    /** Every registered drill, in manifest order — the home mode switch's order. */
     fun getDrills(): List<Drill> = drills.toList()
 
     /** Looks a drill up by id; unknown ids (e.g. legacy stored values) fall

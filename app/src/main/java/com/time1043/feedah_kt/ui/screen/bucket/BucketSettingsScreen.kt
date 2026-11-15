@@ -51,8 +51,6 @@ import kotlinx.coroutines.launch
 fun BucketSettingsScreen(
     activeBucket: String,
     onActiveBucketChange: (String) -> Unit,
-    studyDrill: String,
-    onStudyDrillChange: (String) -> Unit,
     searchScope: List<String>,
     onSearchScopeChange: (List<String>) -> Unit,
     onBack: () -> Unit,
@@ -89,37 +87,8 @@ fun BucketSettingsScreen(
             )
         }
 
-        // Default study mode: what the home screen's Study entry opens. The
-        // chips are the registry's manifest order — a new drill joins them
-        // with no other change.
-        Column(Modifier.padding(horizontal = 16.dp).padding(top = 32.dp)) { // px-4 pt-8
-            Text(
-                text = "Default study mode",
-                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Used by Study on the home screen.",
-                style = TextStyle(fontSize = 13.sp),
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 4.dp), // mt-1
-            )
-            Row(
-                Modifier
-                    .fillMaxWidth()
-                    .padding(top = 12.dp), // mt-3
-                horizontalArrangement = Arrangement.spacedBy(8.dp), // gap-2
-            ) {
-                for (drill in DrillRegistry.getDrills()) {
-                    DrillChip(
-                        label = drill.label,
-                        active = drill.id == studyDrill,
-                        onClick = { onStudyDrillChange(drill.id) },
-                        modifier = Modifier.weight(1f), // flex-1
-                    )
-                }
-            }
-        }
+        // Default study mode: GONE — the home dashboard's mode switch is the
+        // only drill switch now (the source's dafa478).
 
         // Global search scope: which buckets the unpinned search spans. The
         // chips toggle one bucket each; an empty scope means every bucket.
@@ -214,40 +183,6 @@ private fun ScopeChip(
 ) {
     val dark = isSystemInDarkTheme()
     val accent = MaterialTheme.colorScheme.primary // blue-500
-    val activeBackground = accent.copy(alpha = if (dark) 0.20f else 0.08f)
-    val border = if (active) {
-        BorderStroke(1.dp, accent)
-    } else {
-        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) // border-gray-300/700
-    }
-    Box(
-        modifier
-            .border(border, RoundedCornerShape(8.dp)) // rounded-lg
-            .background(activeBackground.takeIf { active } ?: Color.Transparent)
-            .clickable(role = Role.Button, onClick = onClick)
-            .padding(horizontal = 10.dp, vertical = 10.dp), // p-2.5
-        contentAlignment = Alignment.Center,
-    ) {
-        Text(
-            text = label,
-            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
-            color = if (active) accent else MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-/** One mode chip of the default study mode row (the source's Pressable
- * chip): a bordered pill whose active state wears the accent. */
-@Composable
-private fun DrillChip(
-    label: String,
-    active: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val dark = isSystemInDarkTheme()
-    val accent = MaterialTheme.colorScheme.primary // blue-500
-    // bg-blue-50 dark:bg-blue-950 — a wash of the accent over the surface.
     val activeBackground = accent.copy(alpha = if (dark) 0.20f else 0.08f)
     val border = if (active) {
         BorderStroke(1.dp, accent)
