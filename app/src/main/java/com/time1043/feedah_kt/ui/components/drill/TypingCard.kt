@@ -121,7 +121,11 @@ fun TypingCard(
                                 textAlign = TextAlign.Center,
                                 color = MaterialTheme.colorScheme.onSurface, // text-black/white
                             ),
-                            cursorBrush = SolidColor(MaterialTheme.colorScheme.onSurface),
+                            // The caret wears the leaf's lime, like the
+                            // source's selectionColor.
+                            cursorBrush = SolidColor(
+                                androidx.compose.ui.graphics.Color(0xFFC5F36A),
+                            ),
                             keyboardOptions = KeyboardOptions(
                                 keyboardType = KeyboardType.Ascii,
                                 autoCorrect = false,

@@ -132,7 +132,7 @@ fun MonthLedger(
                                         Modifier
                                             .border(
                                                 width = 1.dp,
-                                                color = MaterialTheme.colorScheme.primary, // border-blue-500
+                                                color = MaterialTheme.colorScheme.primary, // border-accent
                                                 shape = CircleShape,
                                             )
                                             .padding(horizontal = 8.dp, vertical = 2.dp), // px-2 py-0.5
@@ -141,7 +141,7 @@ fun MonthLedger(
                                             text = "This month",
                                             style = TextStyle(fontSize = 11.sp),
                                             fontWeight = FontWeight.Medium,
-                                            color = MaterialTheme.colorScheme.primary, // text-blue-500
+                                            color = MaterialTheme.colorScheme.primary, // text-accent-deep dark:text-accent
                                         )
                                     }
                                 }

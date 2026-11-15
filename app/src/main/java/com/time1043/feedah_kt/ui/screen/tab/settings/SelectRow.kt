@@ -17,6 +17,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
@@ -104,8 +105,13 @@ fun SelectRow(
                                     text = option.label,
                                     fontSize = 15.sp,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else null,
+                                    // The picked option's text follows the
+                                    // accent its checkmark already wears —
+                                    // olive on light, lime on dark.
                                     color = if (isSelected) {
-                                        MaterialTheme.colorScheme.primary // text-blue-500
+                                        com.time1043.feedah_kt.ui.theme.ACCENT.let {
+                                            if (isSystemInDarkTheme()) it.dark else it.light
+                                        }
                                     } else {
                                         MaterialTheme.colorScheme.onSurface
                                     },
@@ -114,7 +120,9 @@ fun SelectRow(
                                     Icon(
                                         painter = painterResource(R.drawable.ic_check),
                                         contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary, // ACCENT
+                                        tint = com.time1043.feedah_kt.ui.theme.ACCENT.let {
+                                            if (isSystemInDarkTheme()) it.dark else it.light
+                                        }, // ACCENT
                                         modifier = Modifier.size(18.dp),
                                     )
                                 }
