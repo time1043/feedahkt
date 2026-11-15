@@ -15,6 +15,10 @@ private val json = Json { ignoreUnknownKeys = true }
 /** The bundled seed files, in tab order (the mock dataset). */
 private val SEED_FILES = listOf("2050", "370", "700")
 
+/** The buckets the app bundles — the restore path un-tombstones exactly
+ * these. */
+internal val BUNDLED_BUCKET_NAMES = SEED_FILES
+
 /** One seed word: the JSON entry narrowed to the seeded columns. */
 @Serializable
 private data class SeedWord(
@@ -56,9 +60,10 @@ private fun contentHashOf(words: List<SeedWord>): String {
 /**
  * Seeds the bundled buckets on every cold start; idempotent against the
  * stored bucket.word_count + content hash, so an unchanged bucket is one
- * SELECT and a changed one is fully replaced inside a transaction. The
- * statements are Room now — the idempotency logic is what survived the
- * raw-sqlite stage.
+ * SELECT and a changed one is fully replaced inside a transaction. A
+ * tombstoned bucket stays deleted: even a changed file must not resurrect
+ * it (the check sits before the hash comparison). The statements are Room
+ * now — the idempotency logic is what survived the raw-sqlite stage.
  */
 suspend fun seedBuckets(context: Context, db: FeedahDb): Unit =
     withContext(Dispatchers.IO) {
@@ -66,6 +71,7 @@ suspend fun seedBuckets(context: Context, db: FeedahDb): Unit =
         for (file in loadSeedFiles(context)) {
             val hash = contentHashOf(file.words)
             val existing = dao.getSeedState(file.name)
+            if (existing?.deletedAt != null) continue
             if (existing != null &&
                 existing.wordCount == file.words.size &&
                 existing.contentHash == hash

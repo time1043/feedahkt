@@ -10,6 +10,8 @@ import com.time1043.feedah_kt.db.repo.completeRound
 import com.time1043.feedah_kt.db.repo.countRoundFlags
 import com.time1043.feedah_kt.db.repo.countedReviewCount
 import com.time1043.feedah_kt.db.repo.finishReview
+import com.time1043.feedah_kt.db.repo.getBuckets
+import com.time1043.feedah_kt.db.repo.getBucketCards
 import com.time1043.feedah_kt.db.repo.getProgress
 import com.time1043.feedah_kt.db.repo.getRoundsByBucket
 import com.time1043.feedah_kt.db.repo.getWordsCompletedOn
@@ -17,6 +19,9 @@ import com.time1043.feedah_kt.db.repo.getWordsFlaggedOn
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
 import com.time1043.feedah_kt.db.repo.listDailyPointers
 import com.time1043.feedah_kt.db.repo.openReviewSession
+import com.time1043.feedah_kt.db.repo.restoreBuckets
+import com.time1043.feedah_kt.db.repo.deleteBucket
+import com.time1043.feedah_kt.db.repo.tombstonedBuckets
 import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleCard
 import com.time1043.feedah_kt.db.repo.settleReview
@@ -415,5 +420,45 @@ class RepoTest {
 
         val entries = getWordsFlaggedOn(context, todayLocalDate())
         assertEquals(listOf(1, 1, 2), entries.map { it.round })
+    }
+
+    @Test
+    fun tombstoneHidesTheBucketFromEveryListButKeepsItsRows() = runBlocking {
+        val p1 = wordPositions()[0]
+        settleCard(context, bucket, 1)
+        setRoundFlag(context, bucket, 1, p1, true)
+
+        deleteBucket(context, bucket)
+
+        assertTrue(getBuckets(context).none { it.name == bucket })
+        assertTrue(getBucketCards(context).none { it.name == bucket })
+        // The rows stay: history, flags, probe.
+        assertTrue(getWordsWithRoundFlag(context, bucket, 1).second.isNotEmpty())
+        assertEquals(1, countRoundFlags(context, bucket, 1))
+        assertEquals(1, getProgress(context, bucket).pointer)
+        // The tombstoned bundled bucket is exactly what the restore path offers.
+        assertEquals(listOf(bucket), tombstonedBuckets(context))
+    }
+
+    @Test
+    fun aColdStartDoesNotResurrectADeletedBucket() = runBlocking {
+        deleteBucket(context, bucket)
+        seedBuckets(seedContext, db = com.time1043.feedah_kt.db.getDb(context))
+        assertTrue(getBuckets(context).none { it.name == bucket })
+    }
+
+    @Test
+    fun restoringLiftsTheTombstoneWithTheHistoryIntact() = runBlocking {
+        val p1 = wordPositions()[0]
+        settleCard(context, bucket, 1)
+        setRoundFlag(context, bucket, 1, p1, true)
+        deleteBucket(context, bucket)
+
+        restoreBuckets(context, tombstonedBuckets(context))
+
+        assertTrue(getBuckets(context).any { it.name == bucket })
+        assertEquals(1, countRoundFlags(context, bucket, 1))
+        assertEquals(1, getProgress(context, bucket).pointer)
+        assertTrue(tombstonedBuckets(context).isEmpty())
     }
 }
