@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.time1043.feedah_kt.db.FeedahDb
 import com.time1043.feedah_kt.db.repo.getProgress
 import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
@@ -44,6 +45,10 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class StudySessionControllerTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
+
+    /** Seeding reads the TEST APK's assets — always the tracked mock
+     * buckets, whatever feedahDataset this machine builds the app with. */
+    private val seedContext = InstrumentationRegistry.getInstrumentation().context
     private val bucket = "2050"
 
     // A minimal mode with the gated-answer profile (like quiz) and a prepare
@@ -72,7 +77,7 @@ class StudySessionControllerTest {
             .allowMainThreadQueries()
             .build()
         setDbForTests(db)
-        seedBuckets(context, db)
+        seedBuckets(seedContext, db)
         prepared = 0
         Unit
     }

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.platform.app.InstrumentationRegistry
 import com.time1043.feedah_kt.db.getRawDb
 import com.time1043.feedah_kt.db.repo.completeRound
 import com.time1043.feedah_kt.db.repo.countRoundFlags
@@ -42,6 +43,11 @@ import org.junit.runner.RunWith
 @RunWith(AndroidJUnit4::class)
 class RepoTest {
     private val context: Context = ApplicationProvider.getApplicationContext()
+
+    /** Seeding reads the TEST APK's assets — always the tracked mock
+     * buckets, whatever feedahDataset this machine builds the app with
+     * (the target context's assets would be the app's chosen dataset). */
+    private val seedContext = InstrumentationRegistry.getInstrumentation().context
     private val bucket = "2050"
 
     @Before
@@ -52,7 +58,7 @@ class RepoTest {
             .allowMainThreadQueries()
             .build()
         setDbForTests(db)
-        seedBuckets(context, db)
+        seedBuckets(seedContext, db)
         Unit
     }
 

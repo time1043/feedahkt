@@ -28,6 +28,14 @@ android {
         getByName("main") {
             assets.srcDir("src/$feedahDataset/assets")
         }
+        // The instrumented tests always walk the tracked mock buckets,
+        // whatever dataset this machine builds the app with: they seed from
+        // the TEST APK's assets (the instrumentation's context), so a
+        // feedahDataset=real default never stretches a full-suite run into
+        // per-card transactions over the real vocabulary.
+        getByName("androidTest") {
+            assets.srcDir("src/mock/assets")
+        }
     }
 
     defaultConfig {
