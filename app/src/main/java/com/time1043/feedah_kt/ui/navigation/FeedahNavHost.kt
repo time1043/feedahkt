@@ -74,7 +74,7 @@ fun FeedahNavHost(
         modifier = modifier
     ) {
         // tab
-        homeScreen(navController, activeBucket, studyDrill)
+        homeScreen(navController, activeBucket, studyDrill, onStudyDrillChange)
         bucketScreen(
             navController, activeBucket, onActiveBucketChange, searchScope, onSearchScopeChange,
         )
@@ -131,12 +131,14 @@ fun NavGraphBuilder.homeScreen(
     navController: NavController,
     activeBucket: String,
     studyDrill: String,
+    onStudyDrillChange: (String) -> Unit,
 ) {
     composable<Home> {
         TabScaffold(navController) { padding ->
             HomeScreen(
                 activeBucket = activeBucket,
                 studyDrill = studyDrill,
+                onStudyDrillChange = onStudyDrillChange,
                 onOpenSearch = { navController.navigate(SearchRoute()) },
                 onOpenStudy = { navController.navigate(StudyRoute(drill = studyDrill)) },
                 onOpenReview = { navController.navigate(ReviewRoute()) },
