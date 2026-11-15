@@ -2,6 +2,8 @@ package com.time1043.feedah_kt.ui
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -46,32 +48,40 @@ fun FeedahApp() {
 
         // The tabs own their bottom bar (TabScaffold) — there is no outer
         // scaffold gating it on the current route, so a push never strips
-        // the bar off a still-transitioning tab page.
-        FeedahNavHost(
-            navController = navController,
-            tts = tts,
-            speechRate = settings.speechRate,
-            settingsReady = settingsReady,
-            autoSpeak = settings.autoSpeak,
-            tapToReveal = settings.tapToReveal,
-            chrome = deckChrome,
-            wordsMeaning = settings.wordsMeaning,
-            activeBucket = settings.activeBucket,
-            studyDrill = settings.studyDrill,
-            theme = settings.theme,
-            onThemeSelect = settingsViewModel::updateTheme,
-            onSpeechRateSelect = settingsViewModel::updateSpeechRate,
-            onAutoSpeakChange = settingsViewModel::updateAutoSpeak,
-            onTapToRevealChange = settingsViewModel::updateTapToReveal,
-            onDeckHeaderChange = settingsViewModel::updateDeckHeader,
-            onDeckTitleChange = settingsViewModel::updateDeckTitle,
-            onDeckProgressBarChange = settingsViewModel::updateDeckProgressBar,
-            onHudPageChange = settingsViewModel::updateHudPage,
-            onWordsMeaningChange = settingsViewModel::updateWordsMeaning,
-            onActiveBucketChange = settingsViewModel::updateActiveBucket,
-            onStudyDrillChange = settingsViewModel::updateStudyDrill,
-            modifier = Modifier
-                .fillMaxSize(),
-        )
+        // the bar off a still-transitioning tab page. The themed surface
+        // under the NavHost is what remains of that scaffold: without it
+        // the white window background shows through every full-screen
+        // route (a dark-mode card on white) and through every crossfade.
+        Surface(
+            modifier = Modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background,
+        ) {
+            FeedahNavHost(
+                navController = navController,
+                tts = tts,
+                speechRate = settings.speechRate,
+                settingsReady = settingsReady,
+                autoSpeak = settings.autoSpeak,
+                tapToReveal = settings.tapToReveal,
+                chrome = deckChrome,
+                wordsMeaning = settings.wordsMeaning,
+                activeBucket = settings.activeBucket,
+                studyDrill = settings.studyDrill,
+                theme = settings.theme,
+                onThemeSelect = settingsViewModel::updateTheme,
+                onSpeechRateSelect = settingsViewModel::updateSpeechRate,
+                onAutoSpeakChange = settingsViewModel::updateAutoSpeak,
+                onTapToRevealChange = settingsViewModel::updateTapToReveal,
+                onDeckHeaderChange = settingsViewModel::updateDeckHeader,
+                onDeckTitleChange = settingsViewModel::updateDeckTitle,
+                onDeckProgressBarChange = settingsViewModel::updateDeckProgressBar,
+                onHudPageChange = settingsViewModel::updateHudPage,
+                onWordsMeaningChange = settingsViewModel::updateWordsMeaning,
+                onActiveBucketChange = settingsViewModel::updateActiveBucket,
+                onStudyDrillChange = settingsViewModel::updateStudyDrill,
+                modifier = Modifier
+                    .fillMaxSize(),
+            )
+        }
     }
 }
