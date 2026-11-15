@@ -8,7 +8,9 @@ import androidx.room.Index
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.Insert
+import androidx.room.RawQuery
 import androidx.room.Upsert
+import androidx.sqlite.db.SupportSQLiteQuery
 
 @Entity(tableName = "bucket")
 data class BucketEntity(
@@ -17,6 +19,10 @@ data class BucketEntity(
     /** Hash of the seeded word content — the seed idempotency key sits next
      * to word_count, so data-only changes (edited meanings) re-seed too. */
     @ColumnInfo(name = "content_hash", defaultValue = "") val contentHash: String,
+    /** Deletion tombstone (epoch ms): the bucket is hidden from every list
+     * but every row — and therefore its statistics contribution — stays, and
+     * importing the same file again lifts the tombstone. */
+    @ColumnInfo(name = "deleted_at") val deletedAt: Long? = null,
 )
 
 @Entity(
@@ -60,6 +66,11 @@ interface BucketWordDao {
     @Query("SELECT * FROM word WHERE bucket_name = :bucketId ORDER BY position")
     suspend fun getWordsByBucket(bucketId: String): List<WordEntity>
 
+    /** The search's query is built at runtime — the wildcard count shapes
+     * the WHERE clause (the source's sql.join of alternatives). */
+    @RawQuery(observedEntities = [WordEntity::class])
+    suspend fun searchRaw(query: SupportSQLiteQuery): List<WordEntity>
+
     /** The words' positions in deck order — the timeline's ordinal map. */
     @Query("SELECT position FROM word WHERE bucket_name = :bucketName ORDER BY position")
     suspend fun getPositions(bucketName: String): List<Int>
@@ -71,6 +82,7 @@ interface BucketWordDao {
      * the bucket was never studied) — the launcher surfaces' readout. */
     @Query(
         "SELECT bucket.name AS name, bucket.word_count AS wordCount, " +
+            "bucket.deleted_at AS deletedAt, " +
             "bucket_progress.round AS round, bucket_progress.pointer AS pointer " +
             "FROM bucket LEFT JOIN bucket_progress " +
             "ON bucket_progress.bucket_name = bucket.name ORDER BY bucket.name",
@@ -90,6 +102,18 @@ interface BucketWordDao {
 
     @Insert
     suspend fun insertWords(words: List<WordEntity>)
+
+    /** The tombstone write: history stays, the lists hide. */
+    @Query("UPDATE bucket SET deleted_at = :now WHERE name = :name")
+    suspend fun tombstoneBucket(name: String, now: Long)
+
+    /** The restore write: the rows were never gone, only hidden. */
+    @Query("UPDATE bucket SET deleted_at = NULL WHERE name IN (:names)")
+    suspend fun restoreBuckets(names: List<String>)
+
+    /** The tombstoned names, for the restore section of the settings. */
+    @Query("SELECT name FROM bucket WHERE deleted_at IS NOT NULL ORDER BY name")
+    suspend fun listTombstonedNames(): List<String>
 }
 
 /** One joined row of the bucket tab's launcher readout (see
@@ -97,6 +121,7 @@ interface BucketWordDao {
 data class BucketCardData(
     val name: String,
     val wordCount: Int,
+    val deletedAt: Long?,
     val round: Int?,
     val pointer: Int?,
 )

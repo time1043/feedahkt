@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,10 +33,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.db.repo.BucketRow
 import com.time1043.feedah_kt.db.repo.getBuckets
+import com.time1043.feedah_kt.db.repo.restoreBuckets
+import com.time1043.feedah_kt.db.repo.tombstonedBuckets
 import com.time1043.feedah_kt.drills.DrillRegistry
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectOption
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectRow
+import kotlinx.coroutines.launch
 
 /**
  * The bucket settings — for the list as a whole, not for one bucket: there is
@@ -49,16 +53,23 @@ fun BucketSettingsScreen(
     onActiveBucketChange: (String) -> Unit,
     studyDrill: String,
     onStudyDrillChange: (String) -> Unit,
+    searchScope: List<String>,
+    onSearchScopeChange: (List<String>) -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
+    val scope = rememberCoroutineScope()
     var buckets by remember { mutableStateOf<List<BucketRow>>(emptyList()) }
+    // The deleted bundled buckets: the restore section renders only while
+    // there is something to restore.
+    var deleted by remember { mutableStateOf<List<String>>(emptyList()) }
 
     // Reloads on every focus: the options follow the database.
     LaunchedEffect(Unit) {
         try {
             buckets = getBuckets(appContext)
+            deleted = tombstonedBuckets(appContext)
         } catch (error: Exception) {
             Log.e(TAG, "load failed", error)
         }
@@ -109,6 +120,119 @@ fun BucketSettingsScreen(
                 }
             }
         }
+
+        // Global search scope: which buckets the unpinned search spans. The
+        // chips toggle one bucket each; an empty scope means every bucket.
+        Column(Modifier.padding(horizontal = 16.dp).padding(top = 32.dp)) { // px-4 pt-8
+            Text(
+                text = "Global search scope",
+                style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = if (searchScope.isEmpty()) "Searching every bucket" else "Tapped buckets are searched",
+                style = TextStyle(fontSize = 13.sp),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(top = 4.dp), // mt-1
+            )
+            Row(
+                Modifier
+                    .fillMaxWidth()
+                    .padding(top = 12.dp), // mt-3
+                horizontalArrangement = Arrangement.spacedBy(8.dp), // gap-2
+            ) {
+                for (bucket in buckets) {
+                    ScopeChip(
+                        label = bucket.name,
+                        active = searchScope.contains(bucket.name),
+                        onClick = {
+                            onSearchScopeChange(
+                                if (searchScope.contains(bucket.name)) {
+                                    searchScope.filter { it != bucket.name }
+                                } else {
+                                    searchScope + bucket.name
+                                },
+                            )
+                        },
+                        modifier = Modifier.weight(1f), // flex-1
+                    )
+                }
+            }
+        }
+
+        // Restore the deleted built-ins: pure recovery, no confirmation —
+        // the rows were never gone, only hidden.
+        if (deleted.isNotEmpty()) {
+            Column(Modifier.padding(horizontal = 16.dp).padding(top = 32.dp)) { // px-4 pt-8
+                Text(
+                    text = "Restore built-in buckets",
+                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "They come back with their full history.",
+                    style = TextStyle(fontSize = 13.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp), // mt-1
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp), // mt-3
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), // gap-2
+                ) {
+                    for (name in deleted) {
+                        ScopeChip(
+                            label = name,
+                            active = false,
+                            onClick = {
+                                scope.launch {
+                                    runCatching { restoreBuckets(appContext, listOf(name)) }
+                                        .onSuccess {
+                                            buckets = getBuckets(appContext)
+                                            deleted = tombstonedBuckets(appContext)
+                                        }
+                                }
+                            },
+                            modifier = Modifier.weight(1f), // flex-1
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** One bucket chip of the global search scope row — the drill chip's
+ * sibling, sharing its active treatment. */
+@Composable
+private fun ScopeChip(
+    label: String,
+    active: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val dark = isSystemInDarkTheme()
+    val accent = MaterialTheme.colorScheme.primary // blue-500
+    val activeBackground = accent.copy(alpha = if (dark) 0.20f else 0.08f)
+    val border = if (active) {
+        BorderStroke(1.dp, accent)
+    } else {
+        BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant) // border-gray-300/700
+    }
+    Box(
+        modifier
+            .border(border, RoundedCornerShape(8.dp)) // rounded-lg
+            .background(activeBackground.takeIf { active } ?: Color.Transparent)
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 10.dp, vertical = 10.dp), // p-2.5
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(
+            text = label,
+            style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.SemiBold),
+            color = if (active) accent else MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 
