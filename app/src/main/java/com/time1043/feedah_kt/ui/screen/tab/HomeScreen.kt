@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
@@ -40,13 +39,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.foundation.layout.heightIn
 import com.time1043.feedah_kt.R
 import com.time1043.feedah_kt.db.repo.BucketCard
 import com.time1043.feedah_kt.db.repo.getBucketCards
 import com.time1043.feedah_kt.drills.DrillRegistry
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.TabHeader
+import com.time1043.feedah_kt.ui.theme.FLAG_RED
 
 /**
  * The quick-resume dashboard for the active bucket, the prototype's home:
@@ -69,6 +68,7 @@ fun HomeScreen(
     // The launcher's taps are ripple-free (the source's Pressables carry
     // no android_ripple).
     val interaction = remember { MutableInteractionSource() }
+    val dark = isSystemInDarkTheme()
 
     // Reloads on every focus: studying, reviewing or flagging in a deck
     // moves the numbers this dashboard reads.
@@ -194,7 +194,7 @@ fun HomeScreen(
                             style = TextStyle(fontSize = 36.sp, fontFeatureSettings = "tnum"),
                             fontWeight = FontWeight.ExtraBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.padding(bottom = 8.dp), // items-baseline
+                            modifier = Modifier.padding(bottom = 8.dp),
                         )
                     }
                     // The round's bar fills in the accent.
@@ -238,7 +238,6 @@ fun HomeScreen(
                                 CircleShape,
                             )
                             .padding(4.dp), // p-1
-                        horizontalArrangement = Arrangement.spacedBy(0.dp),
                     ) {
                         for (drill in DrillRegistry.getDrills()) {
                             val selected = drill.id == studyDrill
@@ -343,9 +342,8 @@ fun HomeScreen(
                                     .height(28.dp) // h-7
                                     .widthIn(min = 28.dp) // min-w-7
                                     .background(
-                                        com.time1043.feedah_kt.ui.theme.FLAG_RED.let {
-                                            if (isSystemInDarkTheme()) it.dark else it.light
-                                        },
+                                        if (dark) com.time1043.feedah_kt.ui.theme.FLAG_RED.dark
+                                        else com.time1043.feedah_kt.ui.theme.FLAG_RED.light,
                                         CircleShape,
                                     )
                                     .padding(horizontal = 8.dp), // px-2
