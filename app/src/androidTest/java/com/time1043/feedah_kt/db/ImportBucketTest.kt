@@ -130,6 +130,7 @@ class ImportBucketTest {
     @Test
     fun importingADeletedBucketRestoresIt() = runBlocking {
         importBucketFile(context, parseBucketJson(bucketJson()))
+        settleCard(context, "imported", 1)
         deleteBucket(context, "imported")
         assertTrue(getBuckets(context).none { it.name == "imported" })
 

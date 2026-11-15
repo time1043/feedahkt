@@ -20,6 +20,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -32,10 +33,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.time1043.feedah_kt.db.repo.BucketRow
 import com.time1043.feedah_kt.db.repo.getBuckets
+import com.time1043.feedah_kt.db.repo.restoreBuckets
+import com.time1043.feedah_kt.db.repo.tombstonedBuckets
 import com.time1043.feedah_kt.drills.DrillRegistry
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectOption
 import com.time1043.feedah_kt.ui.screen.tab.settings.SelectRow
+import kotlinx.coroutines.launch
 
 /**
  * The bucket settings — for the list as a whole, not for one bucket: there is
@@ -55,12 +59,17 @@ fun BucketSettingsScreen(
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
+    val scope = rememberCoroutineScope()
     var buckets by remember { mutableStateOf<List<BucketRow>>(emptyList()) }
+    // The deleted bundled buckets: the restore section renders only while
+    // there is something to restore.
+    var deleted by remember { mutableStateOf<List<String>>(emptyList()) }
 
     // Reloads on every focus: the options follow the database.
     LaunchedEffect(Unit) {
         try {
             buckets = getBuckets(appContext)
+            deleted = tombstonedBuckets(appContext)
         } catch (error: Exception) {
             Log.e(TAG, "load failed", error)
         }
@@ -147,6 +156,47 @@ fun BucketSettingsScreen(
                         },
                         modifier = Modifier.weight(1f), // flex-1
                     )
+                }
+            }
+        }
+
+        // Restore the deleted built-ins: pure recovery, no confirmation —
+        // the rows were never gone, only hidden.
+        if (deleted.isNotEmpty()) {
+            Column(Modifier.padding(horizontal = 16.dp).padding(top = 32.dp)) { // px-4 pt-8
+                Text(
+                    text = "Restore built-in buckets",
+                    style = TextStyle(fontSize = 15.sp, fontWeight = FontWeight.SemiBold),
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "They come back with their full history.",
+                    style = TextStyle(fontSize = 13.sp),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(top = 4.dp), // mt-1
+                )
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(top = 12.dp), // mt-3
+                    horizontalArrangement = Arrangement.spacedBy(8.dp), // gap-2
+                ) {
+                    for (name in deleted) {
+                        ScopeChip(
+                            label = name,
+                            active = false,
+                            onClick = {
+                                scope.launch {
+                                    runCatching { restoreBuckets(appContext, listOf(name)) }
+                                        .onSuccess {
+                                            buckets = getBuckets(appContext)
+                                            deleted = tombstonedBuckets(appContext)
+                                        }
+                                }
+                            },
+                            modifier = Modifier.weight(1f), // flex-1
+                        )
+                    }
                 }
             }
         }
