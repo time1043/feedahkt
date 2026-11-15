@@ -67,4 +67,30 @@ class SearchRepoTest {
         // Whatever matched, the row is always the headword of its own entry.
         assertTrue(results.all { it.word.word.isNotEmpty() })
     }
+
+    @Test
+    fun keepsABackslashALiteralOnceTheWildcardSearchLands() = runBlocking {
+        // A query holding a wildcard keeps SQL semantics (the wildcard suite
+        // pins that); the escape path is what keeps a stray backslash literal.
+        assertEquals(0, searchWords(context, bucket, "\\").size)
+    }
+
+    @Test
+    fun honorsPercentAsAnyRunAndUnderscoreAsExactlyOneCharacter() = runBlocking {
+        val sample = sampleWord()
+        val w = sample.word.lowercase()
+        val prefix = searchWords(context, bucket, "${w.take(1)}%")
+        assertTrue(prefix.any { it.word.position == sample.position })
+        val suffix = searchWords(context, bucket, "%${w.takeLast(1)}")
+        assertTrue(suffix.any { it.word.position == sample.position })
+        val singles = searchWords(context, bucket, w.take(1) + "_".repeat(w.length - 1))
+        assertTrue(singles.any { it.word.position == sample.position })
+    }
+
+    @Test
+    fun unionsPipeAlternatives() = runBlocking {
+        val sample = sampleWord()
+        val results = searchWords(context, bucket, "${sample.word}|zzzzqqqq")
+        assertTrue(results.any { it.word.position == sample.position })
+    }
 }

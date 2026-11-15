@@ -13,14 +13,17 @@ private val json = Json
 data class SearchResult(val word: DeckWord, val bucketName: String)
 
 /**
- * Translates user input into a SQL LIKE pattern. A plain query is wrapped as
- * a contains-match with its `%` and `_` escaped — the characters are
- * literals, so "50%" finds "50%" and not "50x". Wildcard search (a query
- * that intends SQL semantics) arrives with this feature's second step.
+ * Translates user input into a SQL LIKE pattern, matching SQL semantics:
+ *   %  any run of zero or more characters
+ *   _  exactly one character
+ * A query with no wildcard characters is escaped and wrapped as a
+ * contains-match, so its % and _ stay literals — "50%" finds "50%".
+ * Examples: `ter%` matches words starting with ter, `%ter` ending with
+ * ter, `wo%rd` exactly starting with wo and ending with rd.
  */
 internal fun toLikePattern(query: String): String {
-    val escaped = query.replace(Regex("[\\\\%_]")) { match -> "\\" + match.value }
-    return "%$escaped%"
+    if (Regex("[%_]").containsMatchIn(query)) return query
+    return "%${query.replace(Regex("[\\\\%_]")) { match -> "\\" + match.value }}%"
 }
 
 private const val SEARCH_LIMIT = 100
@@ -28,21 +31,35 @@ private const val SEARCH_LIMIT = 100
 /**
  * Case-insensitive lookup over the word, its inflected forms (a JSON column
  * LIKE'd as text — the row returned is always the headword) and the Chinese
- * meaning, within one bucket.
+ * meaning, within one bucket. `|` splits the query into alternatives whose
+ * results are unioned (`scene|sense`), each keeping the %/_ rules.
  */
 suspend fun searchWords(context: Context, bucketName: String, query: String): List<SearchResult> {
     val trimmed = query.trim()
     if (trimmed.isEmpty()) return emptyList()
-    val pattern = toLikePattern(trimmed).lowercase()
+    val alternatives = trimmed
+        .split('|')
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+        .ifEmpty { listOf(trimmed) }
     val db = getDb(context)
+    val patterns = alternatives.map { toLikePattern(it).lowercase() }
+    val conditions = patterns.joinToString(" OR ") {
+        "(lower(word) LIKE ? ESCAPE '\\' " +
+            "OR lower(forms) LIKE ? ESCAPE '\\' " +
+            "OR lower(meaning) LIKE ? ESCAPE '\\')"
+    }
+    val args = mutableListOf<Any>(bucketName)
+    for (pattern in patterns) {
+        args.add(pattern)
+        args.add(pattern)
+        args.add(pattern)
+    }
     val rows = db.bucketWordDao().searchRaw(
         SimpleSQLiteQuery(
-            "SELECT * FROM word WHERE bucket_name = ? AND (" +
-                "lower(word) LIKE ? ESCAPE '\\' " +
-                "OR lower(forms) LIKE ? ESCAPE '\\' " +
-                "OR lower(meaning) LIKE ? ESCAPE '\\') " +
+            "SELECT * FROM word WHERE bucket_name = ? AND ($conditions) " +
                 "ORDER BY position LIMIT $SEARCH_LIMIT",
-            arrayOf(bucketName, pattern, pattern, pattern),
+            args.toTypedArray(),
         ),
     )
     return rows.map { row ->
