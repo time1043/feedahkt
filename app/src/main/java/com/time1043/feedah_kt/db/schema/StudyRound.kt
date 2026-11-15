@@ -61,6 +61,14 @@ data class RecordSpan(
     val endedAt: Long,
 )
 
+/** One recorded round's span with its bucket — the study export reads it. */
+data class RecordRowData(
+    val bucketName: String,
+    val round: Int,
+    val startedAt: Long,
+    val endedAt: Long,
+)
+
 /** One flagged word, as the timeline's ordinal translation reads it. */
 data class FlagRef(val round: Int, val position: Int)
 
@@ -115,6 +123,10 @@ interface StudyRoundDao {
     @Query("SELECT * FROM bucket_progress WHERE bucket_name = :bucketName LIMIT 1")
     suspend fun getProgressRow(bucketName: String): BucketProgressEntity?
 
+    /** Every probe row — the study export's progress. */
+    @Query("SELECT * FROM bucket_progress")
+    suspend fun getProgressRows(): List<BucketProgressEntity>
+
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertProgress(progress: BucketProgressEntity)
 
@@ -135,6 +147,13 @@ interface StudyRoundDao {
             "FROM round_record WHERE bucket_name = :bucketName",
     )
     suspend fun getRecordSpans(bucketName: String): List<RecordSpan>
+
+    /** Every recorded round across buckets — the study export's rounds. */
+    @Query(
+        "SELECT bucket_name AS bucketName, round AS round, started_at AS startedAt, " +
+            "ended_at AS endedAt FROM round_record ORDER BY bucket_name, round",
+    )
+    suspend fun listAllRecords(): List<RecordRowData>
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertFlag(flag: RoundFlagEntity)

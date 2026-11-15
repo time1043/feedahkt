@@ -21,17 +21,17 @@ internal val BUNDLED_BUCKET_NAMES = SEED_FILES
 
 /** One seed word: the JSON entry narrowed to the seeded columns. */
 @Serializable
-private data class SeedWord(
+internal data class SeedWord(
     val position: Int,
     val word: String,
     val ipa: String,
     val meaning: String,
-    val forms: List<String>,
+    val forms: List<String> = emptyList(),
     val distractors: List<Distractor> = emptyList(),
 )
 
 /** A seed file: the bundled bucket JSON, narrowed to name + words. */
-private data class SeedFile(val name: String, val words: List<SeedWord>)
+internal data class SeedFile(val name: String, val words: List<SeedWord>)
 
 /** The bundled JSON file's shape, narrowed to the seeded fields (the mock
  * Bucket type is gone — the seed owns its decode). */
@@ -48,7 +48,7 @@ private fun loadSeedFiles(context: Context): List<SeedFile> = SEED_FILES.map { n
 
 /** A deterministic content hash of the seed words: data-only changes (new
  * words, edited meanings) re-seed the bucket even when the count is equal. */
-private fun contentHashOf(words: List<SeedWord>): String {
+internal fun contentHashOf(words: List<SeedWord>): String {
     val text = json.encodeToString(words)
     var hash = 5381
     for (ch in text) {
@@ -67,8 +67,18 @@ private fun contentHashOf(words: List<SeedWord>): String {
  */
 suspend fun seedBuckets(context: Context, db: FeedahDb): Unit =
     withContext(Dispatchers.IO) {
+        seedBucketsFrom(db, loadSeedFiles(context))
+    }
+
+/**
+ * Seeds the given seed files through the same idempotent path the cold
+ * start uses — the import pipeline feeds user-parsed files through here,
+ * so a re-import replaces the words while the study progress survives.
+ */
+internal suspend fun seedBucketsFrom(db: FeedahDb, files: List<SeedFile>): Unit =
+    withContext(Dispatchers.IO) {
         val dao = db.bucketWordDao()
-        for (file in loadSeedFiles(context)) {
+        for (file in files) {
             val hash = contentHashOf(file.words)
             val existing = dao.getSeedState(file.name)
             if (existing?.deletedAt != null) continue
