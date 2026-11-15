@@ -3,29 +3,23 @@ package com.time1043.feedah_kt.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 import com.time1043.feedah_kt.logic.RoundWordStatus
 import com.time1043.feedah_kt.logic.RoundWordStatus.GRAY
 import com.time1043.feedah_kt.logic.RoundWordStatus.GREEN
 import com.time1043.feedah_kt.logic.RoundWordStatus.RED
 import com.time1043.feedah_kt.ui.theme.FLAG_RED
-import kotlin.math.min
-import kotlin.math.roundToInt
 
 /** One scheme's sweep palette. */
 data class RoundPalette(val green: Color, val red: Color, val gray: Color)
@@ -48,11 +42,14 @@ val ROUND_COLORS = RoundColors(
 )
 
 /**
- * Horizontal timeline of a round, drawn with plain boxes. Words are
- * aggregated into one two-pixel column (red wins over green over gray): a
- * 2000-word bucket cannot be resolved per word on a ~360dp bar, one column
- * per two pixels keeps the draw cheap, and a column takes the loudest status
- * of the words it covers so every flagged word stays visible.
+ * Horizontal timeline of a round, drawn over a plain gray track. Runs of one
+ * status merge into a single absolutely-positioned span — a finished round's
+ * two thousand green words are one block, not one column per two pixels —
+ * and every flagged run pins its own hairline at its words' exact position,
+ * so a flag reads at word precision instead of the ~10-words-per-column the
+ * old sweep averaged away. Percent positioning needs no width measurement,
+ * and with dozens of views instead of hundreds, Android never rounds seams
+ * between neighbors either.
  */
 @Composable
 fun RoundBar(
@@ -61,54 +58,40 @@ fun RoundBar(
     modifier: Modifier = Modifier,
 ) {
     val dark = isSystemInDarkTheme()
-    var widthPx by remember { mutableIntStateOf(0) }
-    val density = LocalDensity.current
+    val palette = if (dark) ROUND_COLORS.dark else ROUND_COLORS.light
+    val total = statuses.size
 
-    val columns: List<RoundWordStatus> = buildList {
-        val widthDp = with(density) { widthPx.toDp().value }
-        if (widthDp > 0 && statuses.isNotEmpty()) {
-            val pixelCount = min(statuses.size, (widthDp / 2).roundToInt())
-            val groupSize = statuses.size / pixelCount.toFloat()
-            for (pixel in 0 until pixelCount) {
-                val start = (pixel * groupSize).toInt()
-                val end = if (pixel == pixelCount - 1) {
-                    statuses.size
-                } else {
-                    min(statuses.size, ((pixel + 1) * groupSize).toInt())
-                }
-                var column = GRAY
-                for (i in start until end) {
-                    if (statuses[i] == RED) {
-                        column = RED
-                        break
-                    }
-                    if (statuses[i] == GREEN) column = GREEN
-                }
-                add(column)
-            }
+    // Merge same-status runs; gray stays on the track, green and red become
+    // spans. The 1.5dp min-width keeps a single word's span visible on a
+    // two-thousand-word bar (where one word is a fraction of a percent).
+    val spans = buildList {
+        var index = 0
+        while (index < total) {
+            val status = statuses[index]
+            var end = index + 1
+            while (end < total && statuses[end] == status) end++
+            if (status != GRAY) add(Triple(index, end - index, status))
+            index = end
         }
     }
 
-    val palette = if (dark) ROUND_COLORS.dark else ROUND_COLORS.light
-    Row(
+    BoxWithConstraints(
         modifier = modifier
             .fillMaxWidth()
             .height(14.dp) // h-3.5
             .clip(RoundedCornerShape(2.dp)) // rounded-sm
-            .onSizeChanged { widthPx = it.width },
+            .background(palette.gray),
     ) {
-        columns.forEach { column ->
+        val trackWidth = maxWidth
+        for ((start, count, status) in spans) {
+            // Percent positioning: no width measurement needed, and the
+            // 1.5dp floor keeps a single word's hairline visible.
             Box(
                 Modifier
-                    .weight(1f)
+                    .offset(x = trackWidth * (start.toFloat() / total))
+                    .width((trackWidth * (count.toFloat() / total)).coerceAtLeast(1.5.dp))
                     .fillMaxHeight()
-                    .background(
-                        when (column) {
-                            RED -> palette.red
-                            GREEN -> palette.green
-                            GRAY -> palette.gray
-                        },
-                    ),
+                    .background(if (status == RED) palette.red else palette.green),
             )
         }
     }

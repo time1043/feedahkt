@@ -119,21 +119,38 @@ private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit
     val red = statuses.count { it == RoundWordStatus.RED }
 
     Column {
+        // The title line carries the round's when on the right, above the
+        // sweep — the legend below holds only the counts.
         Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp), // gap-1
         ) {
-            Text(
-                text = "Round ${row.round}",
-                fontSize = 15.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "· ${labelOf(row, studying)}",
-                fontSize = 15.sp,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(4.dp), // gap-1
+            ) {
+                Text(
+                    text = "Round ${row.round}",
+                    fontSize = 15.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "· ${labelOf(row, studying)}",
+                    fontSize = 15.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            timeLine?.let {
+                Text(
+                    text = it,
+                    style = TextStyle(fontSize = 12.sp, fontFeatureSettings = "tnum"),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    modifier = Modifier.padding(start = 8.dp), // flex-shrink
+                )
+            }
         }
         Box(Modifier.padding(top = 8.dp)) { // mt-2
             RoundBar(statuses = statuses)
@@ -142,7 +159,6 @@ private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 8.dp), // mt-2
-            horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
             // The legend counts the same statuses the bar paints: a flagged
@@ -193,13 +209,6 @@ private fun RoundItem(row: RoundRow, studying: Boolean, onOpenReview: () -> Unit
                         )
                     }
                 }
-            }
-            timeLine?.let {
-                Text(
-                    text = it,
-                    style = TextStyle(fontSize = 12.sp, fontFeatureSettings = "tnum"),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
             }
         }
     }

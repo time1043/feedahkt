@@ -106,18 +106,14 @@ fun SettingsScreen(
                 .padding(16.dp), // p-4
             verticalArrangement = Arrangement.spacedBy(24.dp), // gap-6
         ) {
-            // Speech
-            SettingsCard {
-                SpeechRateControl(
-                    rate = speechRate,
-                    tts = tts,
-                    onRateChange = onSpeechRateSelect,
-                )
-            }
-
-            // Study deck
+            // Study deck: the speech rate moves in with the deck switches.
             SettingsCard(title = "Study deck") {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { // gap-1
+                    SpeechRateControl(
+                        rate = speechRate,
+                        tts = tts,
+                        onRateChange = onSpeechRateSelect,
+                    )
                     SwitchRow(
                         label = "Auto speak",
                         value = autoSpeak,
@@ -151,14 +147,20 @@ fun SettingsScreen(
                 }
             }
 
-            // Words & search
-            SettingsCard(title = "Words & search") {
+            // Bucket: the word list's own rows.
+            SettingsCard(title = "Bucket") {
                 Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { // gap-1
                     SwitchRow(
                         label = "Word list meanings",
                         value = wordsMeaning,
                         onValueChange = onWordsMeaningChange,
                     )
+                }
+            }
+
+            // Search
+            SettingsCard(title = "Search") {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) { // gap-1
                     SwitchRow(
                         label = "Search stays in the opened bucket",
                         value = searchLocal,
