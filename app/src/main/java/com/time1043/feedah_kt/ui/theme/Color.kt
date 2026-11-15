@@ -2,19 +2,36 @@ package com.time1043.feedah_kt.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val Purple80 = Color(0xFFD0BCFF)
-val PurpleGrey80 = Color(0xFFCCC2DC)
-val Pink80 = Color(0xFFEFB8C8)
+/** The leaf's lime as a Compose color, for roles that want the fill as a
+ * color value (the theme's primary). Also the caret color inside the fields
+ * that wear the ring. */
+val Lime = Color(0xFFC5F36A)
 
-val Purple40 = Color(0xFF6650a4)
-val PurpleGrey40 = Color(0xFF625b71)
-val Pink40 = Color(0xFF7D5260)
+/** The lime as a raw hex constant, matching the source's LIME in lib/color. */
+const val LIME = 0xFFC5F36A
+val Black = Color(0xFF000000)
+val White = Color(0xFFFFFFFF)
+val Gray100 = Color(0xFFF3F4F6)
+val Gray300 = Color(0xFFD1D5DB)
+val Gray400 = Color(0xFF9CA3AF)
+val Gray500 = Color(0xFF6B7280)
+val Gray700 = Color(0xFF374151)
+val Gray800 = Color(0xFF1F2937)
+val Olive = Color(0xFF55741E)
 
 /** The flag's red — the card's bookmark once set, the word list's mark, and a
  * flagged column of a round's sweep (hence the dark variant). */
 data class FlagRed(val light: Color, val dark: Color)
 
 val FLAG_RED = FlagRed(light = Color(0xFFE5484D), dark = Color(0xFFF0666B))
+
+/** Picks the theme's half of the pair. */
+fun FlagRed.pick(darkTheme: Boolean): Color = if (darkTheme) dark else light
+
+/** The accent for text and icons sitting on the page background: the lime on
+ * dark, the deepened olive on light, where the lime would wash out. Matches
+ * the source's `text-accent-deep dark:text-accent`. */
+val ACCENT = FlagRed(light = Color(0xFF55741E), dark = Color(0xFFC5F36A))
 
 /** A light/dark color pair for the drill cards' option states (the source's
  * tailwind classes). */

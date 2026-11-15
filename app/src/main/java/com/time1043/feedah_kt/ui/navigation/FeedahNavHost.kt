@@ -74,7 +74,7 @@ fun FeedahNavHost(
         modifier = modifier
     ) {
         // tab
-        homeScreen(navController, activeBucket, studyDrill)
+        homeScreen(navController, activeBucket, studyDrill, onStudyDrillChange)
         bucketScreen(
             navController, activeBucket, onActiveBucketChange, searchScope, onSearchScopeChange,
         )
@@ -121,8 +121,7 @@ fun FeedahNavHost(
         wordsScreen(navController, wordsMeaning)
         roundsScreen(navController, activeBucket)
         bucketSettingsScreen(
-            navController, activeBucket, onActiveBucketChange, studyDrill, onStudyDrillChange,
-            searchScope, onSearchScopeChange,
+            navController, activeBucket, onActiveBucketChange, searchScope, onSearchScopeChange,
         )
     }
 }
@@ -131,12 +130,14 @@ fun NavGraphBuilder.homeScreen(
     navController: NavController,
     activeBucket: String,
     studyDrill: String,
+    onStudyDrillChange: (String) -> Unit,
 ) {
     composable<Home> {
         TabScaffold(navController) { padding ->
             HomeScreen(
                 activeBucket = activeBucket,
                 studyDrill = studyDrill,
+                onStudyDrillChange = onStudyDrillChange,
                 onOpenSearch = { navController.navigate(SearchRoute()) },
                 onOpenStudy = { navController.navigate(StudyRoute(drill = studyDrill)) },
                 onOpenReview = { navController.navigate(ReviewRoute()) },
@@ -390,8 +391,6 @@ fun NavGraphBuilder.bucketSettingsScreen(
     navController: NavController,
     activeBucket: String,
     onActiveBucketChange: (String) -> Unit,
-    studyDrill: String,
-    onStudyDrillChange: (String) -> Unit,
     searchScope: List<String>,
     onSearchScopeChange: (List<String>) -> Unit,
 ) {
@@ -400,8 +399,6 @@ fun NavGraphBuilder.bucketSettingsScreen(
             BucketSettingsScreen(
                 activeBucket = activeBucket,
                 onActiveBucketChange = onActiveBucketChange,
-                studyDrill = studyDrill,
-                onStudyDrillChange = onStudyDrillChange,
                 searchScope = searchScope,
                 onSearchScopeChange = onSearchScopeChange,
                 onBack = navController::goBack,

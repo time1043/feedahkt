@@ -69,7 +69,9 @@ fun Heatmap(
     val success = if (dark) Color(0xFF5BB96F) else Color(0xFF3D9A50)
     val track = if (dark) Color(0xFF3A3D42) else Color(0xFFD9D9DE)
     val label = if (dark) Color(0xFF7A7E86) else Color(0xFF9A9EA6)
-    val accent = if (dark) Color(0xFF4CA0F0) else Color(0xFF208AEF)
+    // The selected day's ring reads on the page background — the accent for
+    // text/icons, olive on light where the lime would wash out.
+    val accent = if (dark) Color(0xFFC5F36A) else Color(0xFF55741E)
     val levelColors = listOf(
         track,
         success.copy(alpha = 0.35f),

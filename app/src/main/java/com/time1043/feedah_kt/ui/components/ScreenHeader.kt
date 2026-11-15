@@ -153,13 +153,14 @@ fun ListHeader(
 
 /** Header row of the four tabs (mirror of TabHeader in
  * src/components/header.tsx): 22sp bold title left, optional right slot.
- * The title is optional — an untitled tab renders a spacer so its right
- * slot still lands on the right edge (the home header carries only its
- * search icon). */
+ * The title is optional — an untitled tab renders its `left` slot when given
+ * (the home header's leaf-and-wordmark brand row) or a spacer, so the right
+ * slot still lands on the right edge. */
 @Composable
 fun TabHeader(
     title: String?,
     right: (@Composable () -> Unit)? = null,
+    left: (@Composable () -> Unit)? = null,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -169,15 +170,15 @@ fun TabHeader(
         horizontalArrangement = Arrangement.SpaceBetween, // justify-between
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (title != null) {
-            Text(
+        when {
+            title != null -> Text(
                 text = title,
                 fontSize = 22.sp,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-        } else {
-            Box(Modifier.weight(1f))
+            left != null -> left.invoke()
+            else -> Box(Modifier.weight(1f))
         }
         right?.invoke()
     }

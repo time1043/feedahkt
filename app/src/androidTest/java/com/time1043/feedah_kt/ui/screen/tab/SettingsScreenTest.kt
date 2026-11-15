@@ -3,6 +3,7 @@ package com.time1043.feedah_kt.ui.screen.tab
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.core.app.ApplicationProvider
 import com.time1043.feedah_kt.platform.FeedahTts
@@ -51,8 +52,8 @@ class SettingsScreenTest {
             )
         }
 
-        // act: tap the Dark segment
-        composeRule.onNodeWithText("Dark").performClick()
+        // act: scroll to the Theme card, then tap the Dark segment
+        composeRule.onNodeWithText("Dark").performScrollTo().performClick()
 
         // assert: exactly one selection, the dark choice
         assertEquals(listOf("dark"), selections)

@@ -4,11 +4,13 @@ import android.content.Context
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -18,7 +20,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.CircularProgressIndicator
@@ -30,7 +34,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -184,71 +187,158 @@ fun BucketScreen(
         )
         for (card in cards) {
             val active = card.name == activeBucket
-            Row(
+            Column(
                 Modifier
                     .fillMaxWidth()
                     .padding(start = 16.dp, end = 16.dp, bottom = 12.dp) // mx-4 mb-3
-                    .height(IntrinsicSize.Min) // items-stretch: the side follows the body
+                    .background(
+                        // The prototype's card body: gray-100 / the dark
+                        // page's own surface.
+                        if (isSystemInDarkTheme()) {
+                            MaterialTheme.colorScheme.surfaceVariant // dark:bg-surface
+                        } else {
+                            MaterialTheme.colorScheme.surfaceVariant // bg-gray-100
+                        },
+                        RoundedCornerShape(16.dp), // rounded-2xl
+                    )
                     .border(
                         width = 1.dp,
-                        // The studied bucket's card wears the blue ring.
+                        // The lime ring marks the bucket being studied; the
+                        // others have no ring at all.
                         color = if (active) {
-                            if (isSystemInDarkTheme()) Color(0xFF60A5FA) else Color(0xFF93C5FD) // border-blue-600/400
+                            MaterialTheme.colorScheme.primary // border-accent
                         } else {
-                            MaterialTheme.colorScheme.outlineVariant // border-gray-300/700
+                            Color.Transparent
                         },
-                        shape = RoundedCornerShape(16.dp), // rounded-2xl
+                        shape = RoundedCornerShape(16.dp),
                     ),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
             ) {
-                // Body: the bucket's word list. Long-press deletes the bucket.
-                Column(
-                    Modifier
-                        .weight(1f)
-                        .fillMaxHeight()
-                        .combinedClickable(
-                            role = Role.Button,
-                            onClick = { onOpenBucket(card.name) },
-                            onLongClick = { deleteCandidate = card },
-                            onClickLabel = card.name,
+                Row(Modifier.height(IntrinsicSize.Min)) {
+                    // Body: the bucket's word list. Long-press deletes the bucket.
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .fillMaxHeight()
+                            .combinedClickable(
+                                role = Role.Button,
+                                onClick = { onOpenBucket(card.name) },
+                                onLongClick = { deleteCandidate = card },
+                                onClickLabel = card.name,
+                            )
+                            .padding(16.dp) // p-4
+                            .semantics {
+                                contentDescription = "${card.name}, " +
+                                    "${card.pointer} of ${card.wordCount} words, " +
+                                    "round ${card.round}, long-press to delete"
+                            },
+                        verticalArrangement = Arrangement.spacedBy(8.dp), // gap-2
+                    ) {
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.Top,
+                        ) {
+                            Text(
+                                text = card.name,
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.ExtraBold,
+                                lineHeight = 32.sp, // leading-8
+                                color = MaterialTheme.colorScheme.onSurface,
+                            )
+                            Text(
+                                text = "round ${card.round}",
+                                style = TextStyle(fontSize = 13.sp),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        // The bar fills in the accent only for the bucket
+                        // being studied; the others stay gray.
+                        Box(
+                            Modifier
+                                .fillMaxWidth()
+                                .height(6.dp) // h-1.5
+                                .background(
+                                    MaterialTheme.colorScheme.surfaceVariant, // bg-gray-200/700
+                                    CircleShape,
+                                ),
+                        ) {
+                            Box(
+                                Modifier
+                                    .fillMaxWidth(
+                                        if (card.wordCount > 0) {
+                                            (card.pointer.toFloat() / card.wordCount)
+                                        } else {
+                                            0f
+                                        },
+                                    )
+                                    .height(6.dp)
+                                    .background(
+                                        if (active) {
+                                            MaterialTheme.colorScheme.primary // bg-accent
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant // bg-gray-400/500
+                                        },
+                                        CircleShape,
+                                    ),
+                            )
+                        }
+                        Row(
+                            Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            if (active) {
+                                Row(
+                                    horizontalArrangement = Arrangement.spacedBy(6.dp), // gap-1.5
+                                    verticalAlignment = Alignment.CenterVertically,
+                                ) {
+                                    Box(
+                                        Modifier
+                                            .size(6.dp) // w-1.5 h-1.5
+                                            .background(
+                                                MaterialTheme.colorScheme.primary, // bg-accent
+                                                CircleShape,
+                                            ),
+                                    )
+                                    Text(
+                                        text = "Current bucket",
+                                        style = TextStyle(
+                                            fontSize = 13.sp,
+                                            fontWeight = FontWeight.SemiBold,
+                                        ),
+                                        color = com.time1043.feedah_kt.ui.theme.ACCENT.let {
+                                            if (isSystemInDarkTheme()) it.dark else it.light
+                                        }, // text-accent-deep dark:text-accent
+                                    )
+                                }
+                            } else {
+                                Spacer(Modifier)
+                            }
+                            Text(
+                                text = "${card.pointer} / ${card.wordCount}",
+                                style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    // Side: the round list with its red/green timelines.
+                    Row(
+                        Modifier
+                            .width(48.dp) // w-12
+                            .fillMaxHeight()
+                            .clickable(role = Role.Button, onClickLabel = "open rounds") {
+                                onOpenRounds(card.name)
+                            },
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_repeat),
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.size(20.dp),
                         )
-                        .padding(16.dp) // p-4
-                        .semantics {
-                            contentDescription = "${card.name}, long-press to delete"
-                        },
-                    verticalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        text = card.name,
-                        fontSize = 17.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = MaterialTheme.colorScheme.onSurface,
-                    )
-                    Text(
-                        text = "round ${card.round} · ${card.pointer}/${card.wordCount}",
-                        style = TextStyle(fontSize = 13.sp, fontFeatureSettings = "tnum"),
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.padding(top = 4.dp), // mt-1
-                    )
-                }
-                // Side: the round list with its red/green timelines.
-                Row(
-                    Modifier
-                        .width(56.dp) // w-14
-                        .fillMaxHeight()
-                        .clickable(role = Role.Button, onClickLabel = "open rounds") {
-                            onOpenRounds(card.name)
-                        },
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Icon(
-                        painter = painterResource(R.drawable.ic_repeat),
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                        modifier = Modifier.size(20.dp),
-                    )
+                    }
                 }
             }
         }

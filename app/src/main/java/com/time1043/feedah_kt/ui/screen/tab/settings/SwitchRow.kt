@@ -34,6 +34,12 @@ fun SwitchRow(
         Switch(
             checked = value,
             onCheckedChange = onValueChange,
+            // Android takes the thumb from the platform's blue unless it is
+            // told; white is the knob both platforms agree on.
+            colors = androidx.compose.material3.SwitchDefaults.colors(
+                checkedThumbColor = androidx.compose.ui.graphics.Color.White,
+                uncheckedThumbColor = androidx.compose.ui.graphics.Color.White,
+            ),
         )
     }
 }
