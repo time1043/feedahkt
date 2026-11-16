@@ -83,8 +83,9 @@ fun HomeScreen(
     val active = cards.find { it.name == activeBucket }
     val started = active != null && (active.pointer > 0 || active.round > 1)
     val wordsLeft = active?.let { maxOf(0, it.wordCount - it.pointer) } ?: 0
+    // The bar's fill takes a FRACTION, not the source's percent string.
     val progress = if (active != null && active.wordCount > 0) {
-        (active.pointer.toFloat() / active.wordCount) * 100
+        active.pointer.toFloat() / active.wordCount
     } else {
         0f
     }
