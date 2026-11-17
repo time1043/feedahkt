@@ -19,8 +19,11 @@ fun formatMinutes(totalSeconds: Long): String {
 /** A YYYY-MM-DD day's local calendar, for label lookups. */
 private fun calendarOf(day: String): Calendar? {
     val parts = day.split('-').map { it.toIntOrNull() }
-    val (year, month, date) = parts
-    if (parts.size < 3 || year == null || month == null || date == null || year == 0 ||
+    if (parts.size < 3) return null
+    val year = parts[0]
+    val month = parts[1]
+    val date = parts[2]
+    if (year == null || month == null || date == null || year == 0 ||
         month !in 1..12 || date == 0
     ) {
         return null

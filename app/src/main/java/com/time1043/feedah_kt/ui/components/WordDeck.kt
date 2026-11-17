@@ -207,8 +207,8 @@ fun WordDeck(
     val currentEnd by rememberUpdatedState(end)
     val currentRenderCard by rememberUpdatedState(renderCard)
     val currentCanSettle by rememberUpdatedState(canSettle)
-    val currentCanSpeak = canSpeak
-    val currentAutoSpeak = autoSpeak
+    val currentCanSpeak by rememberUpdatedState(canSpeak)
+    val currentAutoSpeak by rememberUpdatedState(autoSpeak)
 
     // A new resetKey is a new session: the pager remounts, the initial card
     // is re-applied and the session-local state (spoken marks, gesture marks,
@@ -378,7 +378,10 @@ fun WordDeck(
                 currentWords.getOrNull(pagerState.settledPage)?.position == position
             }
             handle?.advance = {
-                val target = (settledIndex.intValue + 1).coerceAtMost(itemCount - 1)
+                // Derive the count from the current words: a lambda stored in
+                // the handle outlives the recomposition that built it.
+                val count = currentWords.size + if (currentEnd != null) 1 else 0
+                val target = (settledIndex.intValue + 1).coerceAtMost(count - 1)
                 if (target != settledIndex.intValue) {
                     // Animated on purpose: the smooth slide is the feedback.
                     // The explicit settle below records immediately; the
