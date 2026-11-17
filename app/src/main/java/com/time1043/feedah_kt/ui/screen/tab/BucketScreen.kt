@@ -61,6 +61,8 @@ import com.time1043.feedah_kt.ui.components.MiniProgressBar
 import com.time1043.feedah_kt.ui.components.TabHeader
 import com.time1043.feedah_kt.ui.components.rememberNoIndication
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
+import com.time1043.feedah_kt.ui.theme.ACCENT
+import com.time1043.feedah_kt.ui.theme.pick
 import kotlinx.coroutines.launch
 
 /**
@@ -294,9 +296,9 @@ fun BucketScreen(
                                             fontSize = 13.sp,
                                             fontWeight = FontWeight.SemiBold,
                                         ),
-                                        color = com.time1043.feedah_kt.ui.theme.ACCENT.let {
-                                            if (isSystemInDarkTheme()) it.dark else it.light
-                                        }, // text-accent-deep dark:text-accent
+                                        color = ACCENT.pick(
+                                            isSystemInDarkTheme(),
+                                        ), // text-accent-deep dark:text-accent
                                     )
                                 }
                             } else {

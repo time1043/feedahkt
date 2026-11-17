@@ -46,7 +46,9 @@ import com.time1043.feedah_kt.drills.DrillRegistry
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
 import com.time1043.feedah_kt.ui.components.MiniProgressBar
 import com.time1043.feedah_kt.ui.components.TabHeader
+import com.time1043.feedah_kt.ui.theme.ACCENT
 import com.time1043.feedah_kt.ui.theme.FLAG_RED
+import com.time1043.feedah_kt.ui.theme.pick
 
 /**
  * The quick-resume dashboard for the active bucket, the prototype's home:
@@ -325,11 +327,7 @@ fun HomeScreen(
                                 Modifier
                                     .height(28.dp) // h-7
                                     .widthIn(min = 28.dp) // min-w-7
-                                    .background(
-                                        if (dark) com.time1043.feedah_kt.ui.theme.FLAG_RED.dark
-                                        else com.time1043.feedah_kt.ui.theme.FLAG_RED.light,
-                                        CircleShape,
-                                    )
+                                    .background(FLAG_RED.pick(dark), CircleShape)
                                     .padding(horizontal = 8.dp), // px-2
                                 contentAlignment = Alignment.Center,
                             ) {

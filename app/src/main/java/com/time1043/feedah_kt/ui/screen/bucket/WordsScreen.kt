@@ -53,7 +53,9 @@ import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
 import com.time1043.feedah_kt.ui.components.ListHeader
 import com.time1043.feedah_kt.ui.components.ProgressBar
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
+import com.time1043.feedah_kt.ui.theme.ACCENT
 import com.time1043.feedah_kt.ui.theme.FLAG_RED
+import com.time1043.feedah_kt.ui.theme.pick
 import kotlinx.coroutines.launch
 
 private const val ROW_HEIGHT = 52
@@ -147,9 +149,9 @@ fun WordsScreen(
                         ),
                         contentDescription = if (showMeaning) "Hide meanings" else "Show meanings",
                         tint = if (showMeaning) {
-                            MaterialTheme.colorScheme.primary
+                            ACCENT.pick(isSystemInDarkTheme()) // ACCENT[scheme]
                         } else {
-                            MaterialTheme.colorScheme.onSurfaceVariant
+                            MaterialTheme.colorScheme.onSurfaceVariant // MUTED
                         },
                         modifier = Modifier.size(22.dp),
                     )
