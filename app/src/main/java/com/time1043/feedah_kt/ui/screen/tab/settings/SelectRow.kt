@@ -1,6 +1,7 @@
 package com.time1043.feedah_kt.ui.screen.tab.settings
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -59,7 +60,12 @@ fun SelectRow(
         Row(
             Modifier
                 .fillMaxWidth()
-                .clickable(role = Role.Button) { open = true }
+                .clickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = null,
+                    role = Role.Button,
+                    onClick = { open = true },
+                )
                 .padding(vertical = 8.dp) // py-2
                 .semantics { contentDescription = "$label, $current" },
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -89,13 +95,19 @@ fun SelectRow(
                     Column(Modifier.padding(8.dp)) { // p-2
                         for (option in options) {
                             val isSelected = option.value == value
+                            val optionInteraction = remember { MutableInteractionSource() }
                             Row(
                                 Modifier
                                     .fillMaxWidth()
-                                    .clickable(role = Role.RadioButton) {
-                                        onValueChange(option.value)
-                                        open = false
-                                    }
+                                    .clickable(
+                                        interactionSource = optionInteraction,
+                                        indication = null,
+                                        role = Role.RadioButton,
+                                        onClick = {
+                                            onValueChange(option.value)
+                                            open = false
+                                        },
+                                    )
                                     .padding(horizontal = 12.dp, vertical = 12.dp) // px-3 py-3
                                     .semantics { selected = isSelected },
                                 horizontalArrangement = Arrangement.SpaceBetween,
