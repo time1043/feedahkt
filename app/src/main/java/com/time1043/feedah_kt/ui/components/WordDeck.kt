@@ -189,8 +189,6 @@ fun WordDeck(
     canSettle: ((from: Int, to: Int) -> Boolean)? = null,
     /** The end page: rendered after the last word when present. */
     end: WordDeckEnd? = null,
-    /** What the end page's 'close' action calls; only needed with it. */
-    onClose: (() -> Unit)? = null,
     /** The imperative handle to wire; the screen keeps the instance. */
     handle: WordDeckHandle? = null,
     modifier: Modifier = Modifier,

@@ -6,7 +6,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
@@ -78,8 +76,9 @@ fun StatisticsScreen(
     modifier: Modifier = Modifier,
 ) {
     val appContext = LocalContext.current.applicationContext
+    // The heatmap's year selector re-anchors to today on every focus.
     var usage by remember { mutableStateOf<Map<String, DailyUsage>>(emptyMap()) }
-    var year by remember { mutableIntStateOf(java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)) }
+    var year by remember { mutableIntStateOf(currentYear()) }
     var selectedDay by remember { mutableStateOf(todayLocalDate()) }
     var metric by remember { mutableStateOf(Metric.Words) }
 
@@ -87,7 +86,7 @@ fun StatisticsScreen(
         // Returning to the tab re-anchors to today: a browsed day is a
         // momentary readout.
         selectedDay = todayLocalDate()
-        year = java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+        year = currentYear()
         try {
             coroutineScope {
                 val stats = async { listDailyStats(appContext) }
@@ -148,7 +147,7 @@ fun StatisticsScreen(
         Column(
             Modifier
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp), // p-16
+                .padding(16.dp), // p-4
             verticalArrangement = Arrangement.spacedBy(24.dp), // gap-6
         ) {
             // Today readout: words (tap = review the day, long-press = review
@@ -319,6 +318,10 @@ fun StatisticsScreen(
     }
 }
 
+/** The local year, for the heatmap's selector and its totals. */
+private fun currentYear(): Int =
+    java.util.Calendar.getInstance().get(java.util.Calendar.YEAR)
+
 /** One metric switch of the heatmap card (the source's MetricPill). */
 @Composable
 private fun MetricPill(
@@ -327,15 +330,14 @@ private fun MetricPill(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val dark = isSystemInDarkTheme()
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier
             .background(
                 if (active) {
-                    MaterialTheme.colorScheme.primary // bg-blue-500
+                    MaterialTheme.colorScheme.primary // bg-accent
                 } else {
-                    if (dark) MaterialTheme.colorScheme.surfaceVariant else Color(0xFFF3F4F6) // bg-gray-100
+                    MaterialTheme.colorScheme.surfaceVariant // bg-gray-100/800
                 },
                 CircleShape,
             )

@@ -81,15 +81,18 @@ fun Heatmap(
 
     // Label a week column when its month differs from the previous labeled
     // one — (week index, label) pairs, only on changes.
-    val monthLabels = mutableListOf<Pair<Int, String>>()
-    var lastMonth = -1
-    for ((weekIndex, days) in weeks.withIndex()) {
-        val first = days.firstOrNull { it != null } ?: continue
-        val month = first.substring(5, 7).toInt() - 1
-        if (month != lastMonth) {
-            monthLabels.add(weekIndex to MONTHS[month])
-            lastMonth = month
+    val monthLabels = remember(weeks) {
+        val labels = mutableListOf<Pair<Int, String>>()
+        var lastMonth = -1
+        for ((weekIndex, days) in weeks.withIndex()) {
+            val first = days.firstOrNull { it != null } ?: continue
+            val month = first.substring(5, 7).toInt() - 1
+            if (month != lastMonth) {
+                labels.add(weekIndex to MONTHS[month])
+                lastMonth = month
+            }
         }
+        labels
     }
 
     fun levelOf(value: Int?): Int {
