@@ -59,9 +59,9 @@ interface BucketWordDao {
     @Query("SELECT * FROM bucket ORDER BY name")
     suspend fun getBuckets(): List<BucketEntity>
 
-    /** The existence probe (mirror of drizzle's `select({ id: bucket.name })`). */
-    @Query("SELECT name AS id FROM bucket WHERE name = :bucketId LIMIT 1")
-    suspend fun findNameById(bucketId: String): String?
+    /** The existence probe: whether a bucket row carries this name. */
+    @Query("SELECT EXISTS(SELECT 1 FROM bucket WHERE name = :bucketName)")
+    suspend fun bucketExists(bucketName: String): Boolean
 
     @Query("SELECT * FROM word WHERE bucket_name = :bucketId ORDER BY position")
     suspend fun getWordsByBucket(bucketId: String): List<WordEntity>

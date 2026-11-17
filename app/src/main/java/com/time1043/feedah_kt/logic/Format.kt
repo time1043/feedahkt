@@ -2,7 +2,8 @@ package com.time1043.feedah_kt.logic
 
 import java.util.Calendar
 
-private val MONTHS = listOf(
+/** The month short names the stats labels and the heatmap share. */
+val MONTHS = listOf(
     "Jan", "Feb", "Mar", "Apr", "May", "Jun",
     "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 )

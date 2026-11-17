@@ -9,9 +9,9 @@ import com.time1043.feedah_kt.db.schema.RoundFlagEntity
 import com.time1043.feedah_kt.db.schema.RoundRecordEntity
 import com.time1043.feedah_kt.logic.todayLocalDate
 import com.time1043.feedah_kt.types.Distractor
+import com.time1043.feedah_kt.db.json
 import kotlinx.serialization.json.Json
 
-private val json = Json
 
 /** How many flag rows one carried-over INSERT may bind: 4 values each, kept
  * well under SQLite's variable limit. */
@@ -292,15 +292,15 @@ suspend fun isRoundComplete(context: Context, bucketName: String, round: Int): B
 
 /** The bucket's words with their flag state IN one round — the deck's words
  * for study and browse. The join is a left one: the flag row's absence is the
- * unflagged state. */
+ * unflagged state. The boolean is the bucket's existence: a miss returns
+ * false and an empty list. */
 suspend fun getWordsWithRoundFlag(
     context: Context,
     bucketName: String,
     round: Int,
 ): Pair<Boolean, List<RoundWordRow>> {
     val db = getDb(context)
-    val exists = db.bucketWordDao().findNameById(bucketName)
-    if (exists == null) return false to emptyList()
+    if (!db.bucketWordDao().bucketExists(bucketName)) return false to emptyList()
     val rows = db.studyRoundDao().getWordsWithRoundFlag(bucketName, round)
     return true to rows.map { row ->
         RoundWordRow(

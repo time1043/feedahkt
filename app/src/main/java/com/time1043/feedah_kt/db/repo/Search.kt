@@ -4,9 +4,9 @@ import android.content.Context
 import androidx.sqlite.db.SimpleSQLiteQuery
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.types.DeckWord
+import com.time1043.feedah_kt.db.json
 import kotlinx.serialization.json.Json
 
-private val json = Json
 
 /** One hit: the headword (whichever field matched — the row is always the
  * word itself) plus its bucket. */
@@ -21,7 +21,7 @@ data class SearchResult(val word: DeckWord, val bucketName: String)
  * Examples: `ter%` matches words starting with ter, `%ter` ending with
  * ter, `wo%rd` exactly starting with wo and ending with rd.
  */
-internal fun toLikePattern(query: String): String {
+private fun toLikePattern(query: String): String {
     if (Regex("[%_]").containsMatchIn(query)) return query
     return "%${query.replace(Regex("[\\\\%_]")) { match -> "\\" + match.value }}%"
 }

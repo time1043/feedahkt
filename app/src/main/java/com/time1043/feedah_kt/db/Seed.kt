@@ -10,7 +10,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 
-private val json = Json { ignoreUnknownKeys = true }
+private val seedJson = Json { ignoreUnknownKeys = true }
 
 /** The bundled seed files, in tab order (the mock dataset). */
 private val SEED_FILES = listOf("2050", "370", "700")
@@ -42,14 +42,14 @@ private data class SeedFileJson(val name: String, val words: List<SeedWord> = em
  * stand-in for RN's bundle-time data-alias imports). */
 private fun loadSeedFiles(context: Context): List<SeedFile> = SEED_FILES.map { name ->
     val raw = context.assets.open("data/$name.json").bufferedReader().use { it.readText() }
-    val bucket = json.decodeFromString<SeedFileJson>(raw)
+    val bucket = seedJson.decodeFromString<SeedFileJson>(raw)
     SeedFile(name = bucket.name, words = bucket.words)
 }
 
 /** A deterministic content hash of the seed words: data-only changes (new
  * words, edited meanings) re-seed the bucket even when the count is equal. */
-internal fun contentHashOf(words: List<SeedWord>): String {
-    val text = json.encodeToString(words)
+private fun contentHashOf(words: List<SeedWord>): String {
+    val text = seedJson.encodeToString(words)
     var hash = 5381
     for (ch in text) {
         hash = (hash shl 5) + hash + ch.code
@@ -110,8 +110,8 @@ internal suspend fun seedBucketsFrom(db: FeedahDb, files: List<SeedFile>): Unit 
                             word = w.word,
                             ipa = w.ipa,
                             meaning = w.meaning,
-                            forms = json.encodeToString(w.forms),
-                            distractors = json.encodeToString(w.distractors),
+                            forms = seedJson.encodeToString(w.forms),
+                            distractors = seedJson.encodeToString(w.distractors),
                         )
                     },
                 )

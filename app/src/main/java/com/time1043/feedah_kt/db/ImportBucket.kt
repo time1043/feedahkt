@@ -2,6 +2,7 @@ package com.time1043.feedah_kt.db
 
 import android.content.Context
 import com.time1043.feedah_kt.types.Distractor
+import com.time1043.feedah_kt.db.json
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -9,7 +10,6 @@ import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
-private val json = Json
 
 /** One parsed word row of an imported bucket file. */
 data class ParsedWord(

@@ -2,9 +2,9 @@ package com.time1043.feedah_kt.db
 
 import android.content.Context
 import kotlinx.serialization.Serializable
+import com.time1043.feedah_kt.db.json
 import kotlinx.serialization.json.Json
 
-private val json = Json { encodeDefaults = true }
 
 @Serializable
 data class ExportedProgress(val round: Int, val pointer: Int, val roundStartedAt: Long)

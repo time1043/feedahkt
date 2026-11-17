@@ -3,10 +3,6 @@ package com.time1043.feedah_kt.logic
 import java.util.Calendar
 import kotlin.math.roundToLong
 
-private val MONTHS = listOf(
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-)
 
 /** The readout for a stamp that does not exist (0, or an unfinished span). */
 private const val UNKNOWN = "—"

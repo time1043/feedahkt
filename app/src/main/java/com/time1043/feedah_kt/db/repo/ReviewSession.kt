@@ -4,9 +4,9 @@ import android.content.Context
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.db.schema.ReviewSessionEntity
 import com.time1043.feedah_kt.db.withTransaction
+import com.time1043.feedah_kt.db.json
 import kotlinx.serialization.json.Json
 
-private val json = Json
 
 /** One row as the session layer carries it: the entity with the queue's
  * JSON decoded. */

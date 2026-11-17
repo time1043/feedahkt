@@ -25,7 +25,7 @@ fun normalizeAnswer(input: String): String = Normalizer.normalize(input.trim(), 
     .replace("[’‘‛`]".toRegex(), "'")
     .replace("\\s+".toRegex(), " ")
 
-internal fun <T> shuffle(items: List<T>, rand: () -> Double): List<T> {
+private fun <T> shuffle(items: List<T>, rand: () -> Double): List<T> {
     val out = items.toMutableList()
     for (i in out.lastIndex downTo 1) {
         val j = (rand() * (i + 1)).toInt()

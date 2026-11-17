@@ -4,9 +4,9 @@ import android.content.Context
 import com.time1043.feedah_kt.db.getDb
 import com.time1043.feedah_kt.logic.todayLocalDate
 import com.time1043.feedah_kt.types.DeckWord
+import com.time1043.feedah_kt.db.json
 import kotlinx.serialization.json.Json
 
-private val json = Json
 /**
  * One entry of a day walk: the word, its bucket, the round it was walked in
  * and that round's flag state — the same word may appear under several
@@ -83,6 +83,8 @@ suspend fun getWordsCompletedOn(context: Context, day: String): List<DayWord> {
         previousByBucket[row.bucketName] = row.globalPosition
     }
 
+    // One flag scan for the whole day: each range's rounds index into it.
+    val allFlags = db.studyRoundDao().listAllFlags()
     val buckets = mutableMapOf<String, BucketEntry>()
     val out = mutableListOf<DayWord>()
     for (range in ranges) {
@@ -92,12 +94,12 @@ suspend fun getWordsCompletedOn(context: Context, day: String): List<DayWord> {
         // day should look the way the day looked.
         val firstRound = (range.from - 1) / entry.wordCount + 1
         val lastRound = (range.to - 1) / entry.wordCount + 1
-        val flagRows = db.studyRoundDao()
-            .listAllFlags()
+        val flagged = allFlags
             .filter {
                 it.bucketName == range.bucketName && it.round in firstRound..lastRound
             }
-        val flagged = flagRows.map { "${it.round}:${it.position}" }.toSet()
+            .map { "${it.round}:${it.position}" }
+            .toSet()
         for (global in range.from..range.to) {
             val round = (global - 1) / entry.wordCount + 1
             val ordinal = (global - 1) % entry.wordCount + 1
