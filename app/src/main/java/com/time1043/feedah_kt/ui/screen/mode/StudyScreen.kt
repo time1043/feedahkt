@@ -6,9 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -30,6 +28,7 @@ import com.time1043.feedah_kt.logic.StudySession
 import com.time1043.feedah_kt.logic.countsOf
 import com.time1043.feedah_kt.logic.frontierOf
 import com.time1043.feedah_kt.platform.FeedahTts
+import com.time1043.feedah_kt.ui.components.ResumePill
 import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import com.time1043.feedah_kt.ui.components.DeckEndAction
@@ -159,20 +158,7 @@ fun StudyScreen(
             // back to the probe.
             banner = if (ready.browsing) {
                 {
-                    Surface(
-                        shape = CircleShape,
-                        color = MaterialTheme.colorScheme.primary, // bg-blue-500
-                    ) {
-                        Text(
-                            text = "Resume studying",
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier
-                                .clickable(role = Role.Button, onClick = resumeStudying)
-                                .padding(horizontal = 16.dp, vertical = 6.dp), // px-4 py-1.5
-                        )
-                    }
+                    ResumePill(label = "Resume studying", onClick = resumeStudying)
                 }
             } else {
                 null

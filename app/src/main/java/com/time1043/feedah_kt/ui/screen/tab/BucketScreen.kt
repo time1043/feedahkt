@@ -57,7 +57,9 @@ import com.time1043.feedah_kt.db.repo.BucketCard
 import com.time1043.feedah_kt.db.repo.deleteBucket
 import com.time1043.feedah_kt.db.repo.getBucketCards
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
+import com.time1043.feedah_kt.ui.components.MiniProgressBar
 import com.time1043.feedah_kt.ui.components.TabHeader
+import com.time1043.feedah_kt.ui.components.rememberNoIndication
 import com.time1043.feedah_kt.ui.navigation.rememberNavGuard
 import kotlinx.coroutines.launch
 
@@ -214,17 +216,20 @@ fun BucketScreen(
                     ),
             ) {
                 Row(Modifier.height(IntrinsicSize.Min)) {
-                    // Body: the bucket's word list. Long-press deletes the bucket.
-                    Column(
-                        Modifier
-                            .weight(1f)
-                            .fillMaxHeight()
-                            .combinedClickable(
-                                role = Role.Button,
-                                onClick = { onOpenBucket(card.name) },
-                                onLongClick = { deleteCandidate = card },
-                                onClickLabel = card.name,
-                            )
+                // Body: the bucket's word list. Long-press deletes the bucket.
+                val bodyInteraction = rememberNoIndication()
+                Column(
+                    Modifier
+                        .weight(1f)
+                        .fillMaxHeight()
+                        .combinedClickable(
+                            interactionSource = bodyInteraction,
+                            indication = null,
+                            role = Role.Button,
+                            onClick = { onOpenBucket(card.name) },
+                            onLongClick = { deleteCandidate = card },
+                            onClickLabel = card.name,
+                        )
                             .padding(16.dp) // p-4
                             .semantics {
                                 contentDescription = "${card.name}, " +
@@ -253,35 +258,18 @@ fun BucketScreen(
                         }
                         // The bar fills in the accent only for the bucket
                         // being studied; the others stay gray.
-                        Box(
-                            Modifier
-                                .fillMaxWidth()
-                                .height(6.dp) // h-1.5
-                                .background(
-                                    MaterialTheme.colorScheme.surfaceVariant, // bg-gray-200/700
-                                    CircleShape,
-                                ),
-                        ) {
-                            Box(
-                                Modifier
-                                    .fillMaxWidth(
-                                        if (card.wordCount > 0) {
-                                            (card.pointer.toFloat() / card.wordCount)
-                                        } else {
-                                            0f
-                                        },
-                                    )
-                                    .height(6.dp)
-                                    .background(
-                                        if (active) {
-                                            MaterialTheme.colorScheme.primary // bg-accent
-                                        } else {
-                                            MaterialTheme.colorScheme.onSurfaceVariant // bg-gray-400/500
-                                        },
-                                        CircleShape,
-                                    ),
-                            )
-                        }
+                        MiniProgressBar(
+                            value = if (card.wordCount > 0) {
+                                card.pointer.toFloat() / card.wordCount
+                            } else {
+                                0f
+                            },
+                            fill = if (active) {
+                                MaterialTheme.colorScheme.primary // bg-accent
+                            } else {
+                                MaterialTheme.colorScheme.onSurfaceVariant // bg-gray-400/500
+                            },
+                        )
                         Row(
                             Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
@@ -326,9 +314,13 @@ fun BucketScreen(
                         Modifier
                             .width(48.dp) // w-12
                             .fillMaxHeight()
-                            .clickable(role = Role.Button, onClickLabel = "open rounds") {
-                                onOpenRounds(card.name)
-                            },
+                            .clickable(
+                                interactionSource = rememberNoIndication(),
+                                indication = null,
+                                role = Role.Button,
+                                onClickLabel = "open rounds",
+                                onClick = { onOpenRounds(card.name) },
+                            ),
                         horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

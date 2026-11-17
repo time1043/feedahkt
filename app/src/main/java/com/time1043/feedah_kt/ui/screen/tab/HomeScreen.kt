@@ -44,6 +44,7 @@ import com.time1043.feedah_kt.db.repo.BucketCard
 import com.time1043.feedah_kt.db.repo.getBucketCards
 import com.time1043.feedah_kt.drills.DrillRegistry
 import com.time1043.feedah_kt.ui.components.HeaderIconButton
+import com.time1043.feedah_kt.ui.components.MiniProgressBar
 import com.time1043.feedah_kt.ui.components.TabHeader
 import com.time1043.feedah_kt.ui.theme.FLAG_RED
 
@@ -199,25 +200,7 @@ fun HomeScreen(
                         )
                     }
                     // The round's bar fills in the accent.
-                    Box(
-                        Modifier
-                            .fillMaxWidth()
-                            .height(6.dp) // h-1.5
-                            .background(
-                                MaterialTheme.colorScheme.surfaceVariant, // bg-gray-200/800
-                                CircleShape,
-                            ),
-                    ) {
-                        Box(
-                            Modifier
-                                .fillMaxWidth(progress.coerceIn(0f, 1f))
-                                .height(6.dp)
-                                .background(
-                                    MaterialTheme.colorScheme.primary, // bg-accent
-                                    CircleShape,
-                                ),
-                        )
-                    }
+                    MiniProgressBar(value = progress)
                     Text(
                         text = "$wordsLeft words left in this round",
                         fontSize = 15.sp,
