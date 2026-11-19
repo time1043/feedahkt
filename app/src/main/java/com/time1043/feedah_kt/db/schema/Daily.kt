@@ -13,9 +13,9 @@ import androidx.room.Upsert
 
 /**
  * Feed high-water mark per (day, bucket): the end-of-day global position
- * ((round-1) * word_count + the 1-based ordinal). A day's word count is the
- * difference of consecutive snapshots — never derived from per-card events,
- * so re-viewing earlier cards never inflates the numbers.
+ * ((round-1) * word_count + the cards settled in the round). A day's word
+ * count is the difference of consecutive snapshots — never derived from
+ * per-card events, so re-viewing earlier cards never inflates the numbers.
  */
 @Entity(
     tableName = "daily_pointer",
@@ -73,4 +73,12 @@ interface DailyDao {
 
     @Query("SELECT * FROM daily_pointer ORDER BY bucket_name, day")
     suspend fun listPointers(): List<DailyPointerEntity>
+
+    /** The one-time repair's row rewrite: every non-multiple snapshot loses
+     * exactly the phantom card the old 1-based-ordinal write added. */
+    @Query(
+        "UPDATE daily_pointer SET global_position = global_position - 1 " +
+            "WHERE bucket_name = :bucketName AND global_position % :wordCount != 0",
+    )
+    suspend fun subtractPhantomCard(bucketName: String, wordCount: Int)
 }

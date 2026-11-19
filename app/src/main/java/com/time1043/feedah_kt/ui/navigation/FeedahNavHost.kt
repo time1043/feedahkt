@@ -114,7 +114,7 @@ fun FeedahNavHost(
         )
         reviewScreen(
             navController, tts, speechRate, settingsReady, autoSpeak, tapToReveal, chrome,
-            activeBucket,
+            studyDrill, activeBucket,
         )
         searchScreen(navController, searchLocal, searchScope)
         // bucket
@@ -310,6 +310,7 @@ fun NavGraphBuilder.reviewScreen(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    studyDrill: String,
     activeBucket: String,
 ) {
     composable<ReviewRoute> { entry ->
@@ -322,6 +323,7 @@ fun NavGraphBuilder.reviewScreen(
                 autoSpeak = autoSpeak,
                 tapToReveal = tapToReveal,
                 chrome = chrome,
+                studyDrill = studyDrill,
                 bucketParam = route.bucket,
                 roundParam = route.round,
                 dayParam = route.day,

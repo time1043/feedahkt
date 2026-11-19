@@ -116,19 +116,19 @@ class RepoTest {
     @Test
     fun snapshotsTheEndOfDayPositionOnSettleAndOnCompletion() = runBlocking {
         val wordCount = getWordsWithRoundFlag(context, bucket, 1).second.size
-        // The ordinal is 1-based: settling the card at index 1 (the second
-        // card) freezes global position 2.
+        // The pointer counts settled cards: parked ON index 1, one card (the
+        // first) has settled — global position 1.
         settleCard(context, bucket, 1)
         val pointers = listDailyPointers(context)
         assertEquals(1, pointers.size)
         val snapshot = pointers[0]
         assertEquals(todayLocalDate(), snapshot.day)
         assertEquals(bucket, snapshot.bucketName)
-        assertEquals(2, snapshot.globalPosition)
+        assertEquals(1, snapshot.globalPosition)
         finishFeedRound()
         val endOfDay = listDailyPointers(context)[0]
-        // The completion itself is exposure: the end card lands on today's
-        // watermark at the round's end.
+        // The completion pins the watermark at the round's end: the finished
+        // round settled exactly its word count.
         assertEquals(wordCount, endOfDay.globalPosition)
     }
 
@@ -138,7 +138,7 @@ class RepoTest {
         settleCard(context, bucket, 1)
         val pointers = listDailyPointers(context)
         assertEquals(1, pointers.size)
-        assertEquals(4, pointers[0].globalPosition)
+        assertEquals(3, pointers[0].globalPosition)
     }
 
     @Test
@@ -327,8 +327,8 @@ class RepoTest {
     fun aDaySpanningTwoRoundsReplaysEveryRoundWithoutDedup() = runBlocking {
         val wordCount = getWordsWithRoundFlag(context, bucket, 1).second.size
         val positions = wordPositions()
-        // Exposure semantics: the first snapshot's gain covers the walk up to
-        // the watermark — settling the second card credits the first card too.
+        // Settled-count semantics: the snapshot is the cards settled so far —
+        // parking on the second card credits only the first one.
         settleCard(context, bucket, 1)
         finishFeedRound()
         settleCard(context, bucket, 1)
@@ -336,16 +336,13 @@ class RepoTest {
         val entries = getWordsCompletedOn(context, todayLocalDate())
         // Round 1's whole stretch (the completion pins its end) plus round 2's
         // gain: the same word may appear once per round it was walked in.
-        assertEquals(wordCount + 2, entries.size)
+        assertEquals(wordCount + 1, entries.size)
         assertEquals(bucket, entries[0].bucketName)
         assertEquals(1, entries[0].round)
         assertEquals(positions[0], entries[0].word.position)
-        val lastTwo = entries.takeLast(2)
-        assertEquals(listOf(2, 2), lastTwo.map { it.round })
-        assertEquals(
-            listOf(positions[0], positions[1]),
-            lastTwo.map { it.word.position },
-        )
+        val lastEntry = entries.last()
+        assertEquals(2, lastEntry.round)
+        assertEquals(positions[0], lastEntry.word.position)
     }
 
     @Test
