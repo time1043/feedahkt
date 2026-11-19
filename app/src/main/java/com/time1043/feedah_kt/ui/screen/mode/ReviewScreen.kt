@@ -38,6 +38,11 @@ import com.time1043.feedah_kt.db.repo.getWordsWithRoundFlag
 import com.time1043.feedah_kt.db.repo.openReviewSession
 import com.time1043.feedah_kt.db.repo.setRoundFlag
 import com.time1043.feedah_kt.db.repo.settleReview
+import com.time1043.feedah_kt.drills.Drill
+import com.time1043.feedah_kt.drills.DrillCardInput
+import com.time1043.feedah_kt.drills.DrillRegistry
+import com.time1043.feedah_kt.logic.AnswerState
+import com.time1043.feedah_kt.logic.PendingAutoAdvance
 import com.time1043.feedah_kt.logic.formatDayLabel
 import com.time1043.feedah_kt.platform.FeedahTts
 import com.time1043.feedah_kt.types.DeckWord
@@ -47,6 +52,7 @@ import com.time1043.feedah_kt.ui.components.ScreenHeader
 import com.time1043.feedah_kt.ui.components.WordDeck
 import com.time1043.feedah_kt.ui.components.WordDeckEnd
 import com.time1043.feedah_kt.ui.components.rememberWordDeckHandle
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.launch
 
@@ -96,9 +102,12 @@ private sealed interface Walk {
  * (round walks) and the frontier stay where the walk actually was.
  *
  * The screen keeps two concerns apart on purpose: the walk owns the queue
- * and the cursor (and stays answer-free), while the card and the answer
- * policy are the drill layer's — the drill's cards plug into this deck
- * without reshaping the walks.
+ * and the cursor (and stays answer-free in the database), while the card
+ * and the answer policy are the drill layer's. The drill is the user's
+ * study choice (study and review share it — browse stays swipe-only), so a
+ * quiz review is quizzed and a typing review is dictated to. Answers,
+ * drafts and auto-advance are session-local: a review records nothing but
+ * its watermark and its flag toggles.
  */
 @Composable
 fun ReviewScreen(
@@ -108,6 +117,7 @@ fun ReviewScreen(
     autoSpeak: Boolean,
     tapToReveal: Boolean,
     chrome: DeckChrome,
+    studyDrill: String,
     bucketParam: String?,
     roundParam: Int?,
     dayParam: String?,
@@ -135,6 +145,18 @@ fun ReviewScreen(
     // Review decks count toward the daily "studying" metric too.
     rememberStudyUsage()
 
+    // The drill card is the study choice: study and review share it (browse
+    // stays on the plain swipe card). Unknown stored ids fall back to swipe.
+    val drill = DrillRegistry.getDrill(studyDrill)
+    // The drill layer's session-local state: answers and drafts live per walk
+    // (every focus reload restarts the walk, so they restart with it) and are
+    // never written down — the walk records only its watermark and flags.
+    var answers by remember { mutableStateOf(emptyMap<Int, AnswerState>()) }
+    var drafts by remember { mutableStateOf(emptyMap<Int, String>()) }
+    // The drill's auto-advance decision: a correct answer slides the deck on
+    // its own, exactly as study does.
+    var pendingAdvance by remember { mutableStateOf<PendingAutoAdvance?>(null) }
+
     val deckHandle = rememberWordDeckHandle()
     // Free-swiping state entered by scrubbing; exited by Resume reviewing.
     // The frontier is the farthest card index reached in the current walk.
@@ -145,12 +167,15 @@ fun ReviewScreen(
     // re-entry resumes the open session at its watermark, and flags made (or
     // cleared) in browse or study while this screen sat under another one
     // must show on return.
-    LaunchedEffect(bucketName, roundParam, dayParam, flagDayParam) {
+    LaunchedEffect(bucketName, roundParam, dayParam, flagDayParam, drill) {
         walk = null
         empty = false
         seen = 1
         frontier = 0
         browsing = false
+        answers = emptyMap()
+        drafts = emptyMap()
+        pendingAdvance = null
         try {
             // Date walks replay a date across buckets and rounds: the day
             // param walks what was studied, the flag-day param what was
@@ -167,6 +192,9 @@ fun ReviewScreen(
                     empty = true
                     return@LaunchedEffect
                 }
+                // The drill rebuilds its per-card private data (quiz options,
+                // …) for this walk; recycled cards must not reshuffle.
+                drill.prepare(queue.map { it.word })
                 walk = Walk.Date(
                     DateWalk(
                         kind = if (flagDay != null) DateWalkKind.FlagDay else DateWalkKind.Day,
@@ -208,6 +236,10 @@ fun ReviewScreen(
                 empty = true
                 return@LaunchedEffect
             }
+            // The drill rebuilds its per-card private data (quiz options, …)
+            // for this walk. The pool is the round's full word list — the same
+            // distractor pool study draws from — not just the flagged subset.
+            drill.prepare(words.map { it.toDeckWord() })
             // A draft's HUD reads time {n+1} · uncounted; a counted session
             // carries its own number.
             val countedCount = if (session.counted) {
@@ -257,38 +289,33 @@ fun ReviewScreen(
         return
     }
 
-    /** The bookmark is the walk's undo: a word that sticks gets its flag
-     * cleared right here. The queue keeps the word in the walk — the list
-     * was frozen when the walk opened, and unflagging must not reshuffle
-     * the cards under the reader's thumb. The session flip and the
-     * round_flag row say the same thing. The match is exact per walk kind:
+    /** Flips one word's flag inside the walk queue. The branch is not noise:
+     * it keeps each walk kind's queue element type exact AND its match exact —
      * the round walk matches on position alone (positions are unique within
      * one bucket's deck), while the date walk matches on bucket + round +
-     * position — positions collide across buckets and rounds, and flagging
-     * one copy of a word must not flip the other copies the same day
-     * replays. Date walks write the entry's own bucket and round (the
-     * tapped deck word carries them). */
-    val toggleFlag: (DeckWord) -> Unit = { word ->
-        walk = when (currentWalk) {
-            is Walk.Round -> currentWalk.copy(
-                state = currentWalk.state.copy(
-                    queue = currentWalk.state.queue.map { entry ->
+     * position: positions collide across buckets and rounds, and flagging one
+     * copy of a word must not flip the other copies the same day replays. */
+    fun withQueueFlag(state: Walk, word: DeckWord, flagged: Boolean): Walk {
+        return when (state) {
+            is Walk.Round -> state.copy(
+                state = state.state.copy(
+                    queue = state.state.queue.map { entry ->
                         if (entry.position == word.position) {
-                            entry.copy(flagged = !entry.flagged)
+                            entry.copy(flagged = flagged)
                         } else {
                             entry
                         }
                     },
                 ),
             )
-            is Walk.Date -> currentWalk.copy(
-                state = currentWalk.state.copy(
-                    queue = currentWalk.state.queue.map { entry ->
+            is Walk.Date -> state.copy(
+                state = state.state.copy(
+                    queue = state.state.queue.map { entry ->
                         val match = entry.word.position == word.position &&
                             entry.word.bucketName == word.bucketName &&
                             entry.word.round == word.round
                         if (match) {
-                            entry.copy(word = entry.word.copy(flagged = !entry.word.flagged))
+                            entry.copy(word = entry.word.copy(flagged = flagged))
                         } else {
                             entry
                         }
@@ -296,9 +323,21 @@ fun ReviewScreen(
                 ),
             )
         }
-        val target = when (currentWalk) {
-            is Walk.Round -> TargetBucket(bucketName, currentWalk.state.session.round)
+    }
+
+    /** The bookmark is the walk's undo: a word that sticks gets its flag
+     * cleared right here. The queue keeps the word in the walk — the list
+     * was frozen when the walk opened, and unflagging must not reshuffle
+     * the cards under the reader's thumb. The session flip and the
+     * round_flag row say the same thing; date walks write the entry's own
+     * bucket and round (they span buckets, where positions collide). */
+    fun flagWord(word: DeckWord, flagged: Boolean) {
+        walk = withQueueFlag(walk!!, word, flagged)
+        val target = when (val state = walk!!) {
+            is Walk.Round -> TargetBucket(bucketName, state.state.session.round)
             is Walk.Date -> TargetBucket(
+                // The tapped deck word carries its own bucket and round: the
+                // same position in two rounds writes two different rows.
                 word.bucketName ?: bucketName,
                 word.round ?: 0,
             )
@@ -310,10 +349,49 @@ fun ReviewScreen(
                     bucketName = target.bucketName,
                     round = target.round,
                     position = word.position,
-                    flagged = !word.flagged,
+                    flagged = flagged,
                 )
             }.onFailure { error -> Log.e(TAG, "flag write failed", error) }
         }
+    }
+
+    val toggleFlag: (DeckWord) -> Unit = { word -> flagWord(word, !word.flagged) }
+
+    /** A drill card's answer, session-local. The walk records nothing — the
+     * policy's side effects are what land: a correct pick arms the drill's
+     * auto-advance (the deck slides on its own, like study), a wrong one
+     * applies the drill's auto-flag into the walk's own round. */
+    fun recordAnswer(word: DeckWord, correct: Boolean, picked: String?) {
+        answers = answers + (word.position to AnswerState.Picked(correct, picked))
+        if (correct && drill.autoAdvanceMs != null) {
+            pendingAdvance = PendingAutoAdvance(
+                position = word.position,
+                dueAt = System.currentTimeMillis() + (drill.autoAdvanceMs ?: 0L),
+            )
+        }
+        if (!correct && drill.autoFlagOnWrong) flagWord(word, true)
+    }
+
+    /** Typing's reveal-without-answer: locks the card like an answer (the
+     * settle gate opens) but records nothing about correctness. */
+    fun skipWord(word: DeckWord) {
+        answers = answers + (word.position to AnswerState.Skipped)
+    }
+
+    /** The typing card's draft, lifted so it survives card recycling. */
+    fun draftWord(word: DeckWord, value: String) {
+        drafts = drafts + (word.position to value)
+    }
+
+    // Executes the drill's auto-advance decision: slides to the pending card
+    // when it is still on screen, then reports back. The countdown is
+    // dueAt-based, so restarts on unrelated renders keep the schedule.
+    LaunchedEffect(pendingAdvance) {
+        val pending = pendingAdvance ?: return@LaunchedEffect
+        val remaining = (pending.dueAt - System.currentTimeMillis()).coerceAtLeast(0L)
+        delay(remaining)
+        if (deckHandle.showsWord(pending.position)) deckHandle.advance()
+        pendingAdvance = null
     }
 
     val resumeReviewing: () -> Unit = {
@@ -368,16 +446,42 @@ fun ReviewScreen(
             resetKey = resetKey,
             initialIndex = initialIndex,
             progressBar = chrome.showProgressBar,
+            scrubbable = drill.scrubbable,
+            autoSpeak = drill.speakOnSettle,
             tapToReveal = tapToReveal,
             canSpeak = canSpeak,
             onSpeak = { word -> tts.speakWord(word.word, speechRate) },
             onToggleFlag = toggleFlag,
             onIndexChange = { index -> seen = index + 1 },
-            // Every settled landing advances the resume watermark on forward
-            // settles unless browsing — a round walk left half-way picks up
-            // at the first card it has not passed. Date walks carry no
-            // session and record nothing; the frontier moves for every walk
-            // kind.
+            renderCard = { word, helpers ->
+                drill.renderCard(
+                    DrillCardInput(
+                        word = word,
+                        answered = answers[word.position],
+                        onAnswer = { correct, picked ->
+                            recordAnswer(word, correct, picked)
+                        },
+                        onSkip = { skipWord(word) },
+                        draft = drafts[word.position] ?: "",
+                        onDraft = { value -> draftWord(word, value) },
+                        onReplay = helpers.onReplay,
+                        onToggleFlag = { toggleFlag(word) },
+                        tapToReveal = helpers.tapToReveal,
+                    ),
+                )
+            },
+            // The study gate, verbatim: an answer-gated drill cannot scroll
+            // past an unanswered card — the only way forward is answering —
+            // and browse mode (scrubbing) opens it.
+            canSettle = { from, to ->
+                if (drill.scrollable || browsing) {
+                    true
+                } else {
+                    val fromWord = queue.getOrNull(from)
+                    fromWord == null || to <= from ||
+                        answers.containsKey(fromWord.position)
+                }
+            },
             onSettle = { word, index ->
                 if (!browsing && index > frontier) {
                     frontier = index
@@ -394,8 +498,12 @@ fun ReviewScreen(
             },
             // Scrubbing enters browse mode: the pill floats over the cards —
             // not the header, which settings can hide — and is the way back
-            // to the walk's frontier.
-            onScrub = { browsing = true },
+            // to the walk's frontier. A pending auto-advance is scrubbed
+            // away with it.
+            onScrub = {
+                pendingAdvance = null
+                browsing = true
+            },
             banner = if (browsing) {
                 {
                     ResumePill(label = "Resume reviewing", onClick = resumeReviewing)
