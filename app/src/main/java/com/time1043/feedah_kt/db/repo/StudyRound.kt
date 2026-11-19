@@ -69,8 +69,10 @@ private suspend fun wordCountOf(db: FeedahDb, bucketName: String): Int =
     db.bucketWordDao().getWordCount(bucketName) ?: 0
 
 /** The end-of-day global position snapshot: (round - 1) * wordCount plus the
- * 1-based ordinal of the card (pointer + 1) — the same number the day replay
- * decodes back into (round, card) with, for arbitrary word positions. */
+ * cards settled in the round (pointer — the card parked ON is not settled
+ * yet, so it is not credited). The home readout and the stats word counts
+ * both read the settled count, and the day replay decodes the same number
+ * back into (round, card) for arbitrary word positions. */
 private suspend fun snapshotDailyPointer(
     db: FeedahDb,
     bucketName: String,
@@ -78,7 +80,7 @@ private suspend fun snapshotDailyPointer(
     pointer: Int,
 ) {
     val wordCount = wordCountOf(db, bucketName)
-    upsertDailyPointer(db, todayLocalDate(), bucketName, (round - 1) * wordCount + pointer + 1)
+    upsertDailyPointer(db, todayLocalDate(), bucketName, (round - 1) * wordCount + pointer)
 }
 
 /**
@@ -98,8 +100,9 @@ suspend fun completeRound(context: Context, bucketName: String, now: Long) {
         val finishedStart = row?.roundStartedAt ?: 0
         val next = finishedRound + 1
 
-        // The end card completes the round's last word on today's watermark:
-        // the completion itself is exposure (the day replay counts it).
+        // Pin the watermark at the round's end: a completed round has settled
+        // exactly its word count (the last settle already wrote this value —
+        // the pin keeps the row right even if the end card never settled).
         val endWordCount = wordCountOf(db, bucketName)
         upsertDailyPointer(db, todayLocalDate(), bucketName, finishedRound * endWordCount)
 

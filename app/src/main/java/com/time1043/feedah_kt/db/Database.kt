@@ -26,13 +26,16 @@ private suspend fun prepareDb(context: Context): FeedahDb {
 /** One full open-migrate-seed attempt against whatever file is there. Seed
  * is the shape verifier: a missing or mis-shaped table makes a seed
  * statement throw, so a successful seed doubles as the probe. The handle
- * is closed on failure so the wipe in prepareDb starts clean. */
+ * is closed on failure so the wipe in prepareDb starts clean. The one-time
+ * repairs run after the seed, ahead of any screen — a fresh-semantics write
+ * must never coexist with rows the repair hasn't rewritten yet. */
 private suspend fun openMigrateAndSeed(context: Context): FeedahDb {
     val db = openDb(context)
     try {
         // Migrations and Room's integrity check run on first access, ahead
         // of the seed.
         seedBuckets(context, db)
+        repairLegacyDailyPointers(context, db)
         return db
     } catch (error: CancellationException) {
         throw error
