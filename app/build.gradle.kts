@@ -1,3 +1,5 @@
+import java.time.LocalDateTime
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
@@ -17,6 +19,15 @@ plugins {
 // Unresolved on a machine without src/real/assets, which is why `mock` is
 // the default: the repo always builds.
 val feedahDataset = (project.findProperty("feedahDataset") as String?)?.takeIf { it.isNotEmpty() } ?: "mock"
+
+// The dist pipeline's optional single-ABI restriction — the counterpart of
+// RN's reactNativeArchitectures (`pn apk:arm64-v8a`): one ABI keeps only
+// that architecture's native libraries (arm64-v8a on modern phones); unset
+// builds the universal APK. The same value is stamped onto the dist name.
+//
+//   ./gradlew :app:distReleaseApk                       → universal
+//   ./gradlew :app:distReleaseApk -PfeedahAbi=arm64-v8a → single-ABI
+val feedahAbi = (project.findProperty("feedahAbi") as String?)?.takeIf { it.isNotEmpty() }
 
 android {
     namespace = "com.time1043.feedah_kt"
@@ -46,6 +57,12 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // A local binding: the property smart-casts inside the block.
+        val distAbi = feedahAbi
+        if (distAbi != null) {
+            ndk { abiFilters.add(distAbi) }
+        }
     }
 
     buildTypes {
@@ -53,6 +70,10 @@ android {
             optimization {
                 enable = false
             }
+            // The dist APK must install: a personal app signs its release
+            // with the debug keystore (the same choice RN's android project
+            // makes — a proper keystore waits for a store release).
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
@@ -77,6 +98,65 @@ kotlin {
 // and AutoMigrations can diff one version against the next.
 ksp {
     arg("room.schemaLocation", "$projectDir/schemas")
+}
+
+// The dist pipeline, the counterpart of RN's scripts/build-apk.mjs
+// (`pn apk:arm64-v8a`): assemble the release APK, copy it to <root>/dist/
+// (gitignored) under a stamped name:
+//
+//   feedah-<yyMMdd-HHmm>-<short commit>[-<abi>].apk
+//   e.g. feedah-261120-2134-0a3c-arm64-v8a.apk
+//
+// The RN script exists because a pnpm script is the only build entry point
+// there; the AN build system owns this natively, so the wrapper is a task.
+// The ABI comes in through -PfeedahAbi (the comment at the top of the
+// file); the dataset through -PfeedahDataset.
+tasks.register("distReleaseApk") {
+    group = "feedah"
+    description =
+        "Assembles the release APK into dist/ under the stamped name (see the comment above this task)."
+
+    // Everything Gradle is resolved at configuration time — doLast only
+    // closes over plain values, which is what the configuration cache
+    // requires of a task action.
+    val apkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
+    val distDir = rootProject.layout.projectDirectory.dir("dist").asFile
+    val abiSuffix = feedahAbi?.let { "-$it" } ?: ""
+    // The commit does not move while a build runs, so configuration time is
+    // as exact as execution time.
+    val shortCommit = providers.exec {
+        commandLine("git", "rev-parse", "--short=4", "HEAD")
+        workingDir(rootDir)
+    }.standardOutput.asText.get().trim()
+
+    dependsOn("assembleRelease")
+    doLast {
+        val apks = apkDir.listFiles { f -> f.isFile && f.name.endsWith(".apk") }
+            ?.sortedBy { it.name }
+            ?: emptyList()
+        val apk = apks.firstOrNull()
+            ?: throw GradleException(
+                "No APK in app/build/outputs/apk/release — did assembleRelease succeed?",
+            )
+
+        // The timestamp is taken when the APK is finished (inside doLast),
+        // not when the build was configured, so it reflects when the
+        // artifact was actually produced — the same rule the RN script
+        // states.
+        val now = LocalDateTime.now()
+        val stamp = "%02d%02d%02d-%02d%02d".format(
+            now.year % 100,
+            now.monthValue,
+            now.dayOfMonth,
+            now.hour,
+            now.minute,
+        )
+        val name = "feedah-$stamp-$shortCommit$abiSuffix.apk"
+
+        distDir.mkdirs()
+        apk.copyTo(distDir.resolve(name), overwrite = true)
+        println("APK ready: dist/$name")
+    }
 }
 
 dependencies {
