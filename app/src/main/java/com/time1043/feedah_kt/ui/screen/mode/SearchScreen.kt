@@ -31,6 +31,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.SolidColor
@@ -73,6 +74,7 @@ fun SearchScreen(
     onBack: () -> Unit,
     onOpenWord: (position: Int, bucketName: String) -> Unit,
     modifier: Modifier = Modifier,
+    autoFocus: Boolean = true,
 ) {
     val appContext = LocalContext.current.applicationContext
     val pinnedBucket = bucketParam?.takeIf { it.isNotEmpty() } ?: ""
@@ -143,17 +145,25 @@ fun SearchScreen(
             // The prototype's field: the lime ring with the lens inside.
             // The lens and the text flow side by side (a Row, not stacked
             // children) — the old stack started the text under the lens in
-            // BOTH the placeholder and the typed state.
+            // BOTH the placeholder and the typed state. The background
+            // shares the border's shape: a shapeless background fills the
+            // bounding rectangle and its corners peek past the rounded ring.
+            // The vertical rhythm (py-2.5) sits on the text line like the
+            // source's TextInput, so the resident clear x never changes the
+            // field's height; and the x SLOT never leaves the layout — an
+            // invisible x is an inert x — or the first keystroke would
+            // visibly resize the input.
+            val fieldShape = RoundedCornerShape(16.dp) // rounded-2xl
             Box(
                 Modifier
                     .weight(1f)
                     .border(
                         width = 2.dp, // border-2
                         color = MaterialTheme.colorScheme.primary, // border-accent
-                        shape = RoundedCornerShape(16.dp), // rounded-2xl
+                        shape = fieldShape,
                     )
-                    .background(MaterialTheme.colorScheme.surfaceVariant) // bg-gray-100 dark:bg-surface
-                    .padding(horizontal = 14.dp, vertical = 10.dp), // px-3.5 py-2.5
+                    .background(MaterialTheme.colorScheme.surfaceVariant, fieldShape) // bg-gray-100 dark:bg-surface
+                    .padding(horizontal = 14.dp), // px-3.5
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -181,6 +191,7 @@ fun SearchScreen(
                         modifier = Modifier
                             .padding(start = 8.dp) // ml-2, the gap after the lens
                             .weight(1f)
+                            .padding(vertical = 10.dp) // py-2.5, mirrors the source
                             .focusRequester(focusRequester)
                             .testTag("search.query"),
                         decorationBox = { inner ->
@@ -196,6 +207,34 @@ fun SearchScreen(
                             }
                         },
                     )
+                    // The clear x (RN 296924b): one tap empties the bar and
+                    // refocuses the field, so the keyboard stays up for the
+                    // next query.
+                    val clearInteraction = remember { MutableInteractionSource() }
+                    Box(
+                        Modifier
+                            .padding(start = 4.dp) // ml-1
+                            .size(width = 28.dp, height = 36.dp) // w-7 h-9
+                            .alpha(if (query.isEmpty()) 0f else 1f)
+                            .clickable(
+                                interactionSource = clearInteraction,
+                                indication = null,
+                                enabled = query.isNotEmpty(),
+                                role = Role.Button,
+                                onClick = {
+                                    query = ""
+                                    focusRequester.requestFocus()
+                                },
+                            ),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(
+                            painter = painterResource(R.drawable.ic_close),
+                            contentDescription = "Clear search",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant, // MUTED
+                            modifier = Modifier.size(18.dp),
+                        )
+                    }
                 }
             }
         }
@@ -276,8 +315,9 @@ fun SearchScreen(
         }
     }
 
-    // autoFocus
-    LaunchedEffect(Unit) { focusRequester.requestFocus() }
+    // autoFocus — the screenshot test turns it off: the blinking cursor is
+    // an infinite animation, and an idle-waiting test would never settle.
+    LaunchedEffect(Unit) { if (autoFocus) focusRequester.requestFocus() }
 }
 
 /** The word with its query matches bolded in the accent (the source's
