@@ -141,6 +141,9 @@ fun SearchScreen(
                 )
             }
             // The prototype's field: the lime ring with the lens inside.
+            // The lens and the text flow side by side (a Row, not stacked
+            // children) — the old stack started the text under the lens in
+            // BOTH the placeholder and the typed state.
             Box(
                 Modifier
                     .weight(1f)
@@ -151,48 +154,49 @@ fun SearchScreen(
                     )
                     .background(MaterialTheme.colorScheme.surfaceVariant) // bg-gray-100 dark:bg-surface
                     .padding(horizontal = 14.dp, vertical = 10.dp), // px-3.5 py-2.5
-                contentAlignment = Alignment.CenterStart,
             ) {
-                Icon(
-                    painter = painterResource(R.drawable.ic_search),
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant, // MUTED
-                    modifier = Modifier.size(18.dp),
-                )
-                BasicTextField(
-                    value = query,
-                    onValueChange = { query = it },
-                    singleLine = true,
-                    textStyle = TextStyle(
-                        fontSize = 17.sp,
-                        color = MaterialTheme.colorScheme.onSurface, // text-black/white
-                    ),
-                    cursorBrush = SolidColor(
-                        androidx.compose.ui.graphics.Color(LIME),
-                    ), // selectionColor lime
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Ascii,
-                        imeAction = ImeAction.Search,
-                        autoCorrect = false,
-                    ),
-                    modifier = Modifier
-                        .padding(start = 8.dp)
-                        .fillMaxWidth()
-                        .focusRequester(focusRequester)
-                        .testTag("search.query"),
-                    decorationBox = { inner ->
-                        Box {
-                            if (query.isEmpty()) {
-                                Text(
-                                    text = "Search words",
-                                    style = TextStyle(fontSize = 17.sp),
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant, // placeholderTextColor
-                                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        painter = painterResource(R.drawable.ic_search),
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant, // MUTED
+                        modifier = Modifier.size(18.dp),
+                    )
+                    BasicTextField(
+                        value = query,
+                        onValueChange = { query = it },
+                        singleLine = true,
+                        textStyle = TextStyle(
+                            fontSize = 17.sp,
+                            color = MaterialTheme.colorScheme.onSurface, // text-black/white
+                        ),
+                        cursorBrush = SolidColor(
+                            androidx.compose.ui.graphics.Color(LIME),
+                        ), // selectionColor lime
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Ascii,
+                            imeAction = ImeAction.Search,
+                            autoCorrect = false,
+                        ),
+                        modifier = Modifier
+                            .padding(start = 8.dp) // ml-2, the gap after the lens
+                            .weight(1f)
+                            .focusRequester(focusRequester)
+                            .testTag("search.query"),
+                        decorationBox = { inner ->
+                            Box {
+                                if (query.isEmpty()) {
+                                    Text(
+                                        text = "Search words",
+                                        style = TextStyle(fontSize = 17.sp),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant, // placeholderTextColor
+                                    )
+                                }
+                                inner()
                             }
-                            inner()
-                        }
-                    },
-                )
+                        },
+                    )
+                }
             }
         }
 
