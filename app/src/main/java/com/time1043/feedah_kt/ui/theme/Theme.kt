@@ -21,6 +21,11 @@ private val DarkLeafScheme = darkColorScheme(
     onPrimary = Black,
     primaryContainer = Gray800,
     onPrimaryContainer = White,
+    // The floating selected surface (the theme toggle's active segment, a
+    // segmented control's raised piece) — the source's bg-gray-700 — and
+    // never the unthemed baseline, which reads as wine-red.
+    secondaryContainer = Gray700,
+    onSecondaryContainer = White,
     secondary = Lime,
     onSecondary = Black,
     background = Black,
@@ -42,6 +47,9 @@ private val LightLeafScheme = lightColorScheme(
     onPrimary = Black,
     primaryContainer = Gray100,
     onPrimaryContainer = Black,
+    // The raised selected surface — the source's bg-white on the gray track.
+    secondaryContainer = White,
+    onSecondaryContainer = Black,
     secondary = Olive,
     onSecondary = White,
     background = White,
