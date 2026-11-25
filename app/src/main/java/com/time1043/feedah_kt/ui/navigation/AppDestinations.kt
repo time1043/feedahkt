@@ -1,15 +1,19 @@
 package com.time1043.feedah_kt.ui.navigation
 
 import androidx.annotation.DrawableRes
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavDestination.Companion.hasRoute
@@ -17,6 +21,8 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.time1043.feedah_kt.R
+import com.time1043.feedah_kt.ui.theme.ACCENT
+import com.time1043.feedah_kt.ui.theme.pick
 
 enum class AppDestinations(
     val route: Route,
@@ -55,12 +61,25 @@ fun TabScaffold(
 ) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
+    // The source's AppTabs: the bar rides the page surface, the focused
+    // tab paints in the accent (lime on dark, olive on light), the others
+    // stay muted — and there is NO pill indicator. The defaults left the
+    // indicator on the unthemed baseline secondaryContainer, which reads
+    // as a wine-red blob against the leaf.
+    val accent = ACCENT.pick(isSystemInDarkTheme())
     Scaffold(
         modifier = modifier,
         bottomBar = {
-            NavigationBar {
+            NavigationBar(containerColor = MaterialTheme.colorScheme.background) {
                 AppDestinations.entries.forEach { destination ->
                     NavigationBarItem(
+                        colors = NavigationBarItemDefaults.colors(
+                            selectedIconColor = accent,
+                            selectedTextColor = accent,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            indicatorColor = Color.Transparent,
+                        ),
                         icon = {
                             Icon(
                                 painterResource(destination.icon),
